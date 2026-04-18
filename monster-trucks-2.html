@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Monster Trucks">
+<meta name="apple-mobile-web-app-title" content="Monster Trucks 2">
 <meta name="theme-color" content="#0a0406">
-<title>Monster Trucks</title>
+<title>Monster Trucks 2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
@@ -116,6 +116,61 @@
     width: 5px; height: 100%;
     background: repeating-linear-gradient(0deg, #ffd080 0 10px, #0a0a0a 10px 20px);
   }
+
+  /* High platform — land here for +1100 bonus */
+  .platform {
+    position: absolute;
+    bottom: 28%;
+    left: 70%;
+    width: 110px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .platform-top {
+    width: 110px;
+    height: 10px;
+    background: linear-gradient(180deg, #6a5a90, #2a2050);
+    border-top: 3px solid #ffd060;
+    border-radius: 2px;
+    box-shadow:
+      0 0 14px rgba(255,210,80,0.5),
+      inset 0 -2px 0 rgba(0,0,0,0.4);
+    position: absolute;
+    left: 0;
+    bottom: 140px;
+  }
+  .platform-post {
+    position: absolute;
+    left: 48px;
+    bottom: 0;
+    width: 14px;
+    height: 140px;
+    background: repeating-linear-gradient(0deg,
+      #3a2a58 0 10px, #1a1228 10px 14px);
+    border: 1px solid #0a0612;
+    border-radius: 2px;
+  }
+  .platform-flag {
+    position: absolute;
+    bottom: 158px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Bungee', sans-serif;
+    font-size: 11px;
+    color: #ffd060;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(255,210,80,0.8), 0 1px 2px #000;
+    background: rgba(15,8,4,0.6);
+    padding: 2px 8px;
+    border: 1px solid #ffa040;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  @keyframes platFlash {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.8); }
+  }
+  .platform.hit .platform-top { animation: platFlash 0.4s 3; }
   .truck {
     position: absolute;
     bottom: 28%;
@@ -184,8 +239,8 @@
 
   .meters {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
   }
   .meter {
     position: relative;
@@ -278,6 +333,29 @@
     z-index: 200;
   }
 
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    border-radius: 3px;
+    border: 1px solid #8a4a1a;
+    background: linear-gradient(180deg, #2a1408, #14080a);
+    color: #ffd8a0;
+    cursor: pointer;
+  }
+  .music-toggle.on {
+    border-color: #ffd060;
+    background: linear-gradient(180deg, #5a2810, #2a1408);
+    color: #ffe890;
+    box-shadow: 0 0 12px rgba(255,210,80,0.55);
+  }
+
   .overlay {
     position: fixed; inset: 0;
     background: rgba(5,2,0,0.92);
@@ -326,7 +404,9 @@
 </head>
 <body>
 
-<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Monster Trucks">
+<button id="music" class="music-toggle">🔇 Music</button>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Monster Trucks 2">
   <defs>
     <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"  stop-color="#fff090"/>
@@ -397,6 +477,11 @@
   <div class="mountain"></div>
   <div class="ground"></div>
   <div class="ramp"></div>
+  <div class="platform" id="platform">
+    <div class="platform-flag">+1100</div>
+    <div class="platform-top"></div>
+    <div class="platform-post"></div>
+  </div>
   <div class="toy-car c1"><div class="win"></div></div>
   <div class="toy-car c2"><div class="win"></div></div>
   <div class="toy-car c3"><div class="win"></div></div>
@@ -442,6 +527,11 @@
     <div class="track-bg"></div>
     <div class="cursor" id="flipCursor"></div>
     <div class="value" id="flipValue">—</div>
+  </div>
+  <div class="meter" id="upMeter" data-label="UP">
+    <div class="track-bg"></div>
+    <div class="cursor" id="upCursor"></div>
+    <div class="value" id="upValue">—</div>
   </div>
 </div>
 
@@ -589,11 +679,13 @@ function startGame() {
 }
 
 function resetMeters() {
-  for (const id of ['powerMeter', 'flipMeter']) document.getElementById(id).classList.remove('locked');
+  for (const id of ['powerMeter', 'flipMeter', 'upMeter']) document.getElementById(id).classList.remove('locked');
   document.getElementById('powerCursor').style.left = '0%';
   document.getElementById('flipCursor').style.left = '0%';
+  document.getElementById('upCursor').style.left = '0%';
   document.getElementById('powerValue').textContent = '—';
   document.getElementById('flipValue').textContent = '—';
+  document.getElementById('upValue').textContent = '—';
 }
 
 function resetTruck() {
@@ -615,7 +707,7 @@ function render() {
     : `Round ${roundNum} / ${ROUNDS} · Player ${currentPlayer} up`;
 
   setRc('rcGo',    state === 'idle');
-  setRc('rcStop',  state === 'power' || state === 'flip');
+  setRc('rcStop',  state === 'power' || state === 'flip' || state === 'up');
   setRc('rcCrush', state === 'animating' && airState && !airState.interrupted);
   setRc('rcNext',  state === 'result');
   setRc('rcReset', true);
@@ -623,6 +715,7 @@ function render() {
   const lcdText = state === 'idle'      ? `P${currentPlayer} · PRESS GO`
                  : state === 'power'     ? 'LOCK POWER'
                  : state === 'flip'      ? 'LOCK FLIP'
+                 : state === 'up'        ? 'LOCK UP'
                  : state === 'animating' ? 'AIRBORNE!'
                  : state === 'result'    ? `+${scores[currentPlayer] - (scores[currentPlayer] - lastGain)} PTS`
                  : state === 'gameover'  ? 'FINAL'
@@ -669,7 +762,7 @@ function stopCursor() {
 function handleGo() {
   if (state !== 'idle') return;
   resetTruck();
-  runData = { power: 0, flip: 0 };
+  runData = { power: 0, flip: 0, up: 0 };
   resetMeters();
   state = 'power';
   setStatus(`P${currentPlayer}: lock your POWER.`);
@@ -692,6 +785,15 @@ function handleStop() {
     runData.flip = v;
     document.getElementById('flipMeter').classList.add('locked');
     document.getElementById('flipValue').textContent = v + '%';
+    state = 'up';
+    setStatus(`Now lock your UP — full for the platform.`);
+    startCursor('upMeter', 'upCursor');
+    render();
+  } else if (state === 'up') {
+    const v = stopCursor();
+    runData.up = v;
+    document.getElementById('upMeter').classList.add('locked');
+    document.getElementById('upValue').textContent = v + '%';
     state = 'animating';
     setStatus('GO GO GO!');
     render();
@@ -764,7 +866,7 @@ function animateRun() {
   const landX = rect.width * 0.90;
 
   const airtime = 800 + runData.power * 14;       // 800–2200 ms
-  const maxHeight = 60 + runData.power * 1.8;     // 60–240 px
+  const maxHeight = 60 + runData.power * 1.8 + runData.up * 2.4; // UP adds up to ~240 px
   const rotPerSec = runData.flip * 7.5;           // 0–750 deg/s
 
   truck.style.transition = 'none';
@@ -824,20 +926,33 @@ function finishLanding(xPx, totalRotAbs) {
   const rect = scene.getBoundingClientRect();
   const landPy = rect.top + rect.height * 0.72;
 
-  // Crush detection
-  const truckRect = truck.getBoundingClientRect();
-  const truckCx = truckRect.left + truckRect.width / 2;
+  // Platform landing check (xPx is relative to scene) — platform at left:70%, width 110px, top ~140px above ground
+  const plat = document.getElementById('platform');
+  const pRect = plat.getBoundingClientRect();
+  const platLeft   = pRect.left - rect.left;
+  const platRight  = pRect.left - rect.left + 110;
+  const truckRect  = truck.getBoundingClientRect();
+  const truckCx    = truckRect.left + truckRect.width / 2;
+  const truckCxInScene = truckCx - rect.left;
+
+  // Bonus if: final X overlaps platform top AND UP was high enough to actually reach it
+  const onPlatform = runData.up >= 70 &&
+    truckCxInScene > platLeft + 10 && truckCxInScene < platRight - 10;
+
+  // Crush detection (only if not on platform)
   let crushed = 0;
-  document.querySelectorAll('.toy-car').forEach(car => {
-    if (car.classList.contains('crushed')) return;
-    const r = car.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    if (Math.abs(truckCx - cx) < 32) {
-      car.classList.add('crushed');
-      crushed++;
-      spawnPuff(cx, landPy, 12);
-    }
-  });
+  if (!onPlatform) {
+    document.querySelectorAll('.toy-car').forEach(car => {
+      if (car.classList.contains('crushed')) return;
+      const r = car.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      if (Math.abs(truckCx - cx) < 32) {
+        car.classList.add('crushed');
+        crushed++;
+        spawnPuff(cx, landPy, 12);
+      }
+    });
+  }
 
   // Flip scoring
   const rotations = Math.floor(totalRotAbs / 360);
@@ -861,7 +976,24 @@ function finishLanding(xPx, totalRotAbs) {
   }
   const crushPts = crushed * 400;
   if (crushed > 0) verdict += ` · ${crushed} CAR${crushed > 1 ? 'S' : ''} CRUSHED!`;
-  const total = base + bonus + crushPts;
+
+  let platBonus = 0;
+  if (onPlatform) {
+    platBonus = 1100;
+    verdict += ` · PLATFORM LANDING +1100!`;
+    plat.classList.add('hit');
+    setTimeout(() => plat.classList.remove('hit'), 1400);
+    // Snap truck visually to rest on the platform
+    const platTopPx = rect.height - (rect.height * 0.28) - 140;
+    truck.style.bottom = `calc(28% + ${140}px)`;
+    truck.style.transform = 'rotate(0deg)';
+    // extra sparkle
+    const pCx = (platLeft + platRight) / 2 + rect.left;
+    const pCy = rect.top + (rect.height - rect.height * 0.28) - 140;
+    spawnPuff(pCx, pCy, 18);
+  }
+
+  const total = base + bonus + crushPts + platBonus;
   scores[currentPlayer] += total;
   lastGain = total;
   setStatus(`${verdict}  +${total} pts`);
@@ -869,20 +1001,22 @@ function finishLanding(xPx, totalRotAbs) {
   airState = null;
   render();
 
-  // Truck drives off-screen after landing
-  setTimeout(() => {
-    if (state !== 'result') return;
-    const sceneRect = scene.getBoundingClientRect();
-    truck.style.transition = 'left 1.1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s';
-    truck.style.left = (sceneRect.width + 100) + 'px';
-    truck.style.transform = 'rotate(0deg)';
-    const trail = setInterval(() => {
-      if (state !== 'result') { clearInterval(trail); return; }
-      const tr = truck.getBoundingClientRect();
-      spawnPuff(tr.left + 8, tr.top + tr.height - 4, 2);
-    }, 110);
-    setTimeout(() => clearInterval(trail), 1100);
-  }, 450);
+  // Drive-away: if we landed on the ground, the truck cruises off-screen right.
+  if (!onPlatform) {
+    setTimeout(() => {
+      if (state !== 'result') return;
+      const sceneRect = scene.getBoundingClientRect();
+      truck.style.transition = 'left 1.1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s';
+      truck.style.left = (sceneRect.width + 100) + 'px';
+      truck.style.transform = 'rotate(0deg)';
+      const trail = setInterval(() => {
+        if (state !== 'result') { clearInterval(trail); return; }
+        const tr = truck.getBoundingClientRect();
+        spawnPuff(tr.left + 8, tr.top + tr.height - 4, 2);
+      }, 110);
+      setTimeout(() => clearInterval(trail), 1100);
+    }, 450);
+  }
 }
 
 // --- Particles ---
@@ -919,13 +1053,137 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space') {
     e.preventDefault();
     if (state === 'idle')                            handleGo();
-    else if (state === 'power' || state === 'flip') handleStop();
+    else if (state === 'power' || state === 'flip' || state === 'up') handleStop();
     else if (state === 'animating')                  handleCrush();
     else if (state === 'result')                     handleNext();
   }
 });
 
 startGame();
+
+// ---------- Monster Trucks 2 music (procedural) ----------
+// "Da-da-da DUH da-da-da-da, da da da, (dla), Da-da-da-da DUH"
+// 16-step loop in A minor, ~130 BPM.
+const MT_STEP_MS = 115;
+const MT_MELODY = [
+  440.00, 523.25, 659.25, 880.00,  // 0..3 "da-da-da DUH"
+  783.99, 659.25, 587.33, 523.25,  // 4..7 "da-da-da-da"
+  440.00, 493.88, 523.25, null,    // 8..11 "da da da" + rest ("dla")
+  587.33, 659.25, 783.99, 880.00,  // 12..15 "Da-da-da-da DUH"
+];
+const MT_BASS = [110.00, 98.00, 110.00, 82.41]; // A2 G2 A2 E2
+
+let mtCtx = null, mtMaster = null, mtStep = 0, mtTimer = null;
+
+function mtMusicStart() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  mtCtx = new Ctx();
+  mtMaster = mtCtx.createGain();
+  mtMaster.gain.value = 0;
+  mtMaster.connect(mtCtx.destination);
+  mtMaster.gain.linearRampToValueAtTime(0.2, mtCtx.currentTime + 1.6);
+  mtStep = 0;
+  mtLoop();
+  return true;
+}
+
+function mtLoop() {
+  if (!mtCtx) return;
+  if (mtCtx.state === 'running') mtPlayStep(mtStep);
+  mtStep = (mtStep + 1) % 16;
+  mtTimer = setTimeout(mtLoop, MT_STEP_MS);
+}
+
+function mtPlayStep(i) {
+  const now = mtCtx.currentTime;
+  if (i % 4 === 0)        mtPlayKick(now);
+  if (i === 4 || i === 12) mtPlaySnare(now);
+  if (i % 2 === 1)        mtPlayHat(now);
+  if (i % 4 === 0)        mtPlayBass(now, MT_BASS[i / 4]);
+  if (MT_MELODY[i] !== null) mtPlayLead(now, MT_MELODY[i], i === 3 || i === 15);
+}
+
+function mtPlayKick(now) {
+  const o = mtCtx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(115, now);
+  o.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+  const g = mtCtx.createGain();
+  g.gain.setValueAtTime(0.6, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+  o.connect(g); g.connect(mtMaster); o.start(now); o.stop(now + 0.26);
+}
+
+function mtPlaySnare(now) {
+  const bufSize = Math.floor(0.1 * mtCtx.sampleRate);
+  const buf = mtCtx.createBuffer(1, bufSize, mtCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let n = 0; n < bufSize; n++) d[n] = Math.random() * 2 - 1;
+  const src = mtCtx.createBufferSource(); src.buffer = buf;
+  const hp = mtCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3600;
+  const g = mtCtx.createGain();
+  g.gain.setValueAtTime(0.22, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+  src.connect(hp); hp.connect(g); g.connect(mtMaster);
+  src.start(now);
+  // tonal body
+  const o = mtCtx.createOscillator(); o.type = 'triangle';
+  o.frequency.setValueAtTime(240, now);
+  o.frequency.exponentialRampToValueAtTime(160, now + 0.12);
+  const sg = mtCtx.createGain();
+  sg.gain.setValueAtTime(0.11, now);
+  sg.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+  o.connect(sg); sg.connect(mtMaster);
+  o.start(now); o.stop(now + 0.16);
+}
+
+function mtPlayHat(now) {
+  const bufSize = Math.floor(0.04 * mtCtx.sampleRate);
+  const buf = mtCtx.createBuffer(1, bufSize, mtCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let n = 0; n < bufSize; n++) d[n] = Math.random() * 2 - 1;
+  const src = mtCtx.createBufferSource(); src.buffer = buf;
+  const hp = mtCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 8500;
+  const g = mtCtx.createGain();
+  g.gain.setValueAtTime(0.07, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+  src.connect(hp); hp.connect(g); g.connect(mtMaster);
+  src.start(now);
+}
+
+function mtPlayBass(now, f) {
+  const o = mtCtx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+  const lp = mtCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+  const g = mtCtx.createGain();
+  g.gain.setValueAtTime(0.2, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+  o.connect(lp); lp.connect(g); g.connect(mtMaster);
+  o.start(now); o.stop(now + 0.44);
+}
+
+function mtPlayLead(now, f, accent) {
+  const o = mtCtx.createOscillator(); o.type = 'square'; o.frequency.value = f;
+  const bp = mtCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 2;
+  const g = mtCtx.createGain();
+  const amp = accent ? 0.17 : 0.1;
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(amp, now + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.001, now + (accent ? 0.24 : 0.12));
+  o.connect(bp); bp.connect(g); g.connect(mtMaster);
+  o.start(now); o.stop(now + (accent ? 0.26 : 0.14));
+}
+
+function mtToggle() {
+  const btn = document.getElementById('music');
+  if (!mtCtx) {
+    if (!mtMusicStart()) return;
+    btn.textContent = '🔊 Music'; btn.classList.add('on');
+    return;
+  }
+  if (mtCtx.state === 'running') { mtCtx.suspend(); btn.textContent = '🔇 Music'; btn.classList.remove('on'); }
+  else                           { mtCtx.resume();  btn.textContent = '🔊 Music'; btn.classList.add('on'); }
+}
+document.getElementById('music').addEventListener('click', mtToggle);
 </script>
 </body>
 </html>
