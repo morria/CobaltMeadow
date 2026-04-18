@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wizard Battle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  html, body { height: 100%; }
+  html, body { min-height: 100%; }
   body {
     font-family: 'Cinzel', Georgia, serif;
     background:
@@ -16,13 +17,18 @@
       radial-gradient(circle at 50% 40%, #1a0f40 0%, #0a0620 55%, #03020c 100%);
     color: #e9d9f5;
     margin: 0;
-    padding: 8px 14px 12px;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
     min-height: 100vh;
+    min-height: 100dvh;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    overflow: hidden;
+    overflow-x: hidden;
   }
   .logo {
     display: block;
@@ -249,6 +255,30 @@
   button:disabled { opacity: 0.35; cursor: not-allowed; }
   button.primary { border-color: #ffd666; background: linear-gradient(180deg, #a06020, #6a3c10); }
   button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #c88030, #8a5018); }
+
+  @media (max-width: 720px) {
+    body { gap: 4px; }
+    .logo { max-height: 70px; }
+    .status { font-size: 11px; letter-spacing: 1px; }
+    .status .event { margin-left: 6px; font-size: 10px; }
+    .arena {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 6px;
+    }
+    .wizard-panel { padding: 6px 8px; }
+    .wizard-panel h2 { font-size: 13px; margin-bottom: 4px; }
+    .hp-bar { height: 14px; margin-bottom: 4px; }
+    .hp-text { font-size: 10px; }
+    .inventory-title { margin: 4px 0 2px; padding-top: 4px; font-size: 10px; }
+    .inventory { min-height: 30px; }
+    .pot { min-width: 52px; padding: 3px 6px; font-size: 11px; }
+    .pot .pot-icon { font-size: 13px; }
+    .pot .pot-name { font-size: 10px; }
+    .grid { grid-template-columns: repeat(8, 1fr); gap: 4px; }
+    .actions { margin-top: 6px; gap: 6px; }
+    button { font-size: 11px; padding: 10px 12px; letter-spacing: 1px; min-height: 44px; }
+  }
 
   /* Sparkles */
   @keyframes float-up {

@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600&family=Orbitron:wght@600;800;900&family=Bungee&family=Rajdhani:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  html, body { height: 100%; }
+  html, body { min-height: 100%; }
   body {
     font-family: 'Cinzel', Georgia, serif;
     background:
@@ -16,8 +17,13 @@
       radial-gradient(circle at 50% 40%, #150f2a 0%, #0a0716 55%, #02010a 100%);
     color: #e9d9f5;
     margin: 0;
-    padding: 28px 20px;
+    padding:
+      max(18px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
     min-height: 100vh;
+    min-height: 100dvh;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;

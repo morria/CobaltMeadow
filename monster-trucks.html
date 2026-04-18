@@ -2,25 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Monster Trucks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  html, body { height: 100%; }
+  html, body { min-height: 100%; }
   body {
     font-family: 'Rajdhani', sans-serif;
     background:
       radial-gradient(ellipse at 50% 0%, #ff5a20 0%, #aa2a10 25%, #4a1408 60%, #0a0406 100%);
     color: #ffe8c8;
     margin: 0;
-    padding: 8px 14px 12px;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
     min-height: 100vh;
+    min-height: 100dvh;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    overflow: hidden;
+    overflow-x: hidden;
   }
   .logo {
     display: block;
@@ -291,6 +297,26 @@
     font-size: 28px;
   }
   .overlay-box p { margin: 6px 0 16px; color: #ffe8c8; line-height: 1.4; }
+
+  @media (max-width: 720px) {
+    body { gap: 6px; }
+    .logo { max-height: 70px; }
+    .scoreboard { padding: 6px 10px; gap: 6px; }
+    .scoreboard .slot { font-size: 11px; letter-spacing: 1px; }
+    .scoreboard .slot .v { font-size: 18px; }
+    .scoreboard .center { font-size: 10px; letter-spacing: 1px; }
+    .scene { min-height: 160px; }
+    .scene .status { font-size: 12px; letter-spacing: 1px; padding: 3px 10px; }
+    .meters { gap: 6px; }
+    .meter { height: 34px; }
+    .meter::before, .meter .value { font-size: 11px; }
+    .remote { max-height: none; }
+    button { font-size: 13px; padding: 10px 14px; letter-spacing: 2px; min-height: 44px; }
+  }
+  @media (max-height: 720px) and (max-width: 720px) {
+    .scene { min-height: 130px; }
+    .logo { max-height: 58px; }
+  }
 </style>
 </head>
 <body>
