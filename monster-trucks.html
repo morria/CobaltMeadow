@@ -97,9 +97,9 @@
   .ramp {
     position: absolute;
     bottom: 28%;
-    left: 55%;
-    width: 100px;
-    height: 54px;
+    left: 33%;
+    width: 88px;
+    height: 50px;
     background: linear-gradient(180deg, #a0502a, #5a2010);
     clip-path: polygon(0 100%, 100% 100%, 100% 0);
     border-top: 2px solid #ffb060;
@@ -114,7 +114,7 @@
   .truck {
     position: absolute;
     bottom: 28%;
-    left: 6%;
+    left: 4%;
     width: 80px;
     height: 50px;
     transform-origin: 50% 70%;
@@ -160,9 +160,9 @@
   .toy-car.c1 { background: linear-gradient(180deg, #60a0ff, #2060c0); animation: drive1 5s linear infinite alternate; }
   .toy-car.c2 { background: linear-gradient(180deg, #ffd060, #a06820); animation: drive2 4s linear infinite alternate; animation-delay: -1.5s; }
   .toy-car.c3 { background: linear-gradient(180deg, #a0ff90, #2ea035); animation: drive3 6s linear infinite alternate; animation-delay: -2.8s; }
-  @keyframes drive1 { 0% { left: 62%; } 100% { left: 92%; } }
-  @keyframes drive2 { 0% { left: 90%; } 100% { left: 60%; } }
-  @keyframes drive3 { 0% { left: 70%; } 100% { left: 88%; } }
+  @keyframes drive1 { 0% { left: 45%; } 100% { left: 93%; } }
+  @keyframes drive2 { 0% { left: 90%; } 100% { left: 48%; } }
+  @keyframes drive3 { 0% { left: 55%; } 100% { left: 88%; } }
   .scene .status {
     position: absolute; top: 8px; left: 50%;
     transform: translateX(-50%);
@@ -593,7 +593,7 @@ function resetMeters() {
 
 function resetTruck() {
   truck.style.transition = 'none';
-  truck.style.left = '6%';
+  truck.style.left = '4%';
   truck.style.bottom = '28%';
   truck.style.transform = 'translate(0,0) rotate(0deg)';
 }
@@ -754,9 +754,9 @@ function finishGame() {
 // --- Run animation ---
 function animateRun() {
   const rect = scene.getBoundingClientRect();
-  const truckStartX = rect.width * 0.06;
-  const launchX = rect.width * 0.55;
-  const landX = rect.width * 0.88;
+  const truckStartX = rect.width * 0.04;
+  const launchX = rect.width * 0.33;
+  const landX = rect.width * 0.90;
 
   const airtime = 800 + runData.power * 14;       // 800–2200 ms
   const maxHeight = 60 + runData.power * 1.8;     // 60–240 px
