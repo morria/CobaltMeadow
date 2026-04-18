@@ -96,7 +96,10 @@
     user-select: none;
     cursor: crosshair;
     box-shadow: inset 0 0 24px rgba(60,100,200,0.25);
+    transition: opacity 0.3s, filter 0.3s, box-shadow 0.3s;
   }
+  .pilot.active   { box-shadow: inset 0 0 24px rgba(60,100,200,0.25), 0 0 24px rgba(100,180,255,0.55); border-color: #80c8ff; }
+  .pilot.inactive { opacity: 0.3; filter: saturate(0.4); pointer-events: none; cursor: default; }
   .pilot .console-frame {
     position: absolute;
     inset: 0;
@@ -188,7 +191,10 @@
     gap: 10px;
     min-height: 0;
     box-shadow: inset 0 0 24px rgba(160,100,220,0.18);
+    transition: opacity 0.3s, filter 0.3s, box-shadow 0.3s;
   }
+  .science.active   { box-shadow: inset 0 0 24px rgba(160,100,220,0.18), 0 0 24px rgba(200,120,255,0.55); border-color: #d080ff; }
+  .science.inactive { opacity: 0.3; filter: saturate(0.4); pointer-events: none; }
   .science .science-label {
     font-family: 'Bungee', sans-serif;
     font-size: 11px;
@@ -569,13 +575,16 @@ const THEMES = [
 // ---------- State ----------
 const MAX_HULL = 5;
 const PUZZLE_COUNT = 5;
+const ANOMALIES_PER_WAVE = 3;
 let theme = THEMES[0];
 let hull = MAX_HULL;
 let solved = 0;
 let running = false;
-let anomalyInterval = null;
 let anomalies = [];
 let puzzleState = null;
+let phase = 'pilot';      // 'pilot' | 'science'
+let waveSpawned = 0;
+let waveCleared = 0;
 
 // ---------- Start/End ----------
 document.getElementById('beginBtn').addEventListener('click', start);
@@ -604,11 +613,57 @@ function start() {
   document.getElementById('themeV').style.color = theme.color;
   document.querySelector('.hud-box.theme').style.borderColor = theme.color;
   updateHud();
-  nextPuzzle();
   running = true;
-  anomalyInterval = setInterval(spawnAnomaly, 1800);
   requestAnimationFrame(tick);
   showBanner(`${theme.label}`);
+  setTimeout(() => startPilotWave(), 500);
+}
+
+function setActiveSide(side) {
+  const pilot = document.getElementById('pilot');
+  const science = document.querySelector('.science');
+  if (side === 'pilot') {
+    pilot.classList.add('active'); pilot.classList.remove('inactive');
+    science.classList.add('inactive'); science.classList.remove('active');
+  } else {
+    science.classList.add('active'); science.classList.remove('inactive');
+    pilot.classList.add('inactive'); pilot.classList.remove('active');
+  }
+}
+
+function startPilotWave() {
+  if (!running) return;
+  phase = 'pilot';
+  waveSpawned = 0;
+  waveCleared = 0;
+  setActiveSide('pilot');
+  showBanner(`PILOT · CLEAR ${ANOMALIES_PER_WAVE}`);
+  setTimeout(() => spawnOne(), 900);
+}
+
+function startScienceWave() {
+  if (!running) return;
+  phase = 'science';
+  setActiveSide('science');
+  showBanner(`SCIENCE · PUZZLE ${solved + 1} / ${PUZZLE_COUNT}`);
+  nextPuzzle();
+}
+
+function spawnOne() {
+  if (!running || phase !== 'pilot') return;
+  if (waveSpawned >= ANOMALIES_PER_WAVE) return;
+  waveSpawned++;
+  spawnAnomaly();
+}
+
+function onAnomalyResolved() {
+  waveCleared++;
+  if (waveCleared >= ANOMALIES_PER_WAVE) {
+    // Wave done -> scientist's turn
+    setTimeout(() => startScienceWave(), 600);
+  } else if (waveSpawned < ANOMALIES_PER_WAVE) {
+    setTimeout(() => spawnOne(), 650);
+  }
 }
 
 function showBanner(text) {
@@ -639,7 +694,6 @@ function endGame(won, reason) {
 }
 
 function stopLoop() {
-  if (anomalyInterval) { clearInterval(anomalyInterval); anomalyInterval = null; }
   document.querySelectorAll('.anomaly,.pop-burst').forEach(e => e.remove());
   anomalies = [];
 }
@@ -648,7 +702,6 @@ function stopLoop() {
 function spawnAnomaly() {
   if (!running) return;
   const pilot = document.getElementById('pilot');
-  const r = pilot.getBoundingClientRect();
   const el = document.createElement('div');
   el.className = 'anomaly ' + theme.id;
   const xPct = 15 + Math.random() * 70;
@@ -656,12 +709,13 @@ function spawnAnomaly() {
   el.style.top = '14px';
   el.innerHTML = glyphSvg(theme.glyph);
   pilot.appendChild(el);
-  const speed = 25 + Math.random() * 30; // px/sec
+  const speed = 22 + Math.random() * 14; // px/sec (gentler)
   anomalies.push({ el, xPct, yPx: 14, speed });
   el.addEventListener('pointerdown', e => {
     e.stopPropagation();
     burstAt(el);
     removeAnomaly(el);
+    onAnomalyResolved();
   });
 }
 
@@ -682,6 +736,7 @@ function tick(now) {
       updateHud();
       flashPilotHit();
       if (hull <= 0) return endGame(false, 'hull has been shredded');
+      onAnomalyResolved();
     }
   }
   requestAnimationFrame(tick);
@@ -738,11 +793,10 @@ function puzzleSolved() {
   solved++;
   updateHud();
   if (solved >= PUZZLE_COUNT) {
-    running = false;
     return endGame(true);
   }
   showBanner(`PUZZLE ${solved}/${PUZZLE_COUNT} SOLVED`);
-  setTimeout(nextPuzzle, 900);
+  setTimeout(startPilotWave, 900);
 }
 
 function setPuzzleHeader(title, instr) {
