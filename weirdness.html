@@ -358,13 +358,38 @@
   /* ---------- Picker / Result ---------- */
   .start-screen, .end-screen {
     text-align: center;
-    padding: 16px 10px;
+    padding: 10px 10px 16px;
     background: rgba(10,4,30,0.65);
     border: 1.5px solid #6040a0;
     border-radius: 8px;
-    max-width: 520px;
-    margin: 12px auto;
+    max-width: 640px;
+    margin: 8px auto;
   }
+  .earth-scene {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 8px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #40306a;
+    box-shadow: inset 0 0 24px rgba(60,30,100,0.35), 0 0 20px rgba(100,60,180,0.25);
+    aspect-ratio: 2.5 / 1;
+    background: #0a0822;
+  }
+  .earth-scene svg { display: block; width: 100%; height: 100%; }
+  @keyframes skyPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.18); }
+  }
+  .earth-anomaly { animation: skyPulse 2.2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.35; }
+    50%      { opacity: 1; }
+  }
+  .earth-scene .twk-a { animation: twinkle 2.8s ease-in-out infinite; }
+  .earth-scene .twk-b { animation: twinkle 3.6s ease-in-out 0.6s infinite; }
+  .earth-scene .twk-c { animation: twinkle 4.4s ease-in-out 1.2s infinite; }
+  .earth-scene .window-light { animation: twinkle 4s ease-in-out infinite; }
   .start-screen h2, .end-screen h2 {
     font-family: 'Bungee', sans-serif;
     color: #ffd060;
@@ -500,16 +525,67 @@
         style="paint-order: stroke; stroke: #04020e; stroke-width: 2.5;">WEIRDNESS</text>
   <text x="400" y="108" text-anchor="middle"
         font-family="'Russo One', sans-serif"
-        font-size="11" fill="#c0a0ff" letter-spacing="6">two voyagers · one strange sky</text>
+        font-size="11" fill="#c0a0ff" letter-spacing="6">one voyager · one strange sky</text>
 </svg>
 
 <div id="startScreen" class="start-screen">
-  <h2>SOMETHING'S WRONG OUT THERE</h2>
-  <p>Player 1 flies the ship — click the drifting anomalies on the left viewport before they clip the hull.</p>
-  <p>Player 2 runs the lab — solve the puzzle on the right to diagnose the weirdness. Five puzzles, one anomaly type per run.</p>
-  <p>Stop the weirdness before the ship is overwhelmed.</p>
+  <div class="earth-scene">
+    <svg viewBox="0 0 600 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="earthSkyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#0a0624"/>
+          <stop offset="60%" stop-color="#1a0c3c"/>
+          <stop offset="100%" stop-color="#2a0830"/>
+        </linearGradient>
+      </defs>
+      <rect width="600" height="240" fill="url(#earthSkyGrad)"/>
+      <!-- stars -->
+      <g fill="#fff">
+        <circle cx="40"  cy="30" r="1" class="twk-a"/>
+        <circle cx="95"  cy="52" r="0.8" class="twk-b"/>
+        <circle cx="160" cy="24" r="1" class="twk-c"/>
+        <circle cx="220" cy="70" r="0.8" class="twk-a"/>
+        <circle cx="320" cy="34" r="1" class="twk-b"/>
+        <circle cx="380" cy="60" r="0.8" class="twk-c"/>
+        <circle cx="430" cy="40" r="1" class="twk-a"/>
+        <circle cx="470" cy="86" r="0.8" class="twk-b"/>
+        <circle cx="540" cy="28" r="1" class="twk-c"/>
+        <circle cx="110" cy="100" r="0.6" class="twk-a"/>
+        <circle cx="350" cy="110" r="0.6" class="twk-b"/>
+        <circle cx="250" cy="140" r="0.6" class="twk-c"/>
+      </g>
+      <!-- moon -->
+      <circle cx="500" cy="52" r="18" fill="#fff4c8" opacity="0.85"/>
+      <circle cx="506" cy="48" r="16" fill="#0a0624"/>
+      <!-- weirdness in the sky -->
+      <g id="earthAnomalyWrap" class="earth-anomaly" transform="translate(250, 78)">
+        <!-- populated by JS based on theme -->
+      </g>
+      <!-- ground silhouette -->
+      <path d="M 0 200 Q 100 172 200 196 T 400 192 Q 500 172 600 198 L 600 240 L 0 240 Z" fill="#04020a"/>
+      <!-- house silhouette -->
+      <g fill="#03010a">
+        <rect x="144" y="186" width="44" height="22"/>
+        <polygon points="142,186 166,166 190,186"/>
+        <rect x="230" y="192" width="36" height="18"/>
+        <polygon points="228,192 248,176 268,192"/>
+      </g>
+      <!-- window glows -->
+      <rect x="160" y="192" width="4" height="6" fill="#ffd060" class="window-light"/>
+      <rect x="240" y="198" width="4" height="5" fill="#ffb060" class="window-light"/>
+      <!-- person looking up (small silhouette on the ground) -->
+      <g transform="translate(310, 196)" fill="#05030e">
+        <ellipse cx="0" cy="-2" rx="2.2" ry="2"/>
+        <rect x="-1.8" y="0" width="3.6" height="9"/>
+        <line x1="1.6" y1="1" x2="5" y2="-2" stroke="#05030e" stroke-width="1.4" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </div>
+  <h2 id="earthTitle">SOMETHING IN THE SKY</h2>
+  <p>Out on the rooftop you look up and see <span id="earthThemeLabel" style="color:#ffd060; font-weight:700; letter-spacing:2px;">—</span> above the horizon.</p>
+  <p>Board your ship, pilot out to it, and figure out what's going on.</p>
   <div style="margin-top:10px;">
-    <button id="beginBtn" class="primary">Begin Mission</button>
+    <button id="beginBtn" class="primary">Board Ship</button>
   </div>
 </div>
 
@@ -585,27 +661,53 @@ let puzzleState = null;
 let phase = 'pilot';      // 'pilot' | 'science'
 let waveSpawned = 0;
 let waveCleared = 0;
+let firstWaveDone = false;
 
 // ---------- Start/End ----------
 document.getElementById('beginBtn').addEventListener('click', start);
 document.getElementById('overClose').addEventListener('click', () => {
   document.getElementById('overlay').classList.remove('on');
+  rollTheme(); // re-roll the sky weirdness for a new run
   showStart();
 });
 document.getElementById('skipBtn').addEventListener('click', () => endGame(false, 'abandoned the mission'));
+
+// Pre-roll the theme so the Earth sky shows the right anomaly type at load
+rollTheme();
+paintEarthSky();
+
+function rollTheme() {
+  theme = THEMES[Math.floor(Math.random() * THEMES.length)];
+}
+
+function paintEarthSky() {
+  const wrap = document.getElementById('earthAnomalyWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const ns = 'http://www.w3.org/2000/svg';
+  const group = document.createElementNS(ns, 'g');
+  group.setAttribute('transform', 'scale(1.6)');
+  group.style.color = theme.color;
+  group.innerHTML = glyphSvgInner(theme.glyph);
+  wrap.appendChild(group);
+  const label = document.getElementById('earthThemeLabel');
+  if (label) { label.textContent = theme.label; label.style.color = theme.color; }
+}
 
 function showStart() {
   document.getElementById('startScreen').style.display = '';
   document.getElementById('hud').style.display = 'none';
   document.getElementById('splitArea').style.display = 'none';
+  paintEarthSky();
   stopLoop();
 }
 
 function start() {
-  theme = THEMES[Math.floor(Math.random() * THEMES.length)];
+  // theme is already chosen in rollTheme() at load / after end-game
   hull = MAX_HULL;
   solved = 0;
   anomalies = [];
+  firstWaveDone = false;
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('hud').style.display = '';
   document.getElementById('splitArea').style.display = '';
@@ -615,8 +717,8 @@ function start() {
   updateHud();
   running = true;
   requestAnimationFrame(tick);
-  showBanner(`${theme.label}`);
-  setTimeout(() => startPilotWave(), 500);
+  showBanner('LAUNCHING · FLY TO THE WEIRDNESS');
+  setTimeout(() => startPilotWave(), 900);
 }
 
 function setActiveSide(side) {
@@ -645,7 +747,12 @@ function startScienceWave() {
   if (!running) return;
   phase = 'science';
   setActiveSide('science');
-  showBanner(`SCIENCE · PUZZLE ${solved + 1} / ${PUZZLE_COUNT}`);
+  if (!firstWaveDone) {
+    firstWaveDone = true;
+    showBanner('ARRIVED · STUDY THE WEIRDNESS');
+  } else {
+    showBanner(`SCIENCE · PUZZLE ${solved + 1} / ${PUZZLE_COUNT}`);
+  }
   nextPuzzle();
 }
 
@@ -766,13 +873,16 @@ function burstAt(el) {
   setTimeout(() => burst.remove(), 450);
 }
 
+function glyphSvgInner(kind) {
+  if (kind === 'drop') return `<path d="M30 8 C20 22 14 32 14 40 A16 16 0 0 0 46 40 C46 32 40 22 30 8 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/>`;
+  if (kind === 'blob') return `<path d="M30 10 Q46 14 48 30 Q52 46 34 50 Q14 52 12 36 Q10 16 30 10 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/><circle cx="22" cy="28" r="3" fill="#fff" opacity="0.8"/><circle cx="36" cy="34" r="2" fill="#fff" opacity="0.6"/>`;
+  if (kind === 'ring') return `<circle cx="30" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="30" cy="30" r="14" fill="none" stroke="currentColor" stroke-width="3" opacity="0.7"/><circle cx="30" cy="30" r="6"  fill="currentColor"/>`;
+  if (kind === 'spike') return `<polygon points="30,4 36,22 56,22 40,34 46,54 30,42 14,54 20,34 4,22 24,22" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/>`;
+  if (kind === 'star') return `<polygon points="30,6 35,24 54,24 39,34 44,54 30,42 16,54 21,34 6,24 25,24" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/>`;
+  return `<circle cx="30" cy="30" r="18" fill="currentColor"/>`;
+}
 function glyphSvg(kind) {
-  if (kind === 'drop') return `<svg viewBox="0 0 60 60"><path d="M30 8 C20 22 14 32 14 40 A16 16 0 0 0 46 40 C46 32 40 22 30 8 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/></svg>`;
-  if (kind === 'blob') return `<svg viewBox="0 0 60 60"><path d="M30 10 Q46 14 48 30 Q52 46 34 50 Q14 52 12 36 Q10 16 30 10 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/><circle cx="22" cy="28" r="3" fill="#fff" opacity="0.8"/><circle cx="36" cy="34" r="2" fill="#fff" opacity="0.6"/></svg>`;
-  if (kind === 'ring') return `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="30" cy="30" r="14" fill="none" stroke="currentColor" stroke-width="3" opacity="0.7"/><circle cx="30" cy="30" r="6"  fill="currentColor"/></svg>`;
-  if (kind === 'spike') return `<svg viewBox="0 0 60 60"><polygon points="30,4 36,22 56,22 40,34 46,54 30,42 14,54 20,34 4,22 24,22" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/></svg>`;
-  if (kind === 'star') return `<svg viewBox="0 0 60 60"><polygon points="30,6 35,24 54,24 39,34 44,54 30,42 16,54 21,34 6,24 25,24" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/></svg>`;
-  return `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="18" fill="currentColor"/></svg>`;
+  return `<svg viewBox="0 0 60 60">${glyphSvgInner(kind)}</svg>`;
 }
 
 // ---------- SCIENCE SIDE ----------
