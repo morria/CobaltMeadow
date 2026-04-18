@@ -396,6 +396,29 @@
   }
   .banner.fade { opacity: 0; }
 
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    border-radius: 3px;
+    border: 1px solid #6040a0;
+    background: linear-gradient(180deg, #1c0f38, #0a061a);
+    color: #c0a0ff;
+    cursor: pointer;
+  }
+  .music-toggle.on {
+    border-color: #c080ff;
+    background: linear-gradient(180deg, #3a1a6a, #1a0838);
+    color: #f0d8ff;
+    box-shadow: 0 0 12px rgba(180,120,255,0.55);
+  }
+
   .overlay {
     position: fixed; inset: 0;
     background: rgba(3,2,14,0.9);
@@ -432,6 +455,8 @@
 </style>
 </head>
 <body>
+
+<button id="music" class="music-toggle">🔇 Music</button>
 
 <svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Weirdness">
   <defs>
@@ -960,6 +985,138 @@ function nodeClick(node, svg) {
   puzzleState.connections[a.dataset.color] = true;
   if (Object.keys(puzzleState.connections).length >= puzzleState.total) puzzleSolved();
 }
+
+// ---------- Space music (procedural, drifting ambient) ----------
+let wdCtx = null, wdMaster = null, wdTimers = [];
+
+function wdStart() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  wdCtx = new Ctx();
+  wdMaster = wdCtx.createGain();
+  wdMaster.gain.value = 0;
+  wdMaster.connect(wdCtx.destination);
+  wdMaster.gain.linearRampToValueAtTime(0.18, wdCtx.currentTime + 3);
+
+  // Deep drone — A1 sine + detuned fifth
+  const drone = wdCtx.createOscillator();
+  drone.type = 'sine';
+  drone.frequency.value = 55;
+  const droneG = wdCtx.createGain();
+  droneG.gain.value = 0.4;
+  drone.connect(droneG); droneG.connect(wdMaster);
+  drone.start();
+
+  const fifth = wdCtx.createOscillator();
+  fifth.type = 'sine';
+  fifth.frequency.value = 82.41; // E2 (fifth above)
+  const fifthG = wdCtx.createGain();
+  fifthG.gain.value = 0.22;
+  fifth.connect(fifthG); fifthG.connect(wdMaster);
+  fifth.start();
+
+  // Slow drift LFO on both drones
+  const driftLFO = wdCtx.createOscillator();
+  driftLFO.frequency.value = 0.035;
+  const driftG = wdCtx.createGain();
+  driftG.gain.value = 0.8;
+  driftLFO.connect(driftG);
+  driftG.connect(drone.frequency);
+  driftG.connect(fifth.frequency);
+  driftLFO.start();
+
+  // Triangle pad — A minor (A3, C4, E4) with slow amplitude breathing
+  const padFreqs = [220.00, 261.63, 329.63];
+  padFreqs.forEach((f, i) => {
+    const osc = wdCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = f;
+    const filt = wdCtx.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.value = 1200;
+    const g = wdCtx.createGain();
+    g.gain.value = 0.02;
+    const lfo = wdCtx.createOscillator();
+    lfo.frequency.value = 0.04 + i * 0.013;
+    const lfoG = wdCtx.createGain();
+    lfoG.gain.value = 0.015;
+    lfo.connect(lfoG); lfoG.connect(g.gain);
+    osc.connect(filt); filt.connect(g); g.connect(wdMaster);
+    osc.start(); lfo.start();
+  });
+
+  wdScheduleSparkle();
+  wdSchedulePulse();
+  return true;
+}
+
+function wdScheduleSparkle() {
+  const t = setTimeout(() => {
+    if (wdCtx && wdCtx.state === 'running') wdPlaySparkle();
+    wdScheduleSparkle();
+  }, 2600 + Math.random() * 4800);
+  wdTimers.push(t);
+}
+
+function wdPlaySparkle() {
+  // A scale sparkle: high square bell
+  const scale = [523.25, 659.25, 784.00, 880.00, 987.77, 1174.66]; // C5 E5 G5 A5 B5 D6
+  const note = scale[Math.floor(Math.random() * scale.length)];
+  const now = wdCtx.currentTime;
+  const osc = wdCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(note, now);
+  const o2 = wdCtx.createOscillator();
+  o2.type = 'triangle';
+  o2.frequency.setValueAtTime(note * 2.003, now);
+  const g = wdCtx.createGain();
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(0.07, now + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0008, now + 1.8);
+  osc.connect(g); o2.connect(g); g.connect(wdMaster);
+  osc.start(now); osc.stop(now + 1.9);
+  o2.start(now);  o2.stop(now + 1.9);
+}
+
+function wdSchedulePulse() {
+  const t = setTimeout(() => {
+    if (wdCtx && wdCtx.state === 'running') wdPlayPulse();
+    wdSchedulePulse();
+  }, 9000 + Math.random() * 8000);
+  wdTimers.push(t);
+}
+
+function wdPlayPulse() {
+  // Radar ping: sine burst with echo
+  const now = wdCtx.currentTime;
+  const osc = wdCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(440, now);
+  osc.frequency.exponentialRampToValueAtTime(220, now + 0.5);
+  const g = wdCtx.createGain();
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(0.09, now + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
+  const delay = wdCtx.createDelay();
+  delay.delayTime.value = 0.35;
+  const feedback = wdCtx.createGain();
+  feedback.gain.value = 0.45;
+  osc.connect(g); g.connect(wdMaster);
+  g.connect(delay); delay.connect(feedback); feedback.connect(delay); delay.connect(wdMaster);
+  osc.start(now); osc.stop(now + 0.6);
+}
+
+function wdToggle() {
+  const btn = document.getElementById('music');
+  if (!wdCtx) {
+    if (!wdStart()) return;
+    btn.textContent = '🔊 Music'; btn.classList.add('on');
+    return;
+  }
+  if (wdCtx.state === 'running') { wdCtx.suspend(); btn.textContent = '🔇 Music'; btn.classList.remove('on'); }
+  else                           { wdCtx.resume();  btn.textContent = '🔊 Music'; btn.classList.add('on'); }
+}
+document.getElementById('music').addEventListener('click', wdToggle);
 </script>
 </body>
 </html>
