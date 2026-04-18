@@ -117,6 +117,59 @@
     background: repeating-linear-gradient(0deg, #ffd080 0 10px, #0a0a0a 10px 20px);
   }
 
+  /* Level-2 loop-the-loop */
+  .loop {
+    position: absolute;
+    bottom: 22%;
+    left: 45%;
+    width: 180px;
+    height: 180px;
+    border: 12px solid;
+    border-image: linear-gradient(135deg, #c070ff 0%, #8040c0 40%, #ffd060 100%) 1;
+    border-radius: 50%;
+    box-shadow: 0 0 26px rgba(180,100,255,0.45), inset 0 0 20px rgba(0,0,0,0.4);
+    background:
+      radial-gradient(circle at center, transparent 60%, rgba(180,100,255,0.1) 100%);
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+  }
+  .loop::before, .loop::after {
+    content: '';
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 10px; height: 10px;
+    background: #ffd060;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ffa040;
+  }
+  .loop::before { left: -6px; }
+  .loop::after  { right: -6px; }
+  .scene.level2 .ramp,
+  .scene.level2 .platform,
+  .scene.level2 .toy-car { display: none; }
+  .scene.level2 .loop { display: block; }
+
+  /* level banner shown when switching levels */
+  .level-banner {
+    position: absolute;
+    top: 12%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Bungee', sans-serif;
+    font-size: 24px;
+    letter-spacing: 6px;
+    color: #ffd060;
+    text-shadow: 0 0 14px rgba(255,210,80,0.9), 0 2px 4px #000;
+    z-index: 30;
+    padding: 6px 18px;
+    background: rgba(30,8,40,0.8);
+    border: 2px solid #a060ff;
+    border-radius: 6px;
+    transition: opacity 0.8s;
+  }
+  .level-banner.fade { opacity: 0; }
+
   /* High platform — land here for +1100 bonus */
   .platform {
     position: absolute;
@@ -482,6 +535,7 @@
     <div class="platform-top"></div>
     <div class="platform-post"></div>
   </div>
+  <div class="loop" id="loopEl"></div>
   <div class="toy-car c1"><div class="win"></div></div>
   <div class="toy-car c2"><div class="win"></div></div>
   <div class="toy-car c3"><div class="win"></div></div>
@@ -668,8 +722,10 @@ function startGame() {
   currentPlayer = 1;
   roundNum = 1;
   scores = { 1: 0, 2: 0 };
-  runData = { power: 0, flip: 0 };
+  runData = { power: 0, flip: 0, up: 0 };
   airState = null;
+  level = 1;
+  document.getElementById('scene').classList.remove('level2');
   resetMeters();
   resetTruck();
   resetCars();
@@ -738,6 +794,7 @@ function setLcd(text) {
 
 let lastGain = 0;
 let airState = null;
+let level = 1;
 
 // --- Meter animation ---
 function startCursor(meterId, cursorId) {
@@ -811,12 +868,30 @@ function handleNext() {
     roundNum++;
   }
   if (roundNum > ROUNDS) { finishGame(); return; }
+  // Unlock level 2 starting round 2
+  if (roundNum >= 2 && level === 1) {
+    level = 2;
+    document.getElementById('scene').classList.add('level2');
+    showLevelBanner('LEVEL 2 · LOOP THE LOOP');
+  }
   resetTruck();
   resetMeters();
   resetCars();
   state = 'idle';
-  setStatus(`Press GO — P${currentPlayer}'s run.`);
+  setStatus(`Press GO — P${currentPlayer}'s run${level === 2 ? ' · POWER decides the loop' : ''}.`);
   render();
+}
+
+function showLevelBanner(text) {
+  const scene = document.getElementById('scene');
+  const old = scene.querySelector('.level-banner');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'level-banner';
+  el.textContent = text;
+  scene.appendChild(el);
+  setTimeout(() => el.classList.add('fade'), 1800);
+  setTimeout(() => el.remove(), 2700);
 }
 
 function resetCars() {
@@ -860,6 +935,7 @@ function finishGame() {
 
 // --- Run animation ---
 function animateRun() {
+  if (level === 2) { animateLoopRun(); return; }
   const rect = scene.getBoundingClientRect();
   const truckStartX = rect.width * 0.04;
   const launchX = rect.width * 0.33;
@@ -920,6 +996,131 @@ function animateRun() {
   }
 
   requestAnimationFrame(driveFrame);
+}
+
+function animateLoopRun() {
+  const rect = scene.getBoundingClientRect();
+  const truckStartX = rect.width * 0.04;
+  const loopEl = document.getElementById('loopEl');
+  const loopRect = loopEl.getBoundingClientRect();
+  const cx = loopRect.left - rect.left + loopRect.width / 2;
+  const cy = loopRect.top  - rect.top  + loopRect.height / 2;
+  const R  = loopRect.width / 2 - 12; // inside the border
+  const entryX = cx - R;
+  const groundPct = 28;
+
+  // Entry speed threshold: need POWER >= 55
+  const powerOK = runData.power >= 55;
+  const loopSpeed = 0.85 + (runData.power / 100) * 1.1; // 0.85 to 1.95 radians/sec multiplier
+  const rotPerSec = runData.flip * 7.5;
+
+  truck.style.transition = 'none';
+  truck.style.left = truckStartX + 'px';
+  truck.style.bottom = groundPct + '%';
+  truck.style.transform = 'rotate(0deg)';
+
+  // Phase 1: drive from start to loop entry (on ground, so bottom stays ~groundPct)
+  const t0 = performance.now();
+  const driveDur = 550;
+  const groundBottomPx = rect.height * (groundPct / 100);
+
+  function drive(now) {
+    const t = Math.min(1, (now - t0) / driveDur);
+    const x = truckStartX + (entryX - truckStartX) * t;
+    truck.style.left = x + 'px';
+    truck.style.bottom = groundPct + '%';
+    truck.style.transform = 'rotate(0deg)';
+    if (t < 1) requestAnimationFrame(drive);
+    else {
+      spawnPuff(x + rect.left + 20, rect.top + rect.height * (1 - groundPct / 100), 6);
+      startLoop();
+    }
+  }
+
+  // Phase 2: truck follows circular path clockwise (left->top->right->bottom->left)
+  // angle starts at 180° (left of circle), sweeps to -180° (full loop)
+  const loopStart = { t: 0 };
+  const loopDur = 1400 / loopSpeed;
+  let loopT0;
+  function startLoop() { loopT0 = performance.now(); requestAnimationFrame(loopFrame); }
+
+  function loopFrame(now) {
+    const raw = (now - loopT0) / loopDur;
+    const t = Math.min(1, raw);
+    // angle from 180° down to -180° (full 360° counterclockwise on screen -> over the top)
+    const angle = 180 - t * 360;
+    const rad = angle * Math.PI / 180;
+    const x = cx + R * Math.cos(rad);
+    const y = cy - R * Math.sin(rad);
+    truck.style.left = x + 'px';
+    truck.style.bottom = (rect.height - y) + 'px';
+    // tangent direction: 90° from radial, clockwise-over-top motion
+    truck.style.transform = `rotate(${-angle - 90}deg)`;
+
+    // If underpowered and past the top (t ~0.5), truck plummets off
+    if (!powerOK && t > 0.35 && t < 0.65) {
+      failFromLoop(x, y, -angle - 90);
+      return;
+    }
+    if (t < 1) requestAnimationFrame(loopFrame);
+    else finishLoop(true, 360 + (runData.flip / 100) * 360);
+  }
+
+  function failFromLoop(xAt, yAt, rotAt) {
+    // Straight-down fall, truck flips to upside-down
+    let vy = 0, y = yAt;
+    const xFinal = xAt;
+    const startRot = rotAt;
+    const endRot = 180; // landed on head
+    let t = 0;
+    function fall(now) {
+      t += 1;
+      vy += 0.55;
+      y += vy;
+      const rot = startRot + (endRot - startRot) * Math.min(1, t / 22);
+      truck.style.left = xFinal + 'px';
+      if (rect.height - y <= groundBottomPx) {
+        truck.style.bottom = groundPct + '%';
+        truck.style.transform = `rotate(180deg)`;
+        spawnPuff(xFinal + rect.left, rect.top + rect.height - groundBottomPx, 22);
+        finishLoop(false, 0);
+        return;
+      }
+      truck.style.bottom = (rect.height - y) + 'px';
+      truck.style.transform = `rotate(${rot}deg)`;
+      requestAnimationFrame(fall);
+    }
+    requestAnimationFrame(fall);
+  }
+
+  function finishLoop(success, totalRotDeg) {
+    let base = 0, bonus = 0, verdict = '';
+    if (success) {
+      bonus = 1500;
+      const flipRots = Math.floor(totalRotDeg / 360);
+      base = flipRots * 100;
+      verdict = `LOOP COMPLETE · ${flipRots}× bonus spin`;
+    } else {
+      base = 0;
+      verdict = 'CRASH — landed on your head';
+    }
+    const total = base + bonus;
+    scores[currentPlayer] += total;
+    lastGain = total;
+    setStatus(`${verdict}  +${total} pts`);
+    state = 'result';
+    render();
+    if (success) {
+      setTimeout(() => {
+        if (state !== 'result') return;
+        truck.style.transition = 'left 1.1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s';
+        truck.style.left = (rect.width + 100) + 'px';
+        truck.style.transform = 'rotate(0deg)';
+      }, 450);
+    }
+  }
+
+  requestAnimationFrame(drive);
 }
 
 function finishLanding(xPx, totalRotAbs) {
