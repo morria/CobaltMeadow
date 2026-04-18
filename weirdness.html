@@ -161,6 +161,41 @@
   .anomaly.echo   { color: #60b0ff; }
   .anomaly.void   { color: #c060ff; }
   .anomaly.cryst  { color: #70ffea; }
+
+  /* ship battle */
+  .player-ship, .alien-ship {
+    position: absolute;
+    pointer-events: none;
+    z-index: 3;
+    transform: translate(-50%, 0);
+  }
+  .player-ship {
+    width: clamp(40px, 5.5vw, 58px);
+    bottom: 18px;
+    left: 50%;
+    filter: drop-shadow(0 0 10px #60a8ff);
+  }
+  .player-ship svg, .alien-ship svg { width: 100%; height: auto; display: block; }
+  .alien-ship {
+    width: clamp(36px, 5vw, 52px);
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+  .alien-ship.melt   { color: #ff6080; }
+  .alien-ship.fog    { color: #80ff90; }
+  .alien-ship.echo   { color: #60b0ff; }
+  .alien-ship.void   { color: #c060ff; }
+  .alien-ship.cryst  { color: #70ffea; }
+
+  .p-bullet, .a-bullet {
+    position: absolute;
+    width: 4px; height: 14px;
+    transform: translate(-50%, 0);
+    border-radius: 2px;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .p-bullet { background: linear-gradient(180deg, #fff, #80c8ff); box-shadow: 0 0 8px #80c8ff; }
+  .a-bullet { background: linear-gradient(180deg, #ffd060, #ff5060); box-shadow: 0 0 8px #ff8040; }
   @keyframes pop {
     0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; }
     60%  { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
@@ -366,6 +401,7 @@
     margin: 8px auto;
   }
   .earth-scene {
+    position: relative;
     width: 100%;
     max-width: 600px;
     margin: 0 auto 8px;
@@ -375,8 +411,67 @@
     box-shadow: inset 0 0 24px rgba(60,30,100,0.35), 0 0 20px rgba(100,60,180,0.25);
     aspect-ratio: 2.5 / 1;
     background: #0a0822;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
   }
   .earth-scene svg { display: block; width: 100%; height: 100%; }
+  .earth-player {
+    position: absolute;
+    bottom: 14%;
+    left: 10%;
+    transform: translateX(-50%);
+    font-size: clamp(22px, 4.5vw, 38px);
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px #000);
+    transition: left 1.4s linear;
+    z-index: 3;
+  }
+  .earth-player.walking::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 50%;
+    transform: translateX(-50%);
+    width: 60%; height: 3px;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.4), transparent 70%);
+    animation: walkDust 0.4s linear infinite;
+  }
+  @keyframes walkDust {
+    0%, 100% { transform: translateX(-60%) scaleX(0.8); opacity: 0.4; }
+    50%      { transform: translateX(-40%) scaleX(1.1); opacity: 0.7; }
+  }
+  .earth-rocket {
+    position: absolute;
+    bottom: 12%;
+    right: 8%;
+    font-size: clamp(32px, 5.5vw, 52px);
+    line-height: 1;
+    filter: drop-shadow(0 0 14px #ffd060);
+    animation: rocketIdle 2s ease-in-out infinite;
+    z-index: 3;
+    transform: translateY(0) rotate(-12deg);
+  }
+  @keyframes rocketIdle {
+    0%, 100% { transform: translateY(0) rotate(-12deg); }
+    50%      { transform: translateY(-3px) rotate(-12deg); }
+  }
+  .earth-prompt {
+    position: absolute;
+    top: 8%; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,5,30,0.78);
+    border: 1px solid #6040a0;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #d0b8ff;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 4;
+  }
+  .earth-prompt.ready { border-color: #60ff80; color: #a0ffb0; box-shadow: 0 0 12px rgba(100,255,140,0.4); }
   @keyframes skyPulse {
     0%, 100% { transform: scale(1); }
     50%      { transform: scale(1.18); }
@@ -573,19 +668,16 @@
       <!-- window glows -->
       <rect x="160" y="192" width="4" height="6" fill="#ffd060" class="window-light"/>
       <rect x="240" y="198" width="4" height="5" fill="#ffb060" class="window-light"/>
-      <!-- person looking up (small silhouette on the ground) -->
-      <g transform="translate(310, 196)" fill="#05030e">
-        <ellipse cx="0" cy="-2" rx="2.2" ry="2"/>
-        <rect x="-1.8" y="0" width="3.6" height="9"/>
-        <line x1="1.6" y1="1" x2="5" y2="-2" stroke="#05030e" stroke-width="1.4" stroke-linecap="round"/>
-      </g>
     </svg>
+    <div class="earth-prompt" id="earthPrompt">TAP THE GROUND TO WALK TO THE ROCKET</div>
+    <div class="earth-player" id="earthPlayer">🚶</div>
+    <div class="earth-rocket" id="earthRocket">🚀</div>
   </div>
   <h2 id="earthTitle">SOMETHING IN THE SKY</h2>
   <p>Out on the rooftop you look up and see <span id="earthThemeLabel" style="color:#ffd060; font-weight:700; letter-spacing:2px;">—</span> above the horizon.</p>
   <p>Board your ship, pilot out to it, and figure out what's going on.</p>
   <div style="margin-top:10px;">
-    <button id="beginBtn" class="primary">Board Ship</button>
+    <button id="beginBtn" class="primary" disabled>Board Ship</button>
   </div>
 </div>
 
@@ -607,7 +699,7 @@
 <div id="splitArea" class="split" style="display:none">
   <div class="pilot" id="pilot">
     <div class="console-frame"></div>
-    <div class="console-label">PILOT · CLICK ANOMALIES</div>
+    <div class="console-label">PILOT · DRAG TO STEER · AUTO-FIRES</div>
     <div class="starfield"></div>
     <svg class="reticle" viewBox="0 0 52 52" aria-hidden="true">
       <circle cx="26" cy="26" r="20" fill="none" stroke="#80c0ff" stroke-width="1.5" opacity="0.8"/>
@@ -651,7 +743,6 @@ const THEMES = [
 // ---------- State ----------
 const MAX_HULL = 5;
 const PUZZLE_COUNT = 5;
-const ANOMALIES_PER_WAVE = 3;
 let theme = THEMES[0];
 let hull = MAX_HULL;
 let solved = 0;
@@ -659,8 +750,6 @@ let running = false;
 let anomalies = [];
 let puzzleState = null;
 let phase = 'pilot';      // 'pilot' | 'science'
-let waveSpawned = 0;
-let waveCleared = 0;
 let firstWaveDone = false;
 
 // ---------- Start/End ----------
@@ -675,6 +764,44 @@ document.getElementById('skipBtn').addEventListener('click', () => endGame(false
 // Pre-roll the theme so the Earth sky shows the right anomaly type at load
 rollTheme();
 paintEarthSky();
+wireEarthWalk();
+
+function wireEarthWalk() {
+  const scene = document.querySelector('.earth-scene');
+  const player = document.getElementById('earthPlayer');
+  const prompt = document.getElementById('earthPrompt');
+  const rocket = document.getElementById('earthRocket');
+  const btn = document.getElementById('beginBtn');
+  let playerXPct = 10;
+
+  function walkTo(xPct) {
+    playerXPct = Math.max(6, Math.min(90, xPct));
+    player.style.left = playerXPct + '%';
+    player.classList.add('walking');
+    clearTimeout(player._stopWalk);
+    player._stopWalk = setTimeout(() => player.classList.remove('walking'), 1400);
+    setTimeout(checkNearRocket, 1450);
+  }
+  function checkNearRocket() {
+    const r = scene.getBoundingClientRect();
+    const rr = rocket.getBoundingClientRect();
+    const rocketPct = ((rr.left + rr.width / 2) - r.left) / r.width * 100;
+    if (Math.abs(playerXPct - rocketPct) < 10) {
+      btn.disabled = false;
+      prompt.textContent = 'READY · TAP BOARD SHIP';
+      prompt.classList.add('ready');
+    } else {
+      btn.disabled = true;
+      prompt.textContent = 'KEEP WALKING TOWARD THE ROCKET';
+      prompt.classList.remove('ready');
+    }
+  }
+  scene.addEventListener('pointerdown', e => {
+    const r = scene.getBoundingClientRect();
+    const pct = ((e.clientX - r.left) / r.width) * 100;
+    walkTo(pct);
+  });
+}
 
 function rollTheme() {
   theme = THEMES[Math.floor(Math.random() * THEMES.length)];
@@ -698,6 +825,12 @@ function showStart() {
   document.getElementById('startScreen').style.display = '';
   document.getElementById('hud').style.display = 'none';
   document.getElementById('splitArea').style.display = 'none';
+  // reset walker
+  const player = document.getElementById('earthPlayer');
+  const prompt = document.getElementById('earthPrompt');
+  if (player) { player.style.left = '10%'; player.classList.remove('walking'); }
+  if (prompt) { prompt.textContent = 'TAP THE GROUND TO WALK TO THE ROCKET'; prompt.classList.remove('ready'); }
+  document.getElementById('beginBtn').disabled = true;
   paintEarthSky();
   stopLoop();
 }
@@ -736,11 +869,16 @@ function setActiveSide(side) {
 function startPilotWave() {
   if (!running) return;
   phase = 'pilot';
-  waveSpawned = 0;
-  waveCleared = 0;
   setActiveSide('pilot');
-  showBanner(`PILOT · CLEAR ${ANOMALIES_PER_WAVE}`);
-  setTimeout(() => spawnOne(), 900);
+  clearBattle();
+  spawnPlayerShip();
+  const count = 3;
+  for (let i = 0; i < count; i++) {
+    const xPct = 20 + (i / (count - 1)) * 60;
+    spawnAlien(xPct);
+  }
+  lastPlayerFire = performance.now();
+  showBanner(firstWaveDone ? 'ALIEN AMBUSH · DEFEND THE SHIP' : 'LAUNCH · FIGHT THROUGH TO THE WEIRDNESS');
 }
 
 function startScienceWave() {
@@ -756,21 +894,97 @@ function startScienceWave() {
   nextPuzzle();
 }
 
-function spawnOne() {
-  if (!running || phase !== 'pilot') return;
-  if (waveSpawned >= ANOMALIES_PER_WAVE) return;
-  waveSpawned++;
-  spawnAnomaly();
+// ship battle state
+let playerShipEl = null;
+let playerShipX = 50, playerShipTargetX = 50;
+let aliens = [];
+let playerBullets = [], alienBullets = [];
+let lastPlayerFire = 0;
+let waveResolving = false;
+
+function clearBattle() {
+  document.querySelectorAll('.player-ship, .alien-ship, .p-bullet, .a-bullet, .pop-burst').forEach(e => e.remove());
+  playerShipEl = null;
+  aliens = []; playerBullets = []; alienBullets = [];
+  waveResolving = false;
 }
 
-function onAnomalyResolved() {
-  waveCleared++;
-  if (waveCleared >= ANOMALIES_PER_WAVE) {
-    // Wave done -> scientist's turn
-    setTimeout(() => startScienceWave(), 600);
-  } else if (waveSpawned < ANOMALIES_PER_WAVE) {
-    setTimeout(() => spawnOne(), 650);
-  }
+function spawnPlayerShip() {
+  const pilot = document.getElementById('pilot');
+  const el = document.createElement('div');
+  el.className = 'player-ship';
+  el.innerHTML = PLAYER_SHIP_SVG;
+  pilot.appendChild(el);
+  playerShipEl = el;
+  playerShipX = 50; playerShipTargetX = 50;
+  el.style.left = '50%';
+}
+
+function spawnAlien(xPct) {
+  const pilot = document.getElementById('pilot');
+  const el = document.createElement('div');
+  el.className = 'alien-ship ' + theme.id;
+  el.innerHTML = alienSvg(theme.glyph);
+  el.style.left = xPct + '%';
+  el.style.top = '16%';
+  pilot.appendChild(el);
+  aliens.push({
+    el, xPct, yPct: 16,
+    vx: (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 8),
+    t: Math.random() * Math.PI * 2,
+    lastFire: performance.now() + 900 + Math.random() * 1400,
+  });
+}
+
+function spawnPlayerBullet() {
+  if (!playerShipEl) return;
+  const pilot = document.getElementById('pilot');
+  const r = pilot.getBoundingClientRect();
+  const sr = playerShipEl.getBoundingClientRect();
+  const x = sr.left + sr.width / 2 - r.left;
+  const y = sr.top + 4 - r.top;
+  const el = document.createElement('div');
+  el.className = 'p-bullet';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  pilot.appendChild(el);
+  playerBullets.push({ el, x, y, vy: -9 });
+}
+
+function spawnAlienBullet(alien) {
+  const pilot = document.getElementById('pilot');
+  const r = pilot.getBoundingClientRect();
+  const ar = alien.el.getBoundingClientRect();
+  const x = ar.left + ar.width / 2 - r.left;
+  const y = ar.top + ar.height - r.top;
+  const el = document.createElement('div');
+  el.className = 'a-bullet';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  pilot.appendChild(el);
+  alienBullets.push({ el, x, y, vy: 5 });
+}
+
+const PLAYER_SHIP_SVG = `<svg viewBox="0 0 60 60">
+  <polygon points="30,6 44,44 30,38 16,44" fill="#80c0ff" stroke="#fff" stroke-width="1.4"/>
+  <polygon points="30,6 30,38 44,44" fill="#4a8ae0" opacity="0.75"/>
+  <circle cx="30" cy="26" r="5" fill="#ffd060"/>
+  <ellipse cx="30" cy="48" rx="4" ry="7" fill="#ffa030" opacity="0.9"/>
+  <ellipse cx="22" cy="46" rx="2" ry="5" fill="#ff8020" opacity="0.75"/>
+  <ellipse cx="38" cy="46" rx="2" ry="5" fill="#ff8020" opacity="0.75"/>
+</svg>`;
+
+function alienSvg(kind) {
+  // Themed saucer; kind modifies top cabin element to match theme
+  return `<svg viewBox="0 0 60 60">
+    <ellipse cx="30" cy="36" rx="24" ry="10" fill="currentColor"/>
+    <ellipse cx="30" cy="30" rx="14" ry="9" fill="currentColor" opacity="0.8"/>
+    <circle cx="30" cy="26" r="5" fill="#fff"/>
+    <circle cx="30" cy="26" r="2.6" fill="#ff4040"/>
+    <circle cx="14" cy="38" r="2" fill="#ffd060"/>
+    <circle cx="30" cy="42" r="2" fill="#ffd060"/>
+    <circle cx="46" cy="38" r="2" fill="#ffd060"/>
+  </svg>`;
 }
 
 function showBanner(text) {
@@ -801,52 +1015,133 @@ function endGame(won, reason) {
 }
 
 function stopLoop() {
-  document.querySelectorAll('.anomaly,.pop-burst').forEach(e => e.remove());
+  document.querySelectorAll('.anomaly,.pop-burst,.player-ship,.alien-ship,.p-bullet,.a-bullet').forEach(e => e.remove());
   anomalies = [];
+  playerShipEl = null;
+  aliens = []; playerBullets = []; alienBullets = [];
 }
+
+// Pilot panel pointer steers the player ship horizontally
+(function wirePilot() {
+  const pilot = document.getElementById('pilot');
+  if (!pilot) return;
+  let dragging = false;
+  function setTargetFromEvent(e) {
+    if (phase !== 'pilot' || !playerShipEl) return;
+    const r = pilot.getBoundingClientRect();
+    const pct = ((e.clientX - r.left) / r.width) * 100;
+    playerShipTargetX = Math.max(8, Math.min(92, pct));
+  }
+  pilot.addEventListener('pointerdown', e => {
+    dragging = true;
+    try { pilot.setPointerCapture(e.pointerId); } catch (_) {}
+    setTargetFromEvent(e);
+  });
+  pilot.addEventListener('pointermove', e => { if (dragging) setTargetFromEvent(e); });
+  pilot.addEventListener('pointerup', e => { dragging = false; try { pilot.releasePointerCapture(e.pointerId); } catch(_) {} });
+  window.addEventListener('keydown', e => {
+    if (phase !== 'pilot' || !playerShipEl) return;
+    if (e.key === 'ArrowLeft')  playerShipTargetX = Math.max(8,  playerShipTargetX - 5);
+    if (e.key === 'ArrowRight') playerShipTargetX = Math.min(92, playerShipTargetX + 5);
+  });
+})();
 
 // ---------- PILOT SIDE ----------
-function spawnAnomaly() {
-  if (!running) return;
-  const pilot = document.getElementById('pilot');
-  const el = document.createElement('div');
-  el.className = 'anomaly ' + theme.id;
-  const xPct = 15 + Math.random() * 70;
-  el.style.left = xPct + '%';
-  el.style.top = '14px';
-  el.innerHTML = glyphSvg(theme.glyph);
-  pilot.appendChild(el);
-  const speed = 22 + Math.random() * 14; // px/sec (gentler)
-  anomalies.push({ el, xPct, yPx: 14, speed });
-  el.addEventListener('pointerdown', e => {
-    e.stopPropagation();
-    burstAt(el);
-    removeAnomaly(el);
-    onAnomalyResolved();
-  });
-}
-
 function tick(now) {
   if (!running) return;
+  if (phase === 'pilot' && playerShipEl) updateBattle(now);
+  requestAnimationFrame(tick);
+}
+
+function updateBattle(now) {
   const pilot = document.getElementById('pilot');
   const r = pilot.getBoundingClientRect();
   const dt = 16 / 1000;
-  for (let i = anomalies.length - 1; i >= 0; i--) {
-    const a = anomalies[i];
-    a.yPx += a.speed * dt;
-    a.el.style.top = a.yPx + 'px';
-    if (a.yPx > r.height - 20) {
-      // hit hull
-      a.el.remove();
-      anomalies.splice(i, 1);
+
+  // Player ship ease
+  playerShipX += (playerShipTargetX - playerShipX) * 0.2;
+  playerShipEl.style.left = playerShipX + '%';
+
+  // Auto-fire
+  if (now - lastPlayerFire > 380) {
+    lastPlayerFire = now;
+    spawnPlayerBullet();
+  }
+
+  // Aliens move
+  for (const a of aliens) {
+    a.xPct += a.vx * dt;
+    if (a.xPct < 10) { a.xPct = 10; a.vx *= -1; }
+    if (a.xPct > 90) { a.xPct = 90; a.vx *= -1; }
+    a.t += dt * 2;
+    a.yPct = 16 + Math.sin(a.t) * 6;
+    a.el.style.left = a.xPct + '%';
+    a.el.style.top  = a.yPct + '%';
+    if (now - a.lastFire > 1800 + Math.random() * 1800) {
+      a.lastFire = now;
+      spawnAlienBullet(a);
+    }
+  }
+
+  // Player bullets
+  for (let i = playerBullets.length - 1; i >= 0; i--) {
+    const b = playerBullets[i];
+    b.y += b.vy;
+    b.el.style.top = b.y + 'px';
+    if (b.y < -20) { b.el.remove(); playerBullets.splice(i, 1); continue; }
+    let hit = false;
+    for (let j = aliens.length - 1; j >= 0; j--) {
+      const a = aliens[j];
+      const ar = a.el.getBoundingClientRect();
+      const ax = ar.left - r.left, ay = ar.top - r.top;
+      if (b.x >= ax && b.x <= ax + ar.width && b.y >= ay && b.y <= ay + ar.height) {
+        burstAtCoord(b.x, b.y);
+        a.el.remove();
+        aliens.splice(j, 1);
+        hit = true;
+        break;
+      }
+    }
+    if (hit) { b.el.remove(); playerBullets.splice(i, 1); }
+  }
+
+  // Alien bullets
+  for (let i = alienBullets.length - 1; i >= 0; i--) {
+    const b = alienBullets[i];
+    b.y += b.vy;
+    b.el.style.top = b.y + 'px';
+    if (b.y > r.height + 20) { b.el.remove(); alienBullets.splice(i, 1); continue; }
+    const sr = playerShipEl.getBoundingClientRect();
+    const sx = sr.left - r.left, sy = sr.top - r.top;
+    if (b.x >= sx && b.x <= sx + sr.width && b.y >= sy && b.y <= sy + sr.height) {
+      b.el.remove();
+      alienBullets.splice(i, 1);
       hull = Math.max(0, hull - 1);
       updateHud();
       flashPilotHit();
-      if (hull <= 0) return endGame(false, 'hull has been shredded');
-      onAnomalyResolved();
+      burstAtCoord(b.x, b.y);
+      if (hull <= 0) { running = false; return endGame(false, 'shot down in battle'); }
     }
   }
-  requestAnimationFrame(tick);
+
+  // Wave clear
+  if (!waveResolving && aliens.length === 0) {
+    waveResolving = true;
+    setTimeout(() => {
+      clearBattle();
+      startScienceWave();
+    }, 550);
+  }
+}
+
+function burstAtCoord(x, y) {
+  const pilot = document.getElementById('pilot');
+  const burst = document.createElement('div');
+  burst.className = 'pop-burst';
+  burst.style.left = x + 'px';
+  burst.style.top  = y + 'px';
+  pilot.appendChild(burst);
+  setTimeout(() => burst.remove(), 450);
 }
 
 function flashPilotHit() {
@@ -855,23 +1150,6 @@ function flashPilotHit() {
   setTimeout(() => pilot.style.boxShadow = '', 250);
 }
 
-function removeAnomaly(el) {
-  const idx = anomalies.findIndex(a => a.el === el);
-  if (idx >= 0) anomalies.splice(idx, 1);
-  el.remove();
-}
-
-function burstAt(el) {
-  const r = el.getBoundingClientRect();
-  const parent = el.parentElement;
-  const parentR = parent.getBoundingClientRect();
-  const burst = document.createElement('div');
-  burst.className = 'pop-burst';
-  burst.style.left = (r.left - parentR.left + r.width / 2) + 'px';
-  burst.style.top  = (r.top - parentR.top + r.height / 2) + 'px';
-  parent.appendChild(burst);
-  setTimeout(() => burst.remove(), 450);
-}
 
 function glyphSvgInner(kind) {
   if (kind === 'drop') return `<path d="M30 8 C20 22 14 32 14 40 A16 16 0 0 0 46 40 C46 32 40 22 30 8 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/>`;
