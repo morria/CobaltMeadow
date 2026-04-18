@@ -308,55 +308,148 @@
     color: var(--accent, #ffd060);
     text-shadow: 0 1px 2px #000;
     margin-bottom: 2px;
-    max-width: 80px;
+    max-width: 100px;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .robot .head {
-    font-size: 28px;
+    font-size: 26px;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
   }
+  .robot .torso {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-top: -2px;
+  }
+  .robot .torso .arm {
+    font-size: 14px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+    z-index: 1;
+  }
+  .robot .torso .arm.left  { transform: scaleX(-1); }
   .robot .body {
-    width: 44px;
-    height: 30px;
+    width: 44px; height: 30px;
     background: var(--body, #3a86ff);
     border: 2px solid rgba(255,255,255,0.35);
     border-radius: 4px 4px 6px 6px;
-    margin-top: -2px;
     position: relative;
-    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2);
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.22), inset 0 2px 0 rgba(255,255,255,0.12);
   }
   .robot .body::before, .robot .body::after {
     content: '';
     position: absolute;
-    top: 40%;
+    top: 38%;
     width: 4px; height: 8px;
     background: var(--accent, #ffd060);
     border-radius: 50%;
   }
   .robot .body::before { left: 4px; }
   .robot .body::after  { right: 4px; }
-  .robot .legs {
-    width: 40px;
-    height: 8px;
-    background: #333;
-    margin-top: 1px;
-    border-radius: 2px;
-  }
-  .robot .weapon {
+  .robot .body .weapon {
     position: absolute;
-    right: -10px; top: 38px;
-    font-size: 18px;
-    transform: rotate(-15deg);
+    right: -10px; bottom: 0;
+    font-size: 13px;
+    transform: rotate(-12deg);
   }
-  .robot.big .head { font-size: 56px; }
-  .robot.big .body { width: 80px; height: 60px; }
-  .robot.big .body::before, .robot.big .body::after { width: 7px; height: 14px; top: 40%; }
-  .robot.big .legs { width: 76px; height: 12px; }
-  .robot.big .weapon { font-size: 30px; right: -18px; top: 64px; }
-  .robot.big .label { font-size: 11px; max-width: 120px; }
+  .robot .body .fx {
+    position: absolute;
+    top: -11px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    pointer-events: none;
+  }
+  @keyframes fxBounce {
+    0%,100% { transform: translateX(-50%) translateY(0) rotate(0); }
+    50%     { transform: translateX(-50%) translateY(-4px) rotate(12deg); }
+  }
+  .robot .body .fx.anim { animation: fxBounce 1.1s ease-in-out infinite; }
+
+  /* Body shapes */
+  .robot.shape-wide .body  { width: 58px; height: 24px; border-radius: 6px; }
+  .robot.shape-round .body { width: 42px; height: 34px; border-radius: 50%; }
+  .robot.shape-winged .body {
+    background:
+      radial-gradient(circle at 0% 50%, var(--body) 8px, transparent 9px),
+      radial-gradient(circle at 100% 50%, var(--body) 8px, transparent 9px),
+      var(--body);
+  }
+  .robot.shape-winged .body::before,
+  .robot.shape-winged .body::after {
+    top: 4px;
+    width: 14px; height: 18px;
+    background: var(--body);
+    border: 2px solid rgba(255,255,255,0.3);
+    box-sizing: border-box;
+    border-radius: 30%;
+    z-index: 0;
+  }
+  .robot.shape-winged .body::before {
+    left: -16px;
+    transform: skewY(20deg);
+    clip-path: polygon(0 10%, 100% 50%, 100% 90%, 40% 60%);
+  }
+  .robot.shape-winged .body::after  {
+    right: -16px;
+    transform: skewY(-20deg);
+    clip-path: polygon(100% 10%, 0 50%, 0 90%, 60% 60%);
+  }
+
+  /* Tail */
+  .robot .tail-row {
+    height: 10px;
+    display: flex;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: -3px;
+  }
+  .robot .tail { transform: rotate(20deg); display: inline-block; }
+  .robot .tail-row.none { height: 0; overflow: hidden; }
+
+  /* Legs */
+  .robot .legs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: -1px;
+    font-size: 13px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+  }
+  .robot .legs.track-bar {
+    position: relative;
+  }
+  .robot .legs.track-bar::before {
+    content: '';
+    position: absolute;
+    left: -2px; right: -2px; top: 50%; transform: translateY(-50%);
+    height: 4px;
+    background: #222;
+    border-radius: 2px;
+    z-index: 0;
+  }
+  .robot .legs span { z-index: 1; }
+  .robot .legs.jets span { text-shadow: 0 0 4px #ffa030; filter: drop-shadow(0 0 3px #ff6020); }
+
+  /* Big preview scaling */
+  .robot.big .head { font-size: 48px; }
+  .robot.big .body { width: 72px; height: 48px; }
+  .robot.big.shape-wide .body  { width: 96px; height: 38px; }
+  .robot.big.shape-round .body { width: 68px; height: 54px; }
+  .robot.big.shape-winged .body::before { left: -22px; width: 20px; height: 26px; }
+  .robot.big.shape-winged .body::after  { right: -22px; width: 20px; height: 26px; }
+  .robot.big .body::before, .robot.big .body::after { width: 7px; height: 14px; }
+  .robot.big .torso .arm { font-size: 22px; }
+  .robot.big .legs { font-size: 22px; gap: 14px; }
+  .robot.big .tail-row { font-size: 20px; height: 18px; margin-top: -5px; }
+  .robot.big .label { font-size: 11px; max-width: 140px; }
+  .robot.big .body .weapon { font-size: 22px; right: -16px; }
+  .robot.big .body .fx { font-size: 20px; top: -18px; }
 
   .robot.down { filter: grayscale(1) brightness(0.5); }
   .robot.down .head { opacity: 0.6; }
@@ -424,20 +517,18 @@
     border-radius: 6px;
     overflow: hidden;
   }
-  .skyline {
+  .city-bg {
     position: absolute;
-    bottom: 22%;
-    left: 0; right: 0; height: 50%;
-    background:
-      linear-gradient(180deg, transparent 0, #0a0622 100%),
-      repeating-linear-gradient(90deg,
-        #0a0622 0 4px,
-        #161845 4px 18px,
-        #0a0622 18px 22px,
-        #1a2a58 22px 40px);
-    opacity: 0.7;
-    mask-image: linear-gradient(180deg, transparent 0, black 25%, black 100%);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
   }
+  @keyframes windowFlick {
+    0%, 94%, 100% { opacity: 0.95; }
+    96% { opacity: 0.25; }
+  }
+  .city-bg .flicker { animation: windowFlick 6s infinite; }
   .ground {
     position: absolute;
     bottom: 0; left: 0; right: 0; height: 22%;
@@ -536,7 +627,7 @@
 
   .controls {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 6px;
   }
   .log {
@@ -682,6 +773,16 @@
     </div>
     <div class="pick-title">Head</div>
     <div class="pick-grid heads" id="heads1"></div>
+    <div class="pick-title">Body</div>
+    <div class="pick-grid weapons" id="bodies1"></div>
+    <div class="pick-title">Arms</div>
+    <div class="pick-grid weapons" id="arms1"></div>
+    <div class="pick-title">Legs</div>
+    <div class="pick-grid weapons" id="legsP1"></div>
+    <div class="pick-title">Tail</div>
+    <div class="pick-grid weapons" id="tails1"></div>
+    <div class="pick-title">Firework</div>
+    <div class="pick-grid weapons" id="fx1"></div>
     <div class="pick-title">Color</div>
     <div class="color-row" id="colors1"></div>
     <div class="pick-title">Weapon</div>
@@ -699,6 +800,16 @@
     </div>
     <div class="pick-title">Head</div>
     <div class="pick-grid heads" id="heads2"></div>
+    <div class="pick-title">Body</div>
+    <div class="pick-grid weapons" id="bodies2"></div>
+    <div class="pick-title">Arms</div>
+    <div class="pick-grid weapons" id="arms2"></div>
+    <div class="pick-title">Legs</div>
+    <div class="pick-grid weapons" id="legsP2"></div>
+    <div class="pick-title">Tail</div>
+    <div class="pick-grid weapons" id="tails2"></div>
+    <div class="pick-title">Firework</div>
+    <div class="pick-grid weapons" id="fx2"></div>
     <div class="pick-title">Color</div>
     <div class="color-row" id="colors2"></div>
     <div class="pick-title">Weapon</div>
@@ -732,7 +843,147 @@
   </div>
 
   <div class="scene" id="scene">
-    <div class="skyline"></div>
+    <svg class="city-bg" viewBox="0 0 800 180" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <!-- moon -->
+      <circle cx="660" cy="28" r="16" fill="#fff4c8" opacity="0.85"/>
+      <circle cx="666" cy="25" r="14" fill="#18163a"/>
+      <!-- stars -->
+      <g fill="#fff8e0">
+        <circle cx="40"  cy="18" r="0.9"/>
+        <circle cx="120" cy="12" r="0.8"/>
+        <circle cx="220" cy="24" r="0.9"/>
+        <circle cx="300" cy="10" r="0.8"/>
+        <circle cx="380" cy="22" r="0.9"/>
+        <circle cx="500" cy="14" r="0.8"/>
+        <circle cx="560" cy="26" r="0.8"/>
+        <circle cx="740" cy="18" r="0.9"/>
+        <circle cx="80"  cy="40" r="0.6"/>
+        <circle cx="340" cy="42" r="0.6"/>
+        <circle cx="600" cy="44" r="0.6"/>
+      </g>
+      <!-- far buildings (dimmest) -->
+      <g fill="#0b082a" opacity="0.85">
+        <rect x="0"   y="110" width="70"  height="70"/>
+        <rect x="70"  y="95"  width="50"  height="85"/>
+        <rect x="170" y="100" width="70"  height="80"/>
+        <rect x="260" y="88"  width="55"  height="92"/>
+        <rect x="430" y="96"  width="70"  height="84"/>
+        <rect x="540" y="108" width="48"  height="72"/>
+        <rect x="610" y="92"  width="60"  height="88"/>
+        <rect x="710" y="104" width="90"  height="76"/>
+      </g>
+      <!-- mid buildings with windows -->
+      <!-- Building A -->
+      <g>
+        <rect x="90" y="86" width="56" height="94" fill="#141034"/>
+        <g fill="#ffd060">
+          <rect x="98"  y="92" width="6" height="6"/>
+          <rect x="110" y="92" width="6" height="6"/>
+          <rect x="122" y="92" width="6" height="6" class="flicker"/>
+          <rect x="134" y="92" width="6" height="6"/>
+          <rect x="98"  y="104" width="6" height="6"/>
+          <rect x="122" y="104" width="6" height="6"/>
+          <rect x="134" y="104" width="6" height="6" class="flicker"/>
+          <rect x="110" y="116" width="6" height="6"/>
+          <rect x="122" y="116" width="6" height="6"/>
+          <rect x="98"  y="128" width="6" height="6"/>
+          <rect x="110" y="128" width="6" height="6" class="flicker"/>
+          <rect x="134" y="128" width="6" height="6"/>
+          <rect x="98"  y="140" width="6" height="6"/>
+          <rect x="122" y="140" width="6" height="6"/>
+        </g>
+      </g>
+      <!-- Building B (taller, narrow) -->
+      <g>
+        <rect x="212" y="68" width="48" height="112" fill="#181240"/>
+        <polygon points="212,68 260,68 236,58" fill="#181240"/>
+        <g fill="#a0ffc0">
+          <rect x="220" y="78" width="5" height="5"/>
+          <rect x="232" y="78" width="5" height="5"/>
+          <rect x="244" y="78" width="5" height="5" class="flicker"/>
+          <rect x="220" y="90" width="5" height="5"/>
+          <rect x="244" y="90" width="5" height="5"/>
+          <rect x="232" y="102" width="5" height="5"/>
+          <rect x="220" y="114" width="5" height="5" class="flicker"/>
+          <rect x="244" y="114" width="5" height="5"/>
+          <rect x="232" y="126" width="5" height="5"/>
+          <rect x="220" y="138" width="5" height="5"/>
+          <rect x="244" y="138" width="5" height="5"/>
+        </g>
+      </g>
+      <!-- Building C (squat, wide) -->
+      <g>
+        <rect x="330" y="102" width="90" height="78" fill="#120e30"/>
+        <g fill="#ff9a60">
+          <rect x="340" y="110" width="7" height="7"/>
+          <rect x="354" y="110" width="7" height="7" class="flicker"/>
+          <rect x="368" y="110" width="7" height="7"/>
+          <rect x="382" y="110" width="7" height="7"/>
+          <rect x="396" y="110" width="7" height="7"/>
+          <rect x="340" y="126" width="7" height="7"/>
+          <rect x="368" y="126" width="7" height="7"/>
+          <rect x="396" y="126" width="7" height="7" class="flicker"/>
+          <rect x="354" y="142" width="7" height="7"/>
+          <rect x="382" y="142" width="7" height="7"/>
+          <rect x="340" y="158" width="7" height="7"/>
+          <rect x="396" y="158" width="7" height="7"/>
+        </g>
+      </g>
+      <!-- Building D (tall) -->
+      <g>
+        <rect x="456" y="56" width="42" height="124" fill="#1a1444"/>
+        <rect x="475" y="48" width="4"  height="10" fill="#ff4040"/>
+        <rect x="474" y="42" width="6"  height="6" fill="#ff4040" opacity="0.85"/>
+        <g fill="#c0e8ff">
+          <rect x="462" y="66" width="5" height="5"/>
+          <rect x="474" y="66" width="5" height="5"/>
+          <rect x="486" y="66" width="5" height="5" class="flicker"/>
+          <rect x="462" y="80" width="5" height="5"/>
+          <rect x="486" y="80" width="5" height="5"/>
+          <rect x="474" y="94" width="5" height="5"/>
+          <rect x="462" y="108" width="5" height="5"/>
+          <rect x="474" y="108" width="5" height="5"/>
+          <rect x="486" y="108" width="5" height="5"/>
+          <rect x="462" y="122" width="5" height="5" class="flicker"/>
+          <rect x="486" y="122" width="5" height="5"/>
+          <rect x="474" y="136" width="5" height="5"/>
+          <rect x="486" y="150" width="5" height="5"/>
+        </g>
+      </g>
+      <!-- Building E -->
+      <g>
+        <rect x="534" y="86" width="54" height="94" fill="#141028"/>
+        <g fill="#ffd060">
+          <rect x="544" y="94" width="6" height="6"/>
+          <rect x="556" y="94" width="6" height="6"/>
+          <rect x="568" y="94" width="6" height="6"/>
+          <rect x="544" y="106" width="6" height="6" class="flicker"/>
+          <rect x="568" y="106" width="6" height="6"/>
+          <rect x="556" y="118" width="6" height="6"/>
+          <rect x="568" y="118" width="6" height="6"/>
+          <rect x="544" y="130" width="6" height="6"/>
+          <rect x="556" y="130" width="6" height="6"/>
+          <rect x="568" y="130" width="6" height="6" class="flicker"/>
+          <rect x="544" y="142" width="6" height="6"/>
+          <rect x="568" y="142" width="6" height="6"/>
+        </g>
+      </g>
+      <!-- neon sign -->
+      <g transform="translate(380, 84)" opacity="0.9">
+        <rect x="-16" y="-4" width="32" height="8" fill="#0a0422"/>
+        <rect x="-14" y="-2" width="28" height="4" fill="#ff60a0">
+          <animate attributeName="opacity" values="1;0.3;1;1;0.4;1" dur="4s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+      <!-- street haze -->
+      <rect x="0" y="160" width="800" height="20" fill="url(#haze)"/>
+      <defs>
+        <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="transparent"/>
+          <stop offset="100%" stop-color="rgba(120,60,200,0.35)"/>
+        </linearGradient>
+      </defs>
+    </svg>
     <div class="ground"></div>
     <div class="track"></div>
     <div class="player-slot" id="slot1"></div>
@@ -758,6 +1009,7 @@
     <button class="attack" id="btnAttack">Attack</button>
     <button class="steal" id="btnSteal">Steal 🍖</button>
     <button class="bomb" id="btnBomb">Blast 💣</button>
+    <button class="move" id="btnWait">Wait</button>
   </div>
 
   <div class="log" id="log"></div>
@@ -781,6 +1033,37 @@ const WEAPONS = [
   { id: 'flamer',  icon: '🔥', name: 'Flamer',  dmg: 4, range: 2 },
   { id: 'rocket',  icon: '💥', name: 'Rocket',  dmg: 6, range: 7 },
 ];
+const BODY_SHAPES = [
+  { id: 'boxy',   icon: '▭', label: 'Box'   },
+  { id: 'wide',   icon: '▬', label: 'Wide'  },
+  { id: 'round',  icon: '◯', label: 'Round' },
+  { id: 'winged', icon: '🦋', label: 'Wings'},
+];
+const ARMS_OPTS = [
+  { id: 'claws',   icon: '🦾', label: 'Claws'  },
+  { id: 'cannons', icon: '🔫', label: 'Cannon' },
+  { id: 'hammers', icon: '🔨', label: 'Hammer' },
+  { id: 'blades',  icon: '🗡', label: 'Blade'  },
+];
+const LEGS_OPTS = [
+  { id: 'legs',   icon: '🦵', label: 'Legs'   },
+  { id: 'wheels', icon: '🛞', label: 'Wheels' },
+  { id: 'tracks', icon: '⚙',  label: 'Tracks' },
+  { id: 'jets',   icon: '🔥', label: 'Jets'   },
+];
+const TAILS_OPTS = [
+  { id: 'none',  icon: '—',  label: 'None'   },
+  { id: 'whip',  icon: '〰',  label: 'Whip'   },
+  { id: 'spike', icon: '⚡', label: 'Spike'  },
+  { id: 'drag',  icon: '🐉', label: 'Dragon' },
+];
+const FX_OPTS = [
+  { id: 'none',    icon: '∅',  label: 'None'   },
+  { id: 'sparks',  icon: '✨', label: 'Sparks' },
+  { id: 'fwork',   icon: '🎆', label: 'Fire!'  },
+  { id: 'bolt',    icon: '⚡', label: 'Bolt'   },
+];
+function findById(arr, id) { return arr.find(o => o.id === id) || arr[0]; }
 const TRACK_LEN = 10; // positions 0..9 (megabot body = 10)
 const START_HP = 7;
 const MB_HP = 30;
@@ -793,10 +1076,29 @@ const BOMB_CHARGES = 2;
 
 // ---------- Build state ----------
 const builds = {
-  1: { head: '🐶', color: '#ff4a5a', weapon: WEAPONS[0], name: 'Robo-One' },
-  2: { head: '🐱', color: '#3a86ff', weapon: WEAPONS[1], name: 'Robo-Two' },
+  1: { head: '🐶', color: '#ff4a5a', weapon: WEAPONS[0], name: 'Robo-One', bodyShape: 'boxy', arms: 'claws', legs: 'legs', tail: 'none', fx: 'sparks' },
+  2: { head: '🐱', color: '#3a86ff', weapon: WEAPONS[1], name: 'Robo-Two', bodyShape: 'boxy', arms: 'claws', legs: 'wheels', tail: 'whip', fx: 'none' },
 };
 const ready = { 1: false, 2: false };
+
+function renderPicker(container, options, currentId, buildKey, num) {
+  container.innerHTML = '';
+  for (const o of options) {
+    const el = document.createElement('div');
+    el.className = 'pick' + (currentId === o.id ? ' selected' : '');
+    el.innerHTML = `<div style="text-align:center;line-height:1.1;">
+      <div style="font-size:18px">${o.icon}</div>
+      <div style="font-size:8px;letter-spacing:0.5px;opacity:0.85;">${o.label}</div>
+    </div>`;
+    el.title = o.label;
+    el.addEventListener('click', () => {
+      if (ready[num]) return;
+      builds[num][buildKey] = o.id;
+      renderBuilderPanel(num);
+    });
+    container.appendChild(el);
+  }
+}
 
 function renderBuilderPanel(num) {
   // Heads
@@ -813,6 +1115,13 @@ function renderBuilderPanel(num) {
     });
     headsEl.appendChild(el);
   }
+  // Body/arms/legs/tail/fx
+  renderPicker(document.getElementById('bodies' + num), BODY_SHAPES, builds[num].bodyShape, 'bodyShape', num);
+  renderPicker(document.getElementById('arms' + num),   ARMS_OPTS,   builds[num].arms,      'arms',      num);
+  renderPicker(document.getElementById('legsP' + num),  LEGS_OPTS,   builds[num].legs,      'legs',      num);
+  renderPicker(document.getElementById('tails' + num),  TAILS_OPTS,  builds[num].tail,      'tail',      num);
+  renderPicker(document.getElementById('fx' + num),     FX_OPTS,     builds[num].fx,        'fx',        num);
+
   // Colors
   const colorsEl = document.getElementById('colors' + num);
   colorsEl.innerHTML = '';
@@ -853,14 +1162,38 @@ function renderBuilderPanel(num) {
 
 function makeRobotEl(b, big) {
   const wrap = document.createElement('div');
-  wrap.className = 'robot' + (big ? ' big' : '');
+  const shape = findById(BODY_SHAPES, b.bodyShape).id;
+  const arms  = findById(ARMS_OPTS,   b.arms);
+  const legs  = findById(LEGS_OPTS,   b.legs);
+  const tail  = findById(TAILS_OPTS,  b.tail);
+  const fx    = findById(FX_OPTS,     b.fx);
+  wrap.className = 'robot' + (big ? ' big' : '') + ' shape-' + shape;
   wrap.style.setProperty('--body', b.color);
   wrap.style.setProperty('--accent', '#ffd060');
+  const tailHtml = tail.id === 'none'
+    ? `<div class="tail-row none"></div>`
+    : `<div class="tail-row"><span class="tail">${tail.icon}</span></div>`;
+  const fxHtml = fx.id === 'none'
+    ? ''
+    : `<div class="fx anim">${fx.icon}</div>`;
+  const legBar = legs.id === 'tracks' ? ' track-bar' : '';
+  const legJet = legs.id === 'jets' ? ' jets' : '';
   wrap.innerHTML = `
     <div class="label">${escapeHtml(b.name || '')}</div>
     <div class="head">${b.head}</div>
-    <div class="body"><div class="weapon">${b.weapon.icon}</div></div>
-    <div class="legs"></div>
+    <div class="torso">
+      <div class="arm left">${arms.icon}</div>
+      <div class="body">
+        ${fxHtml}
+        <div class="weapon">${b.weapon.icon}</div>
+      </div>
+      <div class="arm right">${arms.icon}</div>
+    </div>
+    ${tailHtml}
+    <div class="legs${legBar}${legJet}">
+      <span>${legs.icon}</span>
+      <span>${legs.icon}</span>
+    </div>
   `;
   return wrap;
 }
@@ -942,9 +1275,11 @@ function renderBattle() {
   document.getElementById('megabot').classList.toggle('angry', megabot.hp < megabot.maxHp * 0.4);
 
   // Players on track: position 0..9 maps to ~4%..60% of scene width (leaves right for megabot)
+  const sharing = players[1].pos === players[2].pos;
   for (const n of [1, 2]) {
     const slot = document.getElementById('slot' + n);
-    const leftPct = 5 + (players[n].pos / (TRACK_LEN - 1)) * 60;
+    let leftPct = 5 + (players[n].pos / (TRACK_LEN - 1)) * 60;
+    if (sharing) leftPct += (n === 1 ? -2.5 : 2.5); // offset so both are visible
     slot.style.left = leftPct + '%';
     slot.innerHTML = '';
     const r = makeRobotEl(players[n].build, false);
@@ -976,12 +1311,21 @@ function move(delta) {
   if (!p.alive) return;
   const newPos = p.pos + delta;
   if (newPos < 0 || newPos >= TRACK_LEN) return;
-  if ([1,2].some(n => n !== current && players[n].alive && players[n].pos === newPos)) {
-    addLog(`${p.build.name} bumps into ${players[current===1?2:1].build.name}.`);
-    return;
-  }
   p.pos = newPos;
-  addLog(`${p.build.name} moves to position ${newPos}.`);
+  const other = players[current === 1 ? 2 : 1];
+  if (other.alive && other.pos === newPos) {
+    addLog(`${p.build.name} steps alongside ${other.build.name}.`);
+  } else {
+    addLog(`${p.build.name} moves to position ${newPos}.`);
+  }
+  endTurn();
+}
+
+function wait() {
+  if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
+  addLog(`${p.build.name} holds position.`);
   endTurn();
 }
 
@@ -1138,6 +1482,7 @@ document.getElementById('btnRight').addEventListener('click', () => move(+1));
 document.getElementById('btnAttack').addEventListener('click', attack);
 document.getElementById('btnSteal').addEventListener('click', steal);
 document.getElementById('btnBomb').addEventListener('click', bomb);
+document.getElementById('btnWait').addEventListener('click', wait);
 document.getElementById('overClose').addEventListener('click', () => {
   location.reload();
 });
