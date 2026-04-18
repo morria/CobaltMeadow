@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Robot Builders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(60,140,255,0.18), transparent 60%),
+      radial-gradient(ellipse at 50% 100%, rgba(255,80,180,0.18), transparent 60%),
+      linear-gradient(180deg, #0a0e1e, #05060e);
+    color: #e0f0ff;
+    margin: 0;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-x: hidden;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 540px;
+    width: 100%;
+    max-height: 96px;
+    filter: drop-shadow(0 4px 10px rgba(80,150,255,0.5));
+  }
+  h2, h3 { margin: 0; }
+
+  /* ---------- BUILDER ---------- */
+  .builder {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    flex: 1;
+    min-height: 0;
+  }
+  .panel {
+    background: linear-gradient(180deg, rgba(20,30,60,0.75), rgba(6,10,24,0.9));
+    border: 1.5px solid #4060a0;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .panel.p1 { border-color: #ff6a7a; box-shadow: 0 0 16px rgba(255,100,120,0.18); }
+  .panel.p2 { border-color: #60a0ff; box-shadow: 0 0 16px rgba(100,160,255,0.18); }
+  .panel h2 {
+    font-family: 'Bungee', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+    text-align: center;
+  }
+  .panel.p1 h2 { color: #ff8090; }
+  .panel.p2 h2 { color: #80b0ff; }
+
+  .preview {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 120px;
+    background:
+      linear-gradient(180deg, rgba(80,120,200,0.12), rgba(30,40,80,0.12)),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 14px);
+    border: 1px dashed #4060a0;
+    border-radius: 6px;
+  }
+  .name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .name-row label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #a0b8e0;
+    min-width: 52px;
+  }
+  .name-row input {
+    flex: 1;
+    background: rgba(10,20,40,0.8);
+    color: #fff;
+    border: 1px solid #4060a0;
+    border-radius: 3px;
+    padding: 8px 10px;
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 2px;
+    font-size: 14px;
+  }
+
+  .pick-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #a0b8e0;
+    margin-top: 4px;
+  }
+  .pick-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+  }
+  .pick-grid.weapons { grid-template-columns: repeat(4, 1fr); }
+  .pick {
+    aspect-ratio: 1;
+    background: rgba(10,20,40,0.8);
+    border: 1.5px solid #2a4060;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s, border-color 0.1s;
+  }
+  .pick:hover { transform: translateY(-2px); }
+  .pick.selected {
+    border-color: #ffd060;
+    background: rgba(80,60,10,0.4);
+    box-shadow: 0 0 10px rgba(255,200,80,0.4);
+  }
+  .color-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .swatch {
+    width: 32px; height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.1s;
+  }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.selected { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+
+  .ready-row {
+    margin-top: auto;
+    display: flex;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(100,140,220,0.2);
+  }
+  .ready-row button { flex: 1; }
+
+  button {
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-radius: 4px;
+    border: 1.5px solid #6080c0;
+    background: linear-gradient(180deg, #2a4080, #1a2850);
+    color: #e0f0ff;
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 40px;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #3a56a0, #243068); box-shadow: 0 0 10px rgba(100,140,220,0.5); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ready { border-color: #60e080; background: linear-gradient(180deg, #1a4a28, #0a2418); color: #a0ffb0; }
+  button.ready.done { background: linear-gradient(180deg, #30a050, #18602a); color: #fff; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #c06020, #6a3010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #e07828, #8a4018); }
+  button.attack { border-color: #ff6a7a; background: linear-gradient(180deg, #a02038, #50101a); color: #ffc8d0; }
+  button.steal { border-color: #ffd060; background: linear-gradient(180deg, #805018, #40260a); color: #ffe0a0; }
+  button.bomb { border-color: #9a60b8; background: linear-gradient(180deg, #5a2080, #2a1038); color: #e0b8ff; }
+  button.move { border-color: #6080c0; }
+
+  .battle-start {
+    text-align: center;
+  }
+  .battle-start button {
+    font-size: 14px;
+    padding: 12px 20px;
+    letter-spacing: 3px;
+  }
+
+  /* ---------- ROBOT RENDER ---------- */
+  .robot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    position: relative;
+  }
+  .robot .label {
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent, #ffd060);
+    text-shadow: 0 1px 2px #000;
+    margin-bottom: 2px;
+    max-width: 80px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .robot .head {
+    font-size: 28px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+  }
+  .robot .body {
+    width: 44px;
+    height: 30px;
+    background: var(--body, #3a86ff);
+    border: 2px solid rgba(255,255,255,0.35);
+    border-radius: 4px 4px 6px 6px;
+    margin-top: -2px;
+    position: relative;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2);
+  }
+  .robot .body::before, .robot .body::after {
+    content: '';
+    position: absolute;
+    top: 40%;
+    width: 4px; height: 8px;
+    background: var(--accent, #ffd060);
+    border-radius: 50%;
+  }
+  .robot .body::before { left: 4px; }
+  .robot .body::after  { right: 4px; }
+  .robot .legs {
+    width: 40px;
+    height: 8px;
+    background: #333;
+    margin-top: 1px;
+    border-radius: 2px;
+  }
+  .robot .weapon {
+    position: absolute;
+    right: -10px; top: 38px;
+    font-size: 18px;
+    transform: rotate(-15deg);
+  }
+  .robot.big .head { font-size: 56px; }
+  .robot.big .body { width: 80px; height: 60px; }
+  .robot.big .body::before, .robot.big .body::after { width: 7px; height: 14px; top: 40%; }
+  .robot.big .legs { width: 76px; height: 12px; }
+  .robot.big .weapon { font-size: 30px; right: -18px; top: 64px; }
+  .robot.big .label { font-size: 11px; max-width: 120px; }
+
+  .robot.down { filter: grayscale(1) brightness(0.5); }
+  .robot.down .head { opacity: 0.6; }
+
+  /* ---------- BATTLE ---------- */
+  .battle {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .hpbars {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 10px;
+    align-items: center;
+  }
+  .hpgroup {
+    background: rgba(10,20,40,0.7);
+    border: 1px solid #4060a0;
+    border-radius: 4px;
+    padding: 6px 10px;
+  }
+  .hpgroup.p1 { border-color: #ff6a7a; }
+  .hpgroup.p2 { border-color: #60a0ff; }
+  .hpgroup.mb { border-color: #a060ff; background: rgba(40,10,60,0.6); }
+  .hpgroup .name {
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .hpgroup.p1 .name { color: #ff8090; }
+  .hpgroup.p2 .name { color: #80b0ff; }
+  .hpgroup.mb .name { color: #d0a0ff; text-align: center; }
+  .hpbar {
+    height: 14px;
+    background: #181828;
+    border: 1px solid #4060a0;
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hpbar .fill { height: 100%; transition: width 0.3s; }
+  .hpbar.p1 .fill { background: linear-gradient(90deg, #c02038, #ff6080); }
+  .hpbar.p2 .fill { background: linear-gradient(90deg, #2060c0, #60a0ff); }
+  .hpbar.mb .fill { background: linear-gradient(90deg, #6020a0, #a060ff); }
+  .hpbar .txt {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    text-shadow: 0 1px 2px #000;
+    letter-spacing: 1px;
+  }
+
+  .scene {
+    position: relative;
+    flex: 1;
+    min-height: 180px;
+    background:
+      linear-gradient(180deg, #12183a 0%, #1a1060 40%, #30104a 80%, #200818 100%);
+    border: 1.5px solid #4060a0;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .skyline {
+    position: absolute;
+    bottom: 22%;
+    left: 0; right: 0; height: 50%;
+    background:
+      linear-gradient(180deg, transparent 0, #0a0622 100%),
+      repeating-linear-gradient(90deg,
+        #0a0622 0 4px,
+        #161845 4px 18px,
+        #0a0622 18px 22px,
+        #1a2a58 22px 40px);
+    opacity: 0.7;
+    mask-image: linear-gradient(180deg, transparent 0, black 25%, black 100%);
+  }
+  .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 22%;
+    background: linear-gradient(180deg, #1a1a30, #080812);
+    border-top: 2px solid #4060a0;
+  }
+  .track {
+    position: absolute;
+    bottom: 8%;
+    left: 0; right: 0; height: 4px;
+    background: repeating-linear-gradient(90deg,
+      rgba(255,220,80,0.4) 0 6px,
+      transparent 6px 14px);
+  }
+  .player-slot {
+    position: absolute;
+    bottom: 10%;
+    transform: translateX(-50%);
+    transition: left 0.35s ease;
+  }
+  .megabot-wrap {
+    position: absolute;
+    bottom: 10%;
+    right: 4%;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .megabot-compartments {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .compartment {
+    background: rgba(20,10,30,0.8);
+    border: 1.5px solid #9060c0;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    font-family: 'Russo One', sans-serif;
+    color: #e0c8ff;
+  }
+  .compartment.food { border-color: #ffa060; color: #ffd8a0; }
+  .compartment.bomb { border-color: #ff60a0; color: #ffc0d8; }
+  .compartment.empty { opacity: 0.35; text-decoration: line-through; }
+
+  .megabot {
+    position: relative;
+    text-align: center;
+  }
+  .megabot .mb-head {
+    font-size: clamp(42px, 8vw, 72px);
+    filter: drop-shadow(0 2px 6px rgba(180,60,255,0.4));
+  }
+  .megabot .mb-body {
+    width: clamp(70px, 12vw, 110px);
+    height: clamp(54px, 9vw, 82px);
+    background: linear-gradient(180deg, #605060, #201838);
+    border: 2px solid #a060ff;
+    border-radius: 6px;
+    margin: -4px auto 0;
+    position: relative;
+    box-shadow: 0 0 18px rgba(160,80,255,0.3), inset 0 -8px 0 rgba(0,0,0,0.3);
+  }
+  .megabot .mb-body::before, .megabot .mb-body::after {
+    content: '';
+    position: absolute;
+    top: 30%;
+    width: 10px; height: 18px;
+    background: #ff6060;
+    border-radius: 50%;
+  }
+  .megabot .mb-body::before { left: 8px; }
+  .megabot .mb-body::after  { right: 8px; }
+  .megabot .mb-legs {
+    width: clamp(62px, 11vw, 100px);
+    height: 14px;
+    background: #181020;
+    margin: 2px auto 0;
+    border-radius: 2px;
+  }
+  .megabot.angry .mb-body { box-shadow: 0 0 24px rgba(255,60,100,0.6), inset 0 -8px 0 rgba(0,0,0,0.3); }
+
+  .turn-line {
+    text-align: center;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    min-height: 18px;
+  }
+  .turn-line .p1 { color: #ff8090; }
+  .turn-line .p2 { color: #80b0ff; }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .log {
+    background: rgba(10,20,40,0.7);
+    border: 1px solid #4060a0;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    max-height: 80px;
+    overflow-y: auto;
+    line-height: 1.4;
+  }
+  .log .e { margin: 2px 0; color: #c0d0f0; }
+  .log .e.good { color: #a0ffb0; }
+  .log .e.bad  { color: #ff9aa8; }
+  .log .e.big  { color: #ffd680; font-weight: 700; }
+
+  /* ---------- PROJECTILES ---------- */
+  @keyframes bolt {
+    0%   { opacity: 0; transform: scale(0.3); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.6); }
+  }
+  .bolt {
+    position: fixed;
+    pointer-events: none;
+    font-size: 24px;
+    text-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
+    z-index: 100;
+    animation: bolt 0.6s ease-out forwards;
+  }
+
+  /* ---------- OVERLAY ---------- */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,5,14,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #14203a, #080818);
+    border: 2px solid #60a0ff;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 0 40px rgba(100,160,255,0.4);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    margin: 0 0 10px;
+    color: #ffd060;
+    letter-spacing: 4px;
+    font-size: 26px;
+  }
+  .overlay-box p { margin: 6px 0 14px; color: #e0f0ff; line-height: 1.4; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 720px) {
+    .builder { grid-template-columns: 1fr; }
+    .panel { padding: 8px; gap: 6px; }
+    .panel h2 { font-size: 15px; }
+    .preview { height: 96px; }
+    .pick-grid { grid-template-columns: repeat(6, 1fr); }
+    .pick { font-size: 18px; }
+    .controls { grid-template-columns: repeat(3, 1fr); }
+    button { font-size: 11px; padding: 10px 10px; min-height: 44px; }
+    .logo { max-height: 66px; }
+    .hpgroup { padding: 4px 8px; }
+    .hpgroup .name { font-size: 9px; }
+    .scene { min-height: 160px; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Robot Builders">
+  <defs>
+    <linearGradient id="rbGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8e0ff"/>
+      <stop offset="35%" stop-color="#60a0ff"/>
+      <stop offset="65%" stop-color="#a060ff"/>
+      <stop offset="100%" stop-color="#ff60a0"/>
+    </linearGradient>
+    <filter id="rbGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <ellipse cx="400" cy="80" rx="300" ry="40" fill="#6080d0" opacity="0.22"/>
+  <!-- bolts -->
+  <g fill="#ffd060" filter="url(#rbGlow)">
+    <path d="M 110 50 l 8 -14 l 2 10 l 10 -4 l -12 18 l -3 -12 z"/>
+    <path d="M 680 84 l 8 -14 l 2 10 l 10 -4 l -12 18 l -3 -12 z"/>
+  </g>
+  <text x="400" y="82" text-anchor="middle"
+        font-family="'Bungee', sans-serif"
+        font-size="50"
+        fill="url(#rbGrad)"
+        letter-spacing="3"
+        style="paint-order: stroke; stroke: #05060e; stroke-width: 2.5;">ROBOT BUILDERS</text>
+  <text x="400" y="112" text-anchor="middle"
+        font-family="'Russo One', sans-serif"
+        font-size="12" fill="#a0c8ff" letter-spacing="6">assemble · arm · defend the city</text>
+</svg>
+
+<!-- ===== PHASE 1: BUILDER ===== -->
+<div id="builder" class="builder">
+  <div class="panel p1" id="panel1">
+    <h2>PLAYER 1</h2>
+    <div class="preview" id="preview1"></div>
+    <div class="name-row">
+      <label>Name</label>
+      <input type="text" id="name1" maxlength="14" value="Robo-One">
+    </div>
+    <div class="pick-title">Head</div>
+    <div class="pick-grid heads" id="heads1"></div>
+    <div class="pick-title">Color</div>
+    <div class="color-row" id="colors1"></div>
+    <div class="pick-title">Weapon</div>
+    <div class="pick-grid weapons" id="weapons1"></div>
+    <div class="ready-row">
+      <button class="ready" id="ready1">Ready ▸</button>
+    </div>
+  </div>
+  <div class="panel p2" id="panel2">
+    <h2>PLAYER 2</h2>
+    <div class="preview" id="preview2"></div>
+    <div class="name-row">
+      <label>Name</label>
+      <input type="text" id="name2" maxlength="14" value="Robo-Two">
+    </div>
+    <div class="pick-title">Head</div>
+    <div class="pick-grid heads" id="heads2"></div>
+    <div class="pick-title">Color</div>
+    <div class="color-row" id="colors2"></div>
+    <div class="pick-title">Weapon</div>
+    <div class="pick-grid weapons" id="weapons2"></div>
+    <div class="ready-row">
+      <button class="ready" id="ready2">Ready ▸</button>
+    </div>
+  </div>
+</div>
+
+<div class="battle-start" id="startRow">
+  <button class="primary" id="startBattle" disabled>Start Battle</button>
+</div>
+
+<!-- ===== PHASE 2: BATTLE ===== -->
+<div id="battle" class="battle hidden">
+  <div class="hpbars">
+    <div class="hpgroup p1" id="hpg1">
+      <div class="name" id="name-p1">Robo-One</div>
+      <div class="hpbar p1"><div class="fill" id="fill-p1"></div><div class="txt" id="txt-p1">6/6</div></div>
+    </div>
+    <div class="hpgroup mb">
+      <div class="name">MEGABOT</div>
+      <div class="hpbar mb"><div class="fill" id="fill-mb"></div><div class="txt" id="txt-mb">30/30</div></div>
+    </div>
+    <div class="hpgroup p2" id="hpg2">
+      <div class="name" id="name-p2">Robo-Two</div>
+      <div class="hpbar p2"><div class="fill" id="fill-p2"></div><div class="txt" id="txt-p2">6/6</div></div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="skyline"></div>
+    <div class="ground"></div>
+    <div class="track"></div>
+    <div class="player-slot" id="slot1"></div>
+    <div class="player-slot" id="slot2"></div>
+    <div class="megabot-wrap">
+      <div class="megabot-compartments" id="compartments">
+        <div class="compartment food" id="comp-food">🍖 ×2</div>
+        <div class="compartment bomb" id="comp-bomb">💣 ×2</div>
+      </div>
+      <div class="megabot" id="megabot">
+        <div class="mb-head">🤖</div>
+        <div class="mb-body"></div>
+        <div class="mb-legs"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="turn-line" id="turnLine">Player 1's turn</div>
+
+  <div class="controls">
+    <button class="move" id="btnLeft">◀ Move</button>
+    <button class="move" id="btnRight">Move ▶</button>
+    <button class="attack" id="btnAttack">Attack</button>
+    <button class="steal" id="btnSteal">Steal 🍖</button>
+    <button class="bomb" id="btnBomb">Blast 💣</button>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">VICTORY</h2>
+    <p id="overBody"></p>
+    <button id="overClose">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ---------- Data ----------
+const HEADS = ['🐶','🐱','🦊','🦁','🐼','🐸','🦖','🐲','🐙','👹','👽','🤖'];
+const COLORS = ['#ff4a5a','#ff9a30','#ffd60a','#60e060','#3a86ff','#9060ff','#ff60a0','#c0c0c0'];
+const WEAPONS = [
+  { id: 'blaster', icon: '🔫', name: 'Blaster', dmg: 3, range: 5 },
+  { id: 'sword',   icon: '🗡', name: 'Sword',   dmg: 5, range: 1 },
+  { id: 'flamer',  icon: '🔥', name: 'Flamer',  dmg: 4, range: 2 },
+  { id: 'rocket',  icon: '💥', name: 'Rocket',  dmg: 6, range: 7 },
+];
+const TRACK_LEN = 10; // positions 0..9 (megabot body = 10)
+const START_HP = 7;
+const MB_HP = 30;
+const MB_ATK_EVERY = 3;
+const MB_DMG = 3;
+const FOOD_HEAL = 3;
+const BOMB_DMG = 6;
+const FOOD_CHARGES = 2;
+const BOMB_CHARGES = 2;
+
+// ---------- Build state ----------
+const builds = {
+  1: { head: '🐶', color: '#ff4a5a', weapon: WEAPONS[0], name: 'Robo-One' },
+  2: { head: '🐱', color: '#3a86ff', weapon: WEAPONS[1], name: 'Robo-Two' },
+};
+const ready = { 1: false, 2: false };
+
+function renderBuilderPanel(num) {
+  // Heads
+  const headsEl = document.getElementById('heads' + num);
+  headsEl.innerHTML = '';
+  for (const h of HEADS) {
+    const el = document.createElement('div');
+    el.className = 'pick' + (builds[num].head === h ? ' selected' : '');
+    el.textContent = h;
+    el.addEventListener('click', () => {
+      if (ready[num]) return;
+      builds[num].head = h;
+      renderBuilderPanel(num);
+    });
+    headsEl.appendChild(el);
+  }
+  // Colors
+  const colorsEl = document.getElementById('colors' + num);
+  colorsEl.innerHTML = '';
+  for (const c of COLORS) {
+    const el = document.createElement('div');
+    el.className = 'swatch' + (builds[num].color === c ? ' selected' : '');
+    el.style.background = c;
+    el.addEventListener('click', () => {
+      if (ready[num]) return;
+      builds[num].color = c;
+      renderBuilderPanel(num);
+    });
+    colorsEl.appendChild(el);
+  }
+  // Weapons
+  const wEl = document.getElementById('weapons' + num);
+  wEl.innerHTML = '';
+  for (const w of WEAPONS) {
+    const el = document.createElement('div');
+    el.className = 'pick' + (builds[num].weapon.id === w.id ? ' selected' : '');
+    el.innerHTML = `<div style="text-align:center;line-height:1.1;">
+      <div style="font-size:20px">${w.icon}</div>
+      <div style="font-size:8px;letter-spacing:1px;">${w.dmg}dmg · ${w.range}r</div>
+    </div>`;
+    el.title = `${w.name}: ${w.dmg} damage, range ${w.range}`;
+    el.addEventListener('click', () => {
+      if (ready[num]) return;
+      builds[num].weapon = w;
+      renderBuilderPanel(num);
+    });
+    wEl.appendChild(el);
+  }
+  // Preview
+  const pv = document.getElementById('preview' + num);
+  pv.innerHTML = '';
+  pv.appendChild(makeRobotEl(builds[num], true));
+}
+
+function makeRobotEl(b, big) {
+  const wrap = document.createElement('div');
+  wrap.className = 'robot' + (big ? ' big' : '');
+  wrap.style.setProperty('--body', b.color);
+  wrap.style.setProperty('--accent', '#ffd060');
+  wrap.innerHTML = `
+    <div class="label">${escapeHtml(b.name || '')}</div>
+    <div class="head">${b.head}</div>
+    <div class="body"><div class="weapon">${b.weapon.icon}</div></div>
+    <div class="legs"></div>
+  `;
+  return wrap;
+}
+function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function bindReady(num) {
+  const input = document.getElementById('name' + num);
+  input.addEventListener('input', () => {
+    if (ready[num]) return;
+    builds[num].name = input.value || `Robo-${num}`;
+    renderBuilderPanel(num);
+  });
+  const btn = document.getElementById('ready' + num);
+  btn.addEventListener('click', () => {
+    ready[num] = !ready[num];
+    builds[num].name = document.getElementById('name' + num).value || `Robo-${num}`;
+    btn.textContent = ready[num] ? '✓ Ready' : 'Ready ▸';
+    btn.classList.toggle('done', ready[num]);
+    document.getElementById('name' + num).disabled = ready[num];
+    document.getElementById('startBattle').disabled = !(ready[1] && ready[2]);
+  });
+}
+
+renderBuilderPanel(1); renderBuilderPanel(2);
+bindReady(1); bindReady(2);
+
+document.getElementById('startBattle').addEventListener('click', startBattle);
+
+// ---------- Battle state ----------
+let players, megabot, current, round, gameOver;
+
+function startBattle() {
+  document.getElementById('builder').classList.add('hidden');
+  document.getElementById('startRow').classList.add('hidden');
+  document.getElementById('battle').classList.remove('hidden');
+
+  players = {
+    1: { num: 1, build: builds[1], pos: 0, hp: START_HP, maxHp: START_HP, alive: true },
+    2: { num: 2, build: builds[2], pos: 1, hp: START_HP, maxHp: START_HP, alive: true },
+  };
+  megabot = { hp: MB_HP, maxHp: MB_HP, food: FOOD_CHARGES, bombs: BOMB_CHARGES };
+  current = 1;
+  round = 1;
+  gameOver = false;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('name-p1').textContent = builds[1].name;
+  document.getElementById('name-p2').textContent = builds[2].name;
+  addLog('The city rumbles — Megabot approaches!', 'big');
+  renderBattle();
+}
+
+function addLog(msg, cls) {
+  const el = document.createElement('div');
+  el.className = 'e' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+  const log = document.getElementById('log');
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function renderBattle() {
+  // HP bars
+  document.getElementById('fill-p1').style.width = (players[1].hp / players[1].maxHp * 100) + '%';
+  document.getElementById('fill-p2').style.width = (players[2].hp / players[2].maxHp * 100) + '%';
+  document.getElementById('fill-mb').style.width = (megabot.hp / megabot.maxHp * 100) + '%';
+  document.getElementById('txt-p1').textContent = `${players[1].hp}/${players[1].maxHp}`;
+  document.getElementById('txt-p2').textContent = `${players[2].hp}/${players[2].maxHp}`;
+  document.getElementById('txt-mb').textContent = `${megabot.hp}/${megabot.maxHp}`;
+
+  // Compartments
+  const foodEl = document.getElementById('comp-food');
+  const bombEl = document.getElementById('comp-bomb');
+  foodEl.textContent = `🍖 ×${megabot.food}`;
+  bombEl.textContent = `💣 ×${megabot.bombs}`;
+  foodEl.classList.toggle('empty', megabot.food <= 0);
+  bombEl.classList.toggle('empty', megabot.bombs <= 0);
+
+  // Megabot visual
+  document.getElementById('megabot').classList.toggle('angry', megabot.hp < megabot.maxHp * 0.4);
+
+  // Players on track: position 0..9 maps to ~4%..60% of scene width (leaves right for megabot)
+  for (const n of [1, 2]) {
+    const slot = document.getElementById('slot' + n);
+    const leftPct = 5 + (players[n].pos / (TRACK_LEN - 1)) * 60;
+    slot.style.left = leftPct + '%';
+    slot.innerHTML = '';
+    const r = makeRobotEl(players[n].build, false);
+    if (!players[n].alive) r.classList.add('down');
+    slot.appendChild(r);
+  }
+
+  // Turn line
+  const p = players[current];
+  const turnLine = document.getElementById('turnLine');
+  if (gameOver) {
+    turnLine.textContent = 'Battle over';
+  } else {
+    turnLine.innerHTML = `<span class="p${current}">${p.build.name}</span> — move, attack, steal, or bomb`;
+  }
+
+  // Buttons
+  document.getElementById('btnLeft').disabled   = gameOver || !p.alive || p.pos <= 0;
+  document.getElementById('btnRight').disabled  = gameOver || !p.alive || p.pos >= TRACK_LEN - 1;
+  const distToMB = (TRACK_LEN) - p.pos; // body at TRACK_LEN
+  document.getElementById('btnAttack').disabled = gameOver || !p.alive || distToMB > p.build.weapon.range;
+  document.getElementById('btnSteal').disabled  = gameOver || !p.alive || p.pos !== TRACK_LEN - 1 || megabot.food <= 0;
+  document.getElementById('btnBomb').disabled   = gameOver || !p.alive || p.pos !== TRACK_LEN - 2 || megabot.bombs <= 0;
+}
+
+function move(delta) {
+  if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
+  const newPos = p.pos + delta;
+  if (newPos < 0 || newPos >= TRACK_LEN) return;
+  if ([1,2].some(n => n !== current && players[n].alive && players[n].pos === newPos)) {
+    addLog(`${p.build.name} bumps into ${players[current===1?2:1].build.name}.`);
+    return;
+  }
+  p.pos = newPos;
+  addLog(`${p.build.name} moves to position ${newPos}.`);
+  endTurn();
+}
+
+function attack() {
+  if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
+  const dist = TRACK_LEN - p.pos;
+  if (dist > p.build.weapon.range) { addLog('Out of range!', 'bad'); return; }
+  megabot.hp = Math.max(0, megabot.hp - p.build.weapon.dmg);
+  addLog(`${p.build.name} hits with ${p.build.weapon.name} (−${p.build.weapon.dmg}).`, 'good');
+  flyBolt(p, p.build.weapon.icon);
+  endTurn();
+}
+
+function steal() {
+  if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
+  if (p.pos !== TRACK_LEN - 1 || megabot.food <= 0) return;
+  megabot.food--;
+  p.hp = Math.min(p.maxHp, p.hp + FOOD_HEAL);
+  addLog(`${p.build.name} steals food from Megabot (+${FOOD_HEAL} HP).`, 'good');
+  endTurn();
+}
+
+function bomb() {
+  if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
+  if (p.pos !== TRACK_LEN - 2 || megabot.bombs <= 0) return;
+  megabot.bombs--;
+  megabot.hp = Math.max(0, megabot.hp - BOMB_DMG);
+  addLog(`${p.build.name} blasts a bomb compartment (−${BOMB_DMG} to Megabot)!`, 'big');
+  // Revive all downed partners
+  let revived = 0;
+  for (const n of [1,2]) {
+    if (n === current) continue;
+    if (!players[n].alive) {
+      players[n].alive = true;
+      players[n].hp = 3;
+      addLog(`${players[n].build.name} surges back online! (3 HP)`, 'good');
+      revived++;
+    }
+  }
+  flyBolt(p, '💥');
+  endTurn();
+}
+
+function endTurn() {
+  if (checkEnd()) return;
+  // Switch to next alive player
+  const nextP = current === 1 ? 2 : 1;
+  if (players[nextP].alive) current = nextP;
+  // If both alive and just finished P2 OR skipped dead P1 -> megabot acts every N rounds
+  // Simpler: count each completed turn, every MB_ATK_EVERY full turns megabot attacks once.
+  round++;
+  if (round % MB_ATK_EVERY === 0) {
+    megabotAttack();
+    if (checkEnd()) return;
+  }
+  renderBattle();
+}
+
+function megabotAttack() {
+  const alive = [1,2].filter(n => players[n].alive);
+  if (alive.length === 0) return;
+  // target lowest HP alive player
+  alive.sort((a,b) => players[a].hp - players[b].hp);
+  const target = players[alive[0]];
+  target.hp -= MB_DMG;
+  addLog(`Megabot blasts ${target.build.name} for ${MB_DMG} damage!`, 'bad');
+  flyMBAttack(target);
+  if (target.hp <= 0) {
+    target.hp = 0;
+    target.alive = false;
+    addLog(`${target.build.name} is down!`, 'big');
+  }
+}
+
+function checkEnd() {
+  if (megabot.hp <= 0) {
+    gameOver = true;
+    finishBattle(true);
+    renderBattle();
+    return true;
+  }
+  const anyAlive = [1,2].some(n => players[n].alive);
+  if (!anyAlive) {
+    // Check if anyone can possibly revive (a player with bombs left would need to... but dead can't act)
+    gameOver = true;
+    finishBattle(false);
+    renderBattle();
+    return true;
+  }
+  return false;
+}
+
+function finishBattle(won) {
+  let title, body;
+  if (won) {
+    title = 'CITY SAVED!';
+    body = `${builds[1].name} and ${builds[2].name} reduce Megabot to scrap. Parade starts at dawn.`;
+  } else {
+    title = 'MEGABOT WINS';
+    body = 'Both robots lie shattered. The city is rubble.';
+  }
+  document.getElementById('overTitle').textContent = title;
+  document.getElementById('overBody').textContent = body;
+  document.getElementById('overlay').classList.add('on');
+}
+
+function flyBolt(p, icon) {
+  const slot = document.getElementById('slot' + p.num);
+  const mb = document.getElementById('megabot');
+  const s = slot.getBoundingClientRect();
+  const m = mb.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'bolt';
+  el.textContent = icon;
+  el.style.color = p.build.color;
+  el.style.left = (s.left + s.width/2) + 'px';
+  el.style.top  = (s.top + 20) + 'px';
+  el.style.transition = 'left 0.5s linear, top 0.5s linear';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.left = (m.left + m.width/2) + 'px';
+    el.style.top  = (m.top + m.height/2) + 'px';
+  });
+  setTimeout(() => el.remove(), 600);
+}
+function flyMBAttack(target) {
+  const mb = document.getElementById('megabot');
+  const slot = document.getElementById('slot' + target.num);
+  const m = mb.getBoundingClientRect();
+  const s = slot.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'bolt';
+  el.textContent = '⚡';
+  el.style.color = '#ff60a0';
+  el.style.left = (m.left + m.width/2) + 'px';
+  el.style.top  = (m.top + m.height/2) + 'px';
+  el.style.transition = 'left 0.5s linear, top 0.5s linear';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.left = (s.left + s.width/2) + 'px';
+    el.style.top  = (s.top + 20) + 'px';
+  });
+  setTimeout(() => el.remove(), 600);
+}
+
+document.getElementById('btnLeft').addEventListener('click', () => move(-1));
+document.getElementById('btnRight').addEventListener('click', () => move(+1));
+document.getElementById('btnAttack').addEventListener('click', attack);
+document.getElementById('btnSteal').addEventListener('click', steal);
+document.getElementById('btnBomb').addEventListener('click', bomb);
+document.getElementById('overClose').addEventListener('click', () => {
+  location.reload();
+});
+</script>
+</body>
+</html>
