@@ -11,7 +11,7 @@
   body {
     font-family: 'Cinzel', Georgia, serif;
     background:
-      radial-gradient(ellipse at 50% 0%, #1a3818 0%, #08180a 50%, #02080a 100%);
+      radial-gradient(ellipse at 50% 0%, #1a3818 0%, #08180a 55%, #02080a 100%);
     color: #d8e8c8;
     margin: 0;
     padding: 10px 14px 12px;
@@ -40,12 +40,21 @@
     min-height: 18px;
   }
   .status .accent { color: #ffd680; font-weight: 600; }
+  .status .p1 { color: #ffc880; }
+  .status .p2 { color: #8ec4ff; }
 
   .layout {
     display: grid;
     grid-template-columns: 220px 1fr;
-    gap: 14px;
+    gap: 12px;
     flex: 1;
+    min-height: 0;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     min-height: 0;
   }
 
@@ -53,33 +62,38 @@
     background: linear-gradient(180deg, rgba(40,30,18,0.85), rgba(15,10,6,0.95));
     border: 1.5px solid #6a4a28;
     border-radius: 6px;
-    padding: 12px;
+    padding: 8px 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 0;
+    gap: 4px;
   }
+  .backpack.p1 { border-color: #a08038; }
+  .backpack.p2 { border-color: #406a9a; }
+  .backpack.active.p1 { box-shadow: 0 0 14px rgba(255,210,120,0.5); border-color: #ffd680; }
+  .backpack.active.p2 { box-shadow: 0 0 14px rgba(130,190,255,0.5); border-color: #9ec4ff; }
+  .backpack.dead { opacity: 0.45; filter: grayscale(0.6); }
   .backpack h3 {
-    margin: 0;
+    margin: 0 0 2px;
     font-family: 'Cinzel Decorative', serif;
-    font-size: 14px;
-    letter-spacing: 4px;
+    font-size: 13px;
+    letter-spacing: 3px;
     text-align: center;
-    color: #d8c890;
-    border-bottom: 1px solid #5a4220;
-    padding-bottom: 6px;
   }
+  .backpack.p1 h3 { color: #ffd680; }
+  .backpack.p2 h3 { color: #a0c8ff; }
   .stat-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
+    font-size: 12px;
     letter-spacing: 1px;
   }
-  .stat-row .lbl { color: #a09080; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; }
-  .stat-row .val { color: #f0e0a8; font-weight: 600; font-size: 16px; }
+  .stat-row .lbl { color: #a09080; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; }
+  .stat-row .val { color: #f0e0a8; font-weight: 600; font-size: 13px; }
   .hearts { color: #ff8090; letter-spacing: 2px; }
-  .arrows { color: #d8e0a0; letter-spacing: 1px; }
+  .shield-good { color: #a0e8ff; }
+  .shield-pinned { color: #ffa060; }
+  .shield-pinned::after { content: ' ⚠'; }
+
   .log {
     flex: 1;
     overflow-y: auto;
@@ -87,14 +101,15 @@
     border: 1px solid #3a2a14;
     border-radius: 4px;
     padding: 6px 8px;
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 11px;
+    line-height: 1.35;
     min-height: 60px;
   }
   .log .entry { margin: 2px 0; color: #c8d8a8; }
   .log .entry.bad  { color: #ff9aa8; }
   .log .entry.good { color: #a0ffa8; }
   .log .entry.big  { color: #ffd680; font-weight: 700; }
+  .log .entry.bomb { color: #ffc080; }
 
   .board {
     display: flex;
@@ -107,12 +122,13 @@
     grid-template-columns: repeat(12, 1fr);
     gap: 2px;
     width: 100%;
-    max-width: 720px;
+    max-width: 740px;
     aspect-ratio: 12 / 8;
     background: #0a1808;
     padding: 2px;
     border: 1.5px solid #3a5a28;
     border-radius: 4px;
+    position: relative;
   }
   .cell {
     position: relative;
@@ -126,7 +142,7 @@
     font-size: 18px;
     transition: filter 0.1s, box-shadow 0.1s;
     user-select: none;
-    overflow: hidden;
+    overflow: visible;
   }
   .cell:hover { filter: brightness(1.18); }
   .cell.tree {
@@ -139,32 +155,80 @@
     opacity: 0.95;
     text-shadow: 0 1px 2px #000;
   }
+  .cell.blue {
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.08) 0 2px, transparent 2px 5px),
+      linear-gradient(135deg, #2c5a9a, #0e2a58);
+  }
+  .cell.blue::after {
+    content: '〜';
+    position: absolute;
+    color: rgba(200,230,255,0.35);
+    font-size: 10px;
+    top: 1px; left: 2px;
+  }
   .cell .creature {
     position: relative;
     z-index: 2;
     font-size: clamp(14px, 2.6vw, 22px);
     text-shadow: 0 1px 2px #000;
   }
-  .cell.player {
-    box-shadow: inset 0 0 0 2px #ffd680, 0 0 8px rgba(255,200,100,0.4);
+  .cell .food-icon {
+    position: absolute;
+    bottom: 1px;
+    right: 2px;
+    font-size: clamp(9px, 1.4vw, 14px);
+    z-index: 1;
+    opacity: 0.95;
+    text-shadow: 0 1px 2px #000;
+    filter: drop-shadow(0 0 2px rgba(255,220,120,0.5));
   }
-  .cell.in-tree::before {
-    opacity: 0.55;
-    transform: scale(0.85);
+  .cell.player1 { box-shadow: inset 0 0 0 2px #ffd680, 0 0 6px rgba(255,200,100,0.35); }
+  .cell.player2 { box-shadow: inset 0 0 0 2px #8ec4ff, 0 0 6px rgba(130,190,255,0.35); }
+  .cell.player1.active { animation: pulseP1 1.2s ease-in-out infinite; }
+  .cell.player2.active { animation: pulseP2 1.2s ease-in-out infinite; }
+  @keyframes pulseP1 {
+    0%, 100% { box-shadow: inset 0 0 0 2px #ffd680, 0 0 6px rgba(255,200,100,0.35); }
+    50%      { box-shadow: inset 0 0 0 3px #fff0a0, 0 0 14px rgba(255,210,80,0.7); }
   }
-  .cell.target-line {
-    box-shadow: inset 0 0 0 1px #ff8060;
-    background-color: rgba(255,120,80,0.15);
+  @keyframes pulseP2 {
+    0%, 100% { box-shadow: inset 0 0 0 2px #8ec4ff, 0 0 6px rgba(130,190,255,0.35); }
+    50%      { box-shadow: inset 0 0 0 3px #c0e0ff, 0 0 14px rgba(130,200,255,0.7); }
   }
-  .cell.shootable {
-    cursor: crosshair;
-  }
+  .cell.in-tree::before { opacity: 0.55; transform: scale(0.85); }
+  .cell.shootable { cursor: crosshair; }
   .cell.shootable::after {
     content: '✛';
     position: absolute;
     color: rgba(255,120,80,0.6);
     font-size: 14px;
     z-index: 3;
+  }
+
+  /* moving projectiles */
+  .projectile {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    font-size: 20px;
+    transition: left 0.35s linear, top 0.35s linear, opacity 0.2s;
+  }
+  .projectile.arrow { color: #ffd680; text-shadow: 0 0 6px #ffa040; }
+  .projectile.bomb  { color: #fff; text-shadow: 0 0 8px #ff6040; font-size: 22px; }
+
+  @keyframes boom {
+    0% { opacity: 1; transform: scale(0.3); }
+    50% { opacity: 1; transform: scale(2.4); }
+    100% { opacity: 0; transform: scale(2.8); }
+  }
+  .explosion {
+    position: fixed;
+    pointer-events: none;
+    z-index: 110;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff8a0 0%, #ff8020 50%, rgba(200,0,0,0) 80%);
+    animation: boom 0.55s ease-out forwards;
   }
 
   .actions {
@@ -193,21 +257,9 @@
   button:disabled { opacity: 0.4; cursor: not-allowed; }
   button.shoot { border-color: #b06038; background: linear-gradient(180deg, #4a2010, #2a1208); color: #ffc8a0; }
   button.shoot.active { background: linear-gradient(180deg, #a04020, #5a1808); box-shadow: 0 0 14px rgba(255,120,60,0.5); color: #fff; }
-
-  /* arrow flight */
-  .arrow {
-    position: absolute;
-    pointer-events: none;
-    color: #ffd680;
-    font-size: 18px;
-    text-shadow: 0 0 6px #ffa040;
-    z-index: 100;
-    animation: arrowFly 0.4s linear forwards;
-  }
-  @keyframes arrowFly {
-    from { opacity: 1; }
-    to   { opacity: 0; transform: scale(1.3); }
-  }
+  button.music.on { border-color: #9a60b8; background: linear-gradient(180deg, #4a2060, #2a1038); color: #e0c8ff; box-shadow: 0 0 10px rgba(160,100,220,0.45); }
+  button.ritual { border-color: #60a0b0; background: linear-gradient(180deg, #104048, #061a20); color: #a0e8d8; }
+  button.ritual:hover:not(:disabled) { background: linear-gradient(180deg, #186068, #0a2a30); box-shadow: 0 0 14px rgba(100,220,220,0.4); }
 
   .overlay {
     position: fixed; inset: 0;
@@ -222,7 +274,7 @@
     border-radius: 8px;
     padding: 28px 38px;
     text-align: center;
-    max-width: 400px;
+    max-width: 420px;
     box-shadow: 0 0 40px rgba(140,200,80,0.4);
   }
   .overlay-box h2 {
@@ -252,31 +304,23 @@
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-
   <ellipse cx="400" cy="85" rx="290" ry="36" fill="#3a8a2a" opacity="0.2"/>
-
-  <!-- crescent moon -->
   <g transform="translate(400, 22)">
     <circle r="13" fill="url(#moon)"/>
     <circle cx="5" cy="-2" r="11" fill="#08180a"/>
   </g>
-
-  <!-- left vine + leaves -->
   <g transform="translate(110, 90)" fill="url(#leafGrad)" stroke="#0a2008" stroke-width="0.6">
     <path d="M 0 -20 Q 10 -10 0 0 Q -10 -10 0 -20 Z"/>
     <path d="M -22 -8 Q -12 -16 -2 -8 Q -12 0 -22 -8 Z" opacity="0.85"/>
     <path d="M 18 -2 Q 28 -10 38 -2 Q 28 6 18 -2 Z" opacity="0.85"/>
     <line x1="0" y1="0" x2="0" y2="14" stroke="#3a5a18" stroke-width="1.5"/>
   </g>
-  <!-- right vine + leaves -->
   <g transform="translate(690, 90) scale(-1, 1)" fill="url(#leafGrad)" stroke="#0a2008" stroke-width="0.6">
     <path d="M 0 -20 Q 10 -10 0 0 Q -10 -10 0 -20 Z"/>
     <path d="M -22 -8 Q -12 -16 -2 -8 Q -12 0 -22 -8 Z" opacity="0.85"/>
     <path d="M 18 -2 Q 28 -10 38 -2 Q 28 6 18 -2 Z" opacity="0.85"/>
     <line x1="0" y1="0" x2="0" y2="14" stroke="#3a5a18" stroke-width="1.5"/>
   </g>
-
-  <!-- title -->
   <text x="400" y="92" text-anchor="middle"
         font-family="'Cinzel Decorative', serif"
         font-weight="900" font-size="42"
@@ -284,24 +328,31 @@
         letter-spacing="5"
         filter="url(#leafGlow)"
         style="paint-order: stroke; stroke: #02080a; stroke-width: 2.5;">FORBIDDEN FOREST</text>
-
-  <!-- tagline -->
   <text x="400" y="120" text-anchor="middle"
         font-family="'Cinzel', serif"
-        font-size="13" fill="#88a868" letter-spacing="6">tread softly · the wood remembers</text>
+        font-size="13" fill="#88a868" letter-spacing="6">two walk in · beasts wait · ponds whisper</text>
 </svg>
 
-<div class="status">
-  <span id="statusLine"><span class="accent">Turn 1</span> · click an adjacent tile to walk · click a tree to climb</span>
-</div>
+<div class="status" id="statusLine"></div>
 
 <div class="layout">
-  <div class="backpack">
-    <h3>BACKPACK</h3>
-    <div class="stat-row"><span class="lbl">Health</span><span class="val hearts" id="hearts">♥ ♥</span></div>
-    <div class="stat-row"><span class="lbl">Bow</span><span class="val">🏹</span></div>
-    <div class="stat-row"><span class="lbl">Arrows</span><span class="val arrows" id="arrows">8</span></div>
-    <div class="stat-row"><span class="lbl">Beasts</span><span class="val" id="beasts">5</span></div>
+  <div class="sidebar">
+    <div class="backpack p1" id="bp1">
+      <h3>PLAYER 1 🏹</h3>
+      <div class="stat-row"><span class="lbl">Health</span><span class="val hearts" id="hp1">♥ ♥ ♥ ♥</span></div>
+      <div class="stat-row"><span class="lbl">Arrows</span><span class="val" id="ar1">6</span></div>
+      <div class="stat-row"><span class="lbl">Shield</span><span class="val shield-good" id="sh1">🛡 ready</span></div>
+      <div class="stat-row"><span class="lbl">Food</span><span class="val" id="fd1">🥖 3</span></div>
+      <div class="stat-row"><span class="lbl">Tent</span><span class="val" id="tn1">🏕 1</span></div>
+    </div>
+    <div class="backpack p2" id="bp2">
+      <h3>PLAYER 2 🏹</h3>
+      <div class="stat-row"><span class="lbl">Health</span><span class="val hearts" id="hp2">♥ ♥ ♥ ♥</span></div>
+      <div class="stat-row"><span class="lbl">Arrows</span><span class="val" id="ar2">6</span></div>
+      <div class="stat-row"><span class="lbl">Shield</span><span class="val shield-good" id="sh2">🛡 ready</span></div>
+      <div class="stat-row"><span class="lbl">Food</span><span class="val" id="fd2">🥖 3</span></div>
+      <div class="stat-row"><span class="lbl">Tent</span><span class="val" id="tn2">🏕 1</span></div>
+    </div>
     <div class="log" id="log"></div>
   </div>
   <div class="board"><div class="grid" id="grid"></div></div>
@@ -309,7 +360,10 @@
 
 <div class="actions">
   <button id="shoot" class="shoot">Aim Arrow</button>
+  <button id="tent">Pitch Tent</button>
+  <button id="ritual" class="ritual">Ritual</button>
   <button id="rest">Wait</button>
+  <button id="music" class="music">🔇 Music</button>
   <button id="reset">New Forest</button>
 </div>
 
@@ -323,67 +377,177 @@
 
 <script>
 const W = 12, H = 8;
-const TREES = 26;
-const MAX_HP = 2;
-const MAX_ARROWS = 8;
-const ANIMAL_TYPES = [
-  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
-  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
-  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
-  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
-  { name: 'bear', icon: '🐻', hp: 2, slow: true  },
-];
+const MAX_HP = 4;
+const MAX_ARROWS = 6;
+const TREES = 20;
 
-let tiles, player, animals, mode, turn, gameOver;
+const ROSTER = [
+  { name: 'wolf',   icon: '🐺', hp: 2, dmg: 1, slow: false, moveRange: 1 },
+  { name: 'wolf',   icon: '🐺', hp: 2, dmg: 1, slow: false, moveRange: 1 },
+  { name: 'bear',   icon: '🐻', hp: 3, dmg: 2, slow: true,  moveRange: 1 },
+  { name: 'goblin', icon: '👹', hp: 1, dmg: 0, bomber: true, coolMax: 2, moveRange: 2 },
+];
+const SLIME = { name: 'slime', icon: '🟢', hp: 2, dmg: 1, blueOnly: true, moveRange: 1 };
+const FOOD_ICONS = ['🍄', '🫐', '🍎', '🌰'];
+const FOREST_FOOD = 6;
+
+let tiles;
+let players;
+let current;
+let animals;
+let mode;      // 'walk' | 'shoot'
+let turn;
+let gameOver;
 
 function newGame() {
-  tiles = [];
-  for (let y = 0; y < H; y++) {
-    const row = [];
-    for (let x = 0; x < W; x++) row.push({ tree: false });
-    tiles.push(row);
-  }
-  // sprinkle trees
-  let placed = 0, attempts = 0;
-  while (placed < TREES && attempts < 400) {
-    attempts++;
-    const x = Math.floor(Math.random() * W);
-    const y = Math.floor(Math.random() * H);
-    if (tiles[y][x].tree) continue;
-    tiles[y][x].tree = true;
-    placed++;
-  }
-  // player
-  const py = Math.floor(H / 2);
-  if (tiles[py][0].tree) tiles[py][0].tree = false;
-  if (tiles[py][1].tree) tiles[py][1].tree = false;
-  player = { x: 0, y: py, hp: MAX_HP, arrows: MAX_ARROWS };
-
-  // animals — far from player
-  animals = [];
-  let id = 0;
-  for (const t of ANIMAL_TYPES) {
-    let x, y, tries = 0;
-    do {
-      x = Math.floor(Math.random() * W);
-      y = Math.floor(Math.random() * H);
-      tries++;
-      if (tries > 200) break;
-    } while (
-      tiles[y][x].tree ||
-      Math.abs(x - player.x) + Math.abs(y - player.y) < 6 ||
-      animals.some(a => a.x === x && a.y === y)
-    );
-    animals.push({ id: id++, x, y, ...t });
-  }
-
+  generateMap();
+  players = {
+    1: { num: 1, label: 'Player 1', x: 0, y: 2, form: 'archer', hp: MAX_HP, arrows: MAX_ARROWS, food: 3, tents: 1, inTent: 0, alive: true },
+    2: { num: 2, label: 'Player 2', x: 0, y: 5, form: 'archer', hp: MAX_HP, arrows: MAX_ARROWS, food: 3, tents: 1, inTent: 0, alive: true },
+  };
+  placeAnimals();
+  current = 1;
   mode = 'walk';
   turn = 1;
   gameOver = false;
   document.getElementById('log').innerHTML = '';
   document.getElementById('overlay').classList.remove('on');
-  addLog('You enter the forest. The trees watch.', 'big');
+  addLog('Two archers step into the forbidden wood.', 'big');
   render();
+}
+
+function generateMap() {
+  tiles = Array.from({ length: H }, () =>
+    Array.from({ length: W }, () => ({ tree: false, blue: false, food: null }))
+  );
+  // Blue patches (ponds) — random-walk blobs
+  const patchCount = 2 + Math.floor(Math.random() * 2);
+  for (let p = 0; p < patchCount; p++) {
+    let x = 4 + Math.floor(Math.random() * (W - 5));
+    let y = Math.floor(Math.random() * H);
+    const size = 4 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < size * 2 && i < 14; i++) {
+      if (inBounds(x, y)) tiles[y][x].blue = true;
+      const [dx, dy] = [[1,0],[-1,0],[0,1],[0,-1]][Math.floor(Math.random() * 4)];
+      x += dx; y += dy;
+    }
+  }
+  // Trees — avoid blue and player spawn corridors
+  const blocked = new Set(['0,2', '1,2', '0,5', '1,5']);
+  let placed = 0, attempts = 0;
+  while (placed < TREES && attempts < 500) {
+    attempts++;
+    const x = Math.floor(Math.random() * W);
+    const y = Math.floor(Math.random() * H);
+    if (blocked.has(`${x},${y}`)) continue;
+    if (tiles[y][x].tree || tiles[y][x].blue) continue;
+    tiles[y][x].tree = true;
+    placed++;
+  }
+  // Make sure starts are clear
+  for (const [x, y] of [[0,2],[1,2],[0,5],[1,5]]) {
+    tiles[y][x].tree = false;
+    tiles[y][x].blue = false;
+  }
+  // Scatter forage
+  let fPlaced = 0, fAttempts = 0;
+  while (fPlaced < FOREST_FOOD && fAttempts < 400) {
+    fAttempts++;
+    const x = Math.floor(Math.random() * W);
+    const y = Math.floor(Math.random() * H);
+    if (tiles[y][x].tree || tiles[y][x].blue || tiles[y][x].food) continue;
+    if ((x <= 1) && (y === 2 || y === 5)) continue;
+    tiles[y][x].food = FOOD_ICONS[Math.floor(Math.random() * FOOD_ICONS.length)];
+    fPlaced++;
+  }
+}
+
+function placeAnimals() {
+  animals = [];
+  let id = 0;
+  const farEnough = (x, y) =>
+    Math.abs(x - players[1].x) + Math.abs(y - players[1].y) >= 5 &&
+    Math.abs(x - players[2].x) + Math.abs(y - players[2].y) >= 5;
+
+  // ground-roaming animals (wolves, bear, goblin)
+  for (const t of ROSTER) {
+    let x, y, tries = 0;
+    do {
+      x = Math.floor(Math.random() * W);
+      y = Math.floor(Math.random() * H);
+      tries++;
+      if (tries > 250) break;
+    } while (
+      tiles[y][x].tree || tiles[y][x].blue ||
+      !farEnough(x, y) ||
+      animals.some(a => a.x === x && a.y === y)
+    );
+    animals.push({ id: id++, x, y, ...t, cool: t.coolMax || 0 });
+  }
+  // slimes on blue tiles
+  const bluePool = [];
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++)
+      if (tiles[y][x].blue && !animals.some(a => a.x === x && a.y === y))
+        bluePool.push({ x, y });
+  for (let i = 0; i < 2 && bluePool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * bluePool.length);
+    const { x, y } = bluePool.splice(idx, 1)[0];
+    animals.push({ id: id++, x, y, ...SLIME });
+  }
+}
+
+function inBounds(x, y) { return x >= 0 && x < W && y >= 0 && y < H; }
+function occupied(x, y) { return animals.some(a => a.x === x && a.y === y); }
+function playerOn(x, y) {
+  for (const p of [1, 2]) if (players[p].alive && players[p].x === x && players[p].y === y) return players[p];
+  return null;
+}
+function playerInTree(p) { return tiles[p.y][p.x].tree; }
+function isProtected(p) { return playerInTree(p) || p.food > 0 || p.inTent > 0; }
+function formIcon(p) {
+  if (p.inTent > 0) return '🏕';
+  if (p.form === 'goblin') return '👹';
+  if (p.form === 'slime')  return '🟢';
+  return '🏹';
+}
+function canEnter(p, x, y) {
+  // Destination rules per form
+  if (p.form === 'archer') return true; // archer can walk any tile (tree=climb, blue=wade, grass)
+  if (p.form === 'goblin') return !tiles[y][x].tree && !tiles[y][x].blue;
+  if (p.form === 'slime')  return tiles[y][x].blue;
+  return true;
+}
+function hurt(p, n, sourceLabel) {
+  p.hp -= n;
+  addLog(`${sourceLabel} hits ${p.label} (−${n}).`, 'bad');
+  if (p.hp <= 0) {
+    if (p.form === 'archer') {
+      p.form = 'goblin';
+      p.hp = 1;
+      p.arrows = 0;
+      p.food = 0;
+      p.tents = 0;
+      p.inTent = 0;
+      addLog(`${p.label} collapses… and rises as a goblin! (1 HP, bombs only)`, 'big');
+    } else {
+      p.hp = 0;
+      p.alive = false;
+      addLog(`${p.label} has fallen.`, 'big');
+    }
+  }
+}
+function adjacentSlime(p) {
+  return animals.some(a => a.name === 'slime' && Math.abs(a.x - p.x) + Math.abs(a.y - p.y) === 1);
+}
+function nearestPlayer(a, max = 99) {
+  let best = null, bestD = Infinity;
+  for (const p of [1, 2]) {
+    if (!players[p].alive) continue;
+    const d = Math.abs(players[p].x - a.x) + Math.abs(players[p].y - a.y);
+    if (d < bestD && d <= max) { bestD = d; best = players[p]; }
+  }
+  return best;
 }
 
 function addLog(msg, cls) {
@@ -395,25 +559,51 @@ function addLog(msg, cls) {
   log.scrollTop = log.scrollHeight;
 }
 
-function inBounds(x, y) { return x >= 0 && x < W && y >= 0 && y < H; }
-function playerInTree() { return tiles[player.y][player.x].tree; }
-
-function adj(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+function handleCellClick(x, y) {
+  if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
+  if (mode === 'shoot') { fireArrow(x, y); return; }
+  if (mode === 'bomb')  { throwPlayerBomb(x, y); return; }
+  if (mode === 'slam')  { doSlimeSlam(x, y); return; }
+  const dx = x - p.x, dy = y - p.y;
+  if (Math.abs(dx) + Math.abs(dy) !== 1) { addLog(`${p.label}: that tile is too far.`); return; }
+  if (!canEnter(p, x, y)) {
+    if (p.form === 'goblin') addLog(`${p.label}: goblins don't climb trees or swim.`);
+    else if (p.form === 'slime') addLog(`${p.label}: slimes only slide on blue.`);
+    return;
+  }
+  if (animals.some(a => a.x === x && a.y === y)) { addLog(`${p.label}: a beast blocks your path.`, 'bad'); return; }
+  if (playerOn(x, y)) { addLog(`${p.label}: your companion is there.`); return; }
+  p.x = x; p.y = y;
+  if (p.form === 'archer') {
+    if (tiles[y][x].tree) addLog(`${p.label} climbs the boughs.`, 'good');
+    else if (tiles[y][x].blue) addLog(`${p.label} wades into the blue pond.`);
+    else addLog(`${p.label} steps softly.`);
+  } else if (p.form === 'goblin') {
+    addLog(`${p.label} the goblin slinks across the moss.`);
+  } else {
+    addLog(`${p.label} the slime oozes along the pond.`);
+  }
+  // forage (archer only)
+  if (p.form === 'archer' && tiles[y][x].food) {
+    const icon = tiles[y][x].food;
+    tiles[y][x].food = null;
+    p.food++;
+    addLog(`${p.label} gathers ${icon} (+1 food).`, 'good');
+  }
+  endPlayerAction();
 }
 
-// Available shoot targets: cardinal direction cells (any distance) up to and including first obstacle.
-function shootableCells() {
+function shootableCells(p) {
   const cells = [];
-  if (player.arrows <= 0) return cells;
+  if (p.arrows <= 0) return cells;
   const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
   for (const [dx, dy] of dirs) {
-    let x = player.x + dx, y = player.y + dy;
+    let x = p.x + dx, y = p.y + dy;
     while (inBounds(x, y)) {
       cells.push({ x, y });
-      // tree blocks beyond
       if (tiles[y][x].tree) break;
-      // animal blocks beyond
       if (animals.some(a => a.x === x && a.y === y)) break;
       x += dx; y += dy;
     }
@@ -421,60 +611,179 @@ function shootableCells() {
   return cells;
 }
 
-function handleCellClick(x, y) {
-  if (gameOver) return;
-  if (mode === 'shoot') {
-    fireAt(x, y);
-    return;
+function targetableCells(p) {
+  if (!p.alive) return [];
+  if (p.form === 'archer') return shootableCells(p);
+  if (p.form === 'goblin') {
+    const cells = [];
+    for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) {
+      const d = Math.abs(xx - p.x) + Math.abs(yy - p.y);
+      if (d >= 1 && d <= 4) cells.push({ x: xx, y: yy });
+    }
+    return cells;
   }
-  // walk / climb to adjacent
-  const dx = x - player.x, dy = y - player.y;
-  if (Math.abs(dx) + Math.abs(dy) !== 1) {
-    addLog('Too far — pick an adjacent tile.');
-    return;
+  if (p.form === 'slime') {
+    const cells = [];
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const x = p.x + dx, y = p.y + dy;
+      if (!inBounds(x, y)) continue;
+      if (animals.some(a => a.x === x && a.y === y)) cells.push({ x, y });
+    }
+    return cells;
   }
-  if (animals.some(a => a.x === x && a.y === y)) {
-    addLog('A beast snarls in the way.', 'bad');
-    return;
-  }
-  player.x = x; player.y = y;
-  if (tiles[y][x].tree) addLog('You climb up the boughs.', 'good');
-  else addLog(playerInTree() ? 'You drop to the soft moss.' : 'You step softly.');
-  endTurn();
+  return [];
 }
 
-function fireAt(x, y) {
-  if (player.arrows <= 0) { addLog('Quiver empty.', 'bad'); resetMode(); return; }
-  const dx = x - player.x, dy = y - player.y;
-  if (dx !== 0 && dy !== 0) { addLog('Arrows fly only straight.'); return; }
-  if (dx === 0 && dy === 0) { addLog('You cannot shoot yourself.'); return; }
+function attackMode(p) {
+  if (p.form === 'archer') return 'shoot';
+  if (p.form === 'goblin') return 'bomb';
+  if (p.form === 'slime')  return 'slam';
+  return 'shoot';
+}
+function attackLabel(p) {
+  if (p.form === 'archer') return 'Aim Arrow';
+  if (p.form === 'goblin') return 'Throw Bomb';
+  if (p.form === 'slime')  return 'Slime Slam';
+  return 'Attack';
+}
+function canAttack(p) {
+  if (!p.alive) return false;
+  if (p.form === 'archer') return p.arrows > 0;
+  if (p.form === 'goblin') return true;
+  if (p.form === 'slime')  return targetableCells(p).length > 0;
+  return false;
+}
+
+function canRitual(p) {
+  if (!p.alive || p.form !== 'archer') return null;
+  const other = players[p.num === 1 ? 2 : 1];
+  if (!other.alive || other.form !== 'goblin') return null;
+  for (const slime of animals.filter(a => a.name === 'slime')) {
+    const pAdj = Math.abs(p.x - slime.x) + Math.abs(p.y - slime.y) === 1;
+    const gAdj = Math.abs(other.x - slime.x) + Math.abs(other.y - slime.y) === 1;
+    if (pAdj && gAdj) return slime;
+  }
+  return null;
+}
+
+function performRitual() {
+  if (gameOver) return;
+  const p = players[current];
+  const slime = canRitual(p);
+  if (!slime) { addLog('The ritual fails — stand with a goblin ally beside an enemy slime.'); return; }
+  animals = animals.filter(a => a.id !== slime.id);
+  p.form = 'slime';
+  p.hp = 3;
+  p.arrows = 0;
+  p.food = 0;
+  p.tents = 0;
+  p.inTent = 0;
+  addLog(`${p.label} melts into the slime — reborn as a friendly ooze! (all gear lost)`, 'big');
+  resetMode();
+  endPlayerAction();
+}
+
+function resolveKill(p, hit) {
+  if (hit.name === 'goblin') {
+    if (p.form === 'archer') {
+      p.arrows += 3;
+      addLog(`The goblin's hoard yields 3 new arrows for ${p.label}.`, 'good');
+    } else {
+      addLog(`The goblin crumples — a pile of hunting weapons, but no one to use them here.`);
+    }
+  } else if (hit.name === 'slime') {
+    addLog('The slime dissolves into the pond. Inedible.');
+  } else {
+    if (p.form === 'archer') {
+      const meat = hit.name === 'bear' ? 2 : 1;
+      p.food += meat;
+      addLog(`${p.label} butchers the ${hit.name} (+${meat} food).`, 'good');
+    } else {
+      addLog(`${p.label} leaves the carcass — no stomach for it in this shape.`);
+    }
+  }
+}
+
+function fireArrow(x, y) {
+  const p = players[current];
+  if (p.form !== 'archer') return;
+  if (p.arrows <= 0) { addLog(`${p.label}: quiver empty.`, 'bad'); resetMode(); return; }
+  const dx = x - p.x, dy = y - p.y;
+  if ((dx !== 0 && dy !== 0) || (dx === 0 && dy === 0)) { addLog('Arrows fly only straight.'); return; }
   const sx = Math.sign(dx), sy = Math.sign(dy);
-  let cx = player.x + sx, cy = player.y + sy;
+  let cx = p.x + sx, cy = p.y + sy;
   let hit = null, blocked = null;
   while (inBounds(cx, cy)) {
-    if (tiles[cy][cx].tree) { blocked = { x: cx, y: cy, kind: 'tree' }; break; }
+    if (tiles[cy][cx].tree) { blocked = { x: cx, y: cy }; break; }
     const a = animals.find(a => a.x === cx && a.y === cy);
     if (a) { hit = a; break; }
     cx += sx; cy += sy;
   }
-  player.arrows--;
-  flyArrow(player.x, player.y, cx, cy, sx, sy);
-
+  p.arrows--;
+  flyProjectile('arrow', p.x, p.y, cx, cy, sx, sy);
+  const retaliator = (hit && hit.name === 'goblin') ? { x: hit.x, y: hit.y } : null;
   if (hit) {
     hit.hp--;
     if (hit.hp <= 0) {
       animals = animals.filter(a => a.id !== hit.id);
-      addLog(`Your arrow fells the ${hit.name}.`, 'good');
+      addLog(`${p.label}'s arrow fells the ${hit.name}!`, 'good');
+      resolveKill(p, hit);
     } else {
-      addLog(`Arrow strikes the ${hit.name}.`);
+      addLog(`${p.label}'s arrow strikes the ${hit.name}.`);
     }
-  } else if (blocked) {
-    addLog('Arrow thuds into a tree.');
+  } else if (blocked) addLog('Arrow thuds into a tree.');
+  else addLog('Arrow vanishes into the green dark.');
+  resetMode();
+  // Goblins lob a bomb at the shooter even as they die
+  if (retaliator) {
+    addLog('The goblin hurls a parting bomb!', 'bad');
+    throwBomb({ name: 'goblin', x: retaliator.x, y: retaliator.y }, p);
+  }
+  endPlayerAction();
+}
+
+function throwPlayerBomb(x, y) {
+  const p = players[current];
+  if (p.form !== 'goblin') return;
+  const d = Math.abs(x - p.x) + Math.abs(y - p.y);
+  if (d < 1 || d > 4) { addLog(`${p.label}: bomb range is 1–4 tiles.`); return; }
+  animateBomb(p.x, p.y, x, y, () => {
+    const hit = animals.find(a => a.x === x && a.y === y);
+    if (hit) {
+      hit.hp -= 3;
+      if (hit.hp <= 0) {
+        animals = animals.filter(a => a.id !== hit.id);
+        addLog(`${p.label}'s bomb obliterates the ${hit.name}!`, 'good');
+        resolveKill(p, hit);
+      } else {
+        addLog(`${p.label}'s bomb rocks the ${hit.name} (−3).`);
+      }
+    } else {
+      addLog(`${p.label}'s bomb bursts in the dirt.`);
+    }
+    checkGameOver();
+    render();
+  });
+  resetMode();
+  endPlayerAction();
+}
+
+function doSlimeSlam(x, y) {
+  const p = players[current];
+  if (p.form !== 'slime') return;
+  if (Math.abs(x - p.x) + Math.abs(y - p.y) !== 1) { addLog('Slam is only 1 tile away.'); return; }
+  const hit = animals.find(a => a.x === x && a.y === y);
+  if (!hit) { addLog('Nothing to slam there.'); return; }
+  hit.hp -= 1;
+  if (hit.hp <= 0) {
+    animals = animals.filter(a => a.id !== hit.id);
+    addLog(`${p.label} engulfs the ${hit.name}!`, 'good');
+    resolveKill(p, hit);
   } else {
-    addLog('Arrow vanishes into the green dark.');
+    addLog(`${p.label} slaps the ${hit.name} (−1).`);
   }
   resetMode();
-  endTurn();
+  endPlayerAction();
 }
 
 function resetMode() {
@@ -484,70 +793,174 @@ function resetMode() {
 
 function rest() {
   if (gameOver) return;
-  addLog('You hold your breath, listening…');
-  endTurn();
+  const p = players[current];
+  if (!p.alive) return;
+  addLog(`${p.label} holds their breath…`);
+  endPlayerAction();
 }
 
-function endTurn() {
+function endPlayerAction() {
+  runEnemyPhase();
+  // Tent duration decrements for everyone each round (time passes)
+  for (const n of [1, 2]) {
+    if (players[n].alive && players[n].inTent > 0) players[n].inTent--;
+  }
+  // Food ticks down only for the player who just acted (hunger from effort)
+  const p = players[current];
+  if (p.alive && p.food > 0) p.food--;
+  if (checkGameOver()) return;
+  switchPlayer();
   turn++;
-  // animal moves
-  for (const a of [...animals]) {
-    if (a.slow && turn % 2 === 0) continue;
-    moveAnimal(a);
-  }
-  // animal attacks (only if you're on the ground)
-  if (!playerInTree()) {
-    for (const a of animals) {
-      if (Math.abs(a.x - player.x) + Math.abs(a.y - player.y) === 1) {
-        player.hp--;
-        addLog(`The ${a.name} strikes! −1 ♥`, 'bad');
-        if (player.hp <= 0) break;
-      }
-    }
-  }
-  if (player.hp <= 0) {
-    gameOver = true;
-    finishGame(false);
-  } else if (animals.length === 0) {
-    gameOver = true;
-    finishGame(true);
-  }
   render();
 }
 
+function pitchTent() {
+  if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
+  if (p.inTent > 0) { addLog(`${p.label}: already sheltered.`); return; }
+  if (p.tents <= 0) { addLog(`${p.label}: no tent left.`, 'bad'); return; }
+  p.tents--;
+  p.inTent = 2;
+  addLog(`${p.label} pitches a tent — sheltered 2 turns.`, 'good');
+  resetMode();
+  endPlayerAction();
+}
+
+function switchPlayer() {
+  for (let i = 0; i < 2; i++) {
+    current = current === 1 ? 2 : 1;
+    if (players[current].alive) return;
+  }
+  // no one alive — handled by checkGameOver
+}
+
+function runEnemyPhase() {
+  for (const a of [...animals]) {
+    if (!animals.includes(a)) continue; // removed mid-phase
+    if (a.slow && turn % 2 === 0) continue;
+    if (a.bomber) {
+      if (a.cool > 0) { a.cool--; moveAnimal(a); continue; }
+      const target = nearestPlayerInRange(a, 6);
+      if (target) {
+        throwBomb(a, target);
+        a.cool = a.coolMax;
+        continue;
+      }
+      moveAnimal(a);
+      continue;
+    }
+    moveAnimal(a);
+  }
+  // adjacent melee attacks
+  for (const a of animals) {
+    if (a.bomber) continue;
+    for (const p of [1, 2]) {
+      if (!players[p].alive) continue;
+      if (isProtected(players[p])) continue;
+      if (Math.abs(a.x - players[p].x) + Math.abs(a.y - players[p].y) === 1) {
+        hurt(players[p], a.dmg, `The ${a.name}`);
+      }
+    }
+  }
+}
+
+function nearestPlayerInRange(a, range) {
+  let best = null, bestD = Infinity;
+  for (const p of [1, 2]) {
+    if (!players[p].alive) continue;
+    if (isProtected(players[p])) continue; // no bombs at tree/food/tent
+    const d = Math.abs(players[p].x - a.x) + Math.abs(players[p].y - a.y);
+    if (d <= range && d < bestD) { bestD = d; best = players[p]; }
+  }
+  return best;
+}
+
 function moveAnimal(a) {
-  const dx = player.x - a.x, dy = player.y - a.y;
-  const adx = Math.abs(dx), ady = Math.abs(dy);
-  const tries = [];
-  if (adx >= ady) {
-    if (dx !== 0) tries.push([Math.sign(dx), 0]);
-    if (dy !== 0) tries.push([0, Math.sign(dy)]);
-    if (dy !== 0) tries.push([0, -Math.sign(dy)]);
-    if (dx !== 0) tries.push([-Math.sign(dx), 0]);
+  const steps = a.moveRange || 1;
+  for (let s = 0; s < steps; s++) {
+    const target = nearestPlayer(a);
+    if (!target) return;
+    const dx = target.x - a.x, dy = target.y - a.y;
+    if (dx === 0 && dy === 0) return;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    const tries = [];
+    if (adx >= ady) {
+      if (dx !== 0) tries.push([Math.sign(dx), 0]);
+      if (dy !== 0) tries.push([0, Math.sign(dy)]);
+      if (dy !== 0) tries.push([0, -Math.sign(dy)]);
+      if (dx !== 0) tries.push([-Math.sign(dx), 0]);
+    } else {
+      if (dy !== 0) tries.push([0, Math.sign(dy)]);
+      if (dx !== 0) tries.push([Math.sign(dx), 0]);
+      if (dx !== 0) tries.push([-Math.sign(dx), 0]);
+      if (dy !== 0) tries.push([0, -Math.sign(dy)]);
+    }
+    let moved = false;
+    for (const [tx, ty] of tries) {
+      const nx = a.x + tx, ny = a.y + ty;
+      if (!inBounds(nx, ny)) continue;
+      if (tiles[ny][nx].tree) continue;
+      if (a.blueOnly && !tiles[ny][nx].blue) continue;
+      if (!a.blueOnly && tiles[ny][nx].blue && a.name !== 'slime') continue;
+      if (playerOn(nx, ny)) continue;
+      if (animals.some(o => o !== a && o.x === nx && o.y === ny)) continue;
+      a.x = nx; a.y = ny;
+      moved = true;
+      break;
+    }
+    if (!moved) return;
+  }
+}
+
+function throwBomb(a, target) {
+  const strong = Math.random() < 0.4;
+  const rawDmg = strong ? 3 : 2;
+  const pinned = adjacentSlime(target);
+  let final, note;
+  if (pinned) {
+    final = rawDmg;
+    note = `${target.label} is pinned by slime — can't defend! Bomb hits for ${final}.`;
+  } else if (strong) {
+    final = 3;
+    note = `A strong bomb cracks through ${target.label}'s shield for ${final}.`;
   } else {
-    if (dy !== 0) tries.push([0, Math.sign(dy)]);
-    if (dx !== 0) tries.push([Math.sign(dx), 0]);
-    if (dx !== 0) tries.push([-Math.sign(dx), 0]);
-    if (dy !== 0) tries.push([0, -Math.sign(dy)]);
+    final = 0;
+    note = `${target.label} raises shield — bomb deflected!`;
   }
-  for (const [tx, ty] of tries) {
-    const nx = a.x + tx, ny = a.y + ty;
-    if (!inBounds(nx, ny)) continue;
-    if (tiles[ny][nx].tree) continue; // can't enter trees
-    if (animals.some(o => o !== a && o.x === nx && o.y === ny)) continue;
-    a.x = nx; a.y = ny;
-    return;
+  animateBomb(a.x, a.y, target.x, target.y, () => {
+    addLog(`${a.name === 'goblin' ? 'The goblin hurls a bomb!' : 'A bomb is hurled!'} ${note}`, final > 0 ? 'bad' : 'good');
+    if (final > 0) hurt(target, final, 'The bomb');
+    render();
+  });
+}
+
+function checkGameOver() {
+  const anyAlive = players[1].alive || players[2].alive;
+  if (!anyAlive) {
+    gameOver = true;
+    finishGame(false);
+    return true;
   }
+  if (animals.length === 0) {
+    gameOver = true;
+    finishGame(true);
+    return true;
+  }
+  return false;
 }
 
 function finishGame(won) {
   let title, body;
   if (won) {
+    const alive = [players[1], players[2]].filter(p => p.alive);
     title = 'THE FOREST IS STILL';
-    body = `Every beast laid low. ${player.arrows} arrow${player.arrows === 1 ? '' : 's'} remain in your quiver.`;
+    body = alive.length === 2
+      ? 'Both archers survive. The beasts lie silent.'
+      : `${alive[0].label} stands alone among the fallen beasts.`;
   } else {
     title = 'YOU HAVE FALLEN';
-    body = 'The wood swallows another wanderer. The trees do not weep.';
+    body = 'The wood swallows two wanderers. The trees do not weep.';
   }
   document.getElementById('overTitle').textContent = title;
   document.getElementById('overBody').textContent = body;
@@ -555,41 +968,77 @@ function finishGame(won) {
 }
 
 function render() {
-  // Stats
-  document.getElementById('hearts').textContent = '♥ '.repeat(player.hp).trim() || '—';
-  document.getElementById('arrows').textContent = String(player.arrows);
-  document.getElementById('beasts').textContent = String(animals.length);
+  // Backpacks
+  for (const num of [1, 2]) {
+    const p = players[num];
+    const bp = document.getElementById('bp' + num);
+    bp.classList.toggle('active', !gameOver && current === num);
+    bp.classList.toggle('dead', !p.alive);
+    document.getElementById('hp' + num).textContent = p.hp > 0 ? '♥ '.repeat(p.hp).trim() : '—';
+    document.getElementById('ar' + num).textContent = String(p.arrows);
+    const shEl = document.getElementById('sh' + num);
+    if (!p.alive) { shEl.textContent = '— fallen —'; shEl.className = 'val shield-pinned'; }
+    else if (adjacentSlime(p)) { shEl.textContent = '🛡 pinned'; shEl.className = 'val shield-pinned'; }
+    else { shEl.textContent = '🛡 ready'; shEl.className = 'val shield-good'; }
 
-  // Status
-  document.getElementById('statusLine').innerHTML =
-    `<span class="accent">Turn ${turn}</span> · ${
-      gameOver ? 'the hunt is done' :
-      mode === 'shoot' ? 'pick a tile in line of sight' :
-      'click adjacent to walk · click a tree to climb'
-    }`;
+    const fdEl = document.getElementById('fd' + num);
+    if (!p.alive) { fdEl.textContent = '—'; fdEl.className = 'val'; }
+    else if (p.food > 0) { fdEl.textContent = `🥖 ${p.food} · peaceful`; fdEl.className = 'val shield-good'; }
+    else { fdEl.textContent = '🥖 — · hungry'; fdEl.className = 'val shield-pinned'; }
+
+    const tnEl = document.getElementById('tn' + num);
+    if (!p.alive) { tnEl.textContent = '—'; tnEl.className = 'val'; }
+    else if (p.inTent > 0) { tnEl.textContent = `🏕 sheltered (${p.inTent})`; tnEl.className = 'val shield-good'; }
+    else if (p.tents > 0) { tnEl.textContent = `🏕 ${p.tents}`; tnEl.className = 'val'; }
+    else { tnEl.textContent = '🏕 —'; tnEl.className = 'val'; }
+  }
+
+  // Status line
+  const p = players[current];
+  const statusEl = document.getElementById('statusLine');
+  if (gameOver) statusEl.innerHTML = '<span class="accent">the hunt is done</span>';
+  else {
+    const who = current === 1 ? '<span class="p1">Player 1</span>' : '<span class="p2">Player 2</span>';
+    const act = mode === 'shoot' ? 'aim an arrow in line of sight' : 'walk adjacent · climb a tree';
+    statusEl.innerHTML = `<span class="accent">Turn ${turn}</span> · ${who} · ${act}`;
+  }
 
   // Grid
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  const targets = mode === 'shoot' ? shootableCells() : [];
+  const curP0 = players[current];
+  const aimModes = new Set(['shoot', 'bomb', 'slam']);
+  const targets = (!gameOver && aimModes.has(mode)) ? targetableCells(curP0) : [];
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
       if (tiles[y][x].tree) cell.className += ' tree';
-      const isPlayer = (player.x === x && player.y === y);
-      if (isPlayer) {
-        cell.className += ' player';
-        if (tiles[y][x].tree) cell.className += ' in-tree';
+      if (tiles[y][x].blue) cell.className += ' blue';
+      for (const num of [1, 2]) {
+        const pp = players[num];
+        if (pp.alive && pp.x === x && pp.y === y) {
+          cell.className += ' player' + num;
+          if (num === current && !gameOver) cell.className += ' active';
+          if (tiles[y][x].tree) cell.className += ' in-tree';
+        }
       }
-      if (mode === 'shoot' && targets.some(t => t.x === x && t.y === y)) {
-        cell.className += ' shootable';
+      if (targets.some(t => t.x === x && t.y === y)) cell.className += ' shootable';
+      // Forage icon
+      if (tiles[y][x].food) {
+        const fspan = document.createElement('span');
+        fspan.className = 'food-icon';
+        fspan.textContent = tiles[y][x].food;
+        cell.appendChild(fspan);
       }
-      // creature
-      if (isPlayer) {
+      // Content: prefer player icon; else animal icon
+      const p1Here = players[1].alive && players[1].x === x && players[1].y === y;
+      const p2Here = players[2].alive && players[2].x === x && players[2].y === y;
+      if (p1Here || p2Here) {
+        const here = p1Here ? players[1] : players[2];
         const span = document.createElement('span');
         span.className = 'creature';
-        span.textContent = '🏹';
+        span.textContent = formIcon(here);
         cell.appendChild(span);
       } else {
         const a = animals.find(a => a.x === x && a.y === y);
@@ -607,53 +1056,227 @@ function render() {
   }
 
   // Buttons
-  document.getElementById('shoot').classList.toggle('active', mode === 'shoot');
-  document.getElementById('shoot').disabled = gameOver || player.arrows <= 0;
-  document.getElementById('rest').disabled = gameOver;
+  const curP = players[current];
+  const shootBtn = document.getElementById('shoot');
+  shootBtn.textContent = attackLabel(curP);
+  shootBtn.classList.toggle('active', aimModes.has(mode));
+  shootBtn.disabled = gameOver || !canAttack(curP);
+  document.getElementById('rest').disabled = gameOver || !curP.alive;
+  document.getElementById('tent').disabled = gameOver || !curP.alive || curP.form !== 'archer' || curP.tents <= 0 || curP.inTent > 0;
+  document.getElementById('ritual').disabled = gameOver || !canRitual(curP);
 }
 
-function flyArrow(fx, fy, tx, ty, sx, sy) {
-  // visual only
+function cellCenter(x, y) {
   const grid = document.getElementById('grid');
-  const cells = grid.children;
-  const fromCell = cells[fy * W + fx];
-  const toCell = (inBounds(tx, ty)) ? cells[ty * W + tx] : cells[(fy + sy) * W + (fx + sx)] || fromCell;
-  const fr = fromCell.getBoundingClientRect();
-  const tr = toCell.getBoundingClientRect();
-  const arrow = document.createElement('div');
-  arrow.className = 'arrow';
-  arrow.textContent = sx > 0 ? '➤' : sx < 0 ? '⮜' : sy > 0 ? '⮟' : '⮝';
-  arrow.style.left = (fr.left + fr.width/2) + 'px';
-  arrow.style.top  = (fr.top + fr.height/2) + 'px';
-  arrow.style.transition = 'left 0.35s linear, top 0.35s linear, opacity 0.35s';
-  document.body.appendChild(arrow);
+  const el = grid.children[y * W + x];
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+}
+
+function flyProjectile(kind, fx, fy, tx, ty, sx, sy) {
+  const from = cellCenter(fx, fy);
+  const toInBounds = inBounds(tx, ty) ? { x: tx, y: ty } : { x: fx + sx, y: fy + sy };
+  const to = cellCenter(toInBounds.x, toInBounds.y);
+  if (!from || !to) return;
+  const el = document.createElement('div');
+  el.className = 'projectile ' + kind;
+  el.textContent = kind === 'arrow'
+    ? (sx > 0 ? '➤' : sx < 0 ? '⮜' : sy > 0 ? '⮟' : '⮝')
+    : '💣';
+  el.style.left = from.cx + 'px'; el.style.top = from.cy + 'px';
+  document.body.appendChild(el);
   requestAnimationFrame(() => {
-    arrow.style.left = (tr.left + tr.width/2) + 'px';
-    arrow.style.top  = (tr.top + tr.height/2) + 'px';
+    el.style.left = to.cx + 'px'; el.style.top = to.cy + 'px';
   });
-  setTimeout(() => arrow.remove(), 450);
+  setTimeout(() => el.remove(), 450);
+}
+
+function animateBomb(fx, fy, tx, ty, done) {
+  const from = cellCenter(fx, fy);
+  const to = cellCenter(tx, ty);
+  if (!from || !to) { done(); return; }
+  const el = document.createElement('div');
+  el.className = 'projectile bomb';
+  el.textContent = '💣';
+  el.style.left = from.cx + 'px'; el.style.top = from.cy + 'px';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.left = to.cx + 'px'; el.style.top = to.cy + 'px';
+  });
+  setTimeout(() => {
+    el.remove();
+    const boom = document.createElement('div');
+    boom.className = 'explosion';
+    boom.style.left = (to.cx - 14) + 'px';
+    boom.style.top = (to.cy - 14) + 'px';
+    document.body.appendChild(boom);
+    setTimeout(() => boom.remove(), 600);
+    done();
+  }, 400);
 }
 
 document.getElementById('shoot').addEventListener('click', () => {
-  if (gameOver || player.arrows <= 0) return;
-  mode = (mode === 'shoot') ? 'walk' : 'shoot';
+  if (gameOver) return;
+  const p = players[current];
+  if (!canAttack(p)) return;
+  const am = attackMode(p);
+  mode = (mode === am) ? 'walk' : am;
   render();
 });
 document.getElementById('rest').addEventListener('click', rest);
+document.getElementById('tent').addEventListener('click', pitchTent);
+document.getElementById('ritual').addEventListener('click', performRitual);
 document.getElementById('reset').addEventListener('click', newGame);
 document.getElementById('overClose').addEventListener('click', newGame);
 
 window.addEventListener('keydown', e => {
   if (gameOver) return;
+  const p = players[current];
+  if (!p.alive) return;
   const map = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1],
                 a:[-1,0], d:[1,0], w:[0,-1], s:[0,1] };
   const k = map[e.key];
-  if (k) { e.preventDefault(); handleCellClick(player.x + k[0], player.y + k[1]); }
+  if (k) { e.preventDefault(); handleCellClick(p.x + k[0], p.y + k[1]); }
   else if (e.key === 'f' || e.key === 'F') {
-    if (player.arrows > 0) { mode = (mode === 'shoot') ? 'walk' : 'shoot'; render(); }
+    if (canAttack(p)) { const am = attackMode(p); mode = (mode === am) ? 'walk' : am; render(); }
   }
   else if (e.key === '.') rest();
 });
+
+// ----- Scary music (Web Audio, procedural) -----
+let musicCtx = null;
+let musicMaster = null;
+let musicTimers = [];
+
+function startMusic() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  musicCtx = new Ctx();
+  musicMaster = musicCtx.createGain();
+  musicMaster.gain.value = 0.0;
+  musicMaster.connect(musicCtx.destination);
+  musicMaster.gain.linearRampToValueAtTime(0.18, musicCtx.currentTime + 2.5);
+
+  // Low bass drone (A1) with slow detuning LFO
+  const bass = musicCtx.createOscillator();
+  bass.type = 'sawtooth';
+  bass.frequency.value = 55;
+  const bassFilter = musicCtx.createBiquadFilter();
+  bassFilter.type = 'lowpass';
+  bassFilter.frequency.value = 140;
+  const bassGain = musicCtx.createGain();
+  bassGain.gain.value = 0.35;
+  bass.connect(bassFilter); bassFilter.connect(bassGain); bassGain.connect(musicMaster);
+  const bassLFO = musicCtx.createOscillator();
+  bassLFO.frequency.value = 0.07;
+  const bassLFOGain = musicCtx.createGain();
+  bassLFOGain.gain.value = 1.4;
+  bassLFO.connect(bassLFOGain); bassLFOGain.connect(bass.frequency);
+  bass.start(); bassLFO.start();
+
+  // Eerie minor pad — A2, C3, E3 (A minor) + F3 (flat-six dissonance)
+  const padFreqs = [110.00, 130.81, 164.81, 174.61];
+  padFreqs.forEach((f, i) => {
+    const osc = musicCtx.createOscillator();
+    osc.type = i === 3 ? 'triangle' : 'sine';
+    osc.frequency.value = f;
+    const filt = musicCtx.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.value = 700;
+    const g = musicCtx.createGain();
+    g.gain.value = 0.025;
+    // slow amplitude wobble per voice
+    const lfo = musicCtx.createOscillator();
+    lfo.frequency.value = 0.045 + Math.random() * 0.09;
+    const lfoG = musicCtx.createGain();
+    lfoG.gain.value = 0.02;
+    lfo.connect(lfoG); lfoG.connect(g.gain);
+    osc.connect(filt); filt.connect(g); g.connect(musicMaster);
+    osc.start(); lfo.start();
+  });
+
+  // Occasional dissonant shrieks
+  scheduleShriek();
+  // Occasional low wolf howls
+  scheduleHowl();
+  return true;
+}
+
+function scheduleShriek() {
+  const t = setTimeout(() => {
+    if (musicCtx && musicCtx.state === 'running') playShriek();
+    scheduleShriek();
+  }, 5000 + Math.random() * 11000);
+  musicTimers.push(t);
+}
+
+function playShriek() {
+  const now = musicCtx.currentTime;
+  const osc = musicCtx.createOscillator();
+  osc.type = 'triangle';
+  const start = 900 + Math.random() * 500;
+  osc.frequency.setValueAtTime(start, now);
+  osc.frequency.exponentialRampToValueAtTime(start * 0.28, now + 1.6);
+  const g = musicCtx.createGain();
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(0.05, now + 0.3);
+  g.gain.exponentialRampToValueAtTime(0.0005, now + 1.6);
+  const filt = musicCtx.createBiquadFilter();
+  filt.type = 'bandpass';
+  filt.frequency.value = 1100;
+  filt.Q.value = 3;
+  osc.connect(filt); filt.connect(g); g.connect(musicMaster);
+  osc.start(now); osc.stop(now + 1.7);
+}
+
+function scheduleHowl() {
+  const t = setTimeout(() => {
+    if (musicCtx && musicCtx.state === 'running') playHowl();
+    scheduleHowl();
+  }, 9000 + Math.random() * 13000);
+  musicTimers.push(t);
+}
+
+function playHowl() {
+  const now = musicCtx.currentTime;
+  const osc = musicCtx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(140, now);
+  osc.frequency.exponentialRampToValueAtTime(260, now + 0.4);
+  osc.frequency.exponentialRampToValueAtTime(180, now + 2.2);
+  const g = musicCtx.createGain();
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(0.08, now + 0.5);
+  g.gain.setValueAtTime(0.08, now + 1.6);
+  g.gain.exponentialRampToValueAtTime(0.0005, now + 2.4);
+  const filt = musicCtx.createBiquadFilter();
+  filt.type = 'bandpass';
+  filt.frequency.value = 350;
+  filt.Q.value = 2;
+  osc.connect(filt); filt.connect(g); g.connect(musicMaster);
+  osc.start(now); osc.stop(now + 2.5);
+}
+
+function toggleMusic() {
+  const btn = document.getElementById('music');
+  if (!musicCtx) {
+    if (!startMusic()) return;
+    btn.textContent = '🔊 Music';
+    btn.classList.add('on');
+    return;
+  }
+  if (musicCtx.state === 'running') {
+    musicCtx.suspend();
+    btn.textContent = '🔇 Music';
+    btn.classList.remove('on');
+  } else {
+    musicCtx.resume();
+    btn.textContent = '🔊 Music';
+    btn.classList.add('on');
+  }
+}
+document.getElementById('music').addEventListener('click', toggleMusic);
 
 newGame();
 </script>
