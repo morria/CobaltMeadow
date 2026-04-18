@@ -557,6 +557,134 @@
     transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
   }
 
+  /* Return — pick Earth */
+  .return-stage {
+    position: relative;
+    overflow: hidden;
+  }
+  .return-stage .starfield {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle, #fff 0.8px, transparent 1px),
+      radial-gradient(circle, #fff 0.6px, transparent 1px);
+    background-size: 140px 140px, 90px 90px;
+    background-position: 0 0, 30px 50px;
+    animation: bf 20s linear infinite;
+    opacity: 0.65;
+  }
+  .dot {
+    position: absolute;
+    border-radius: 50%;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    transition: background 0.4s, box-shadow 0.4s;
+    z-index: 3;
+    border: 1.5px solid rgba(255,255,255,0.4);
+  }
+  .dot.blue {
+    background: radial-gradient(circle at 30% 30%, #9ac8ff, #2a70ff 55%, #0a3088 100%);
+    box-shadow: 0 0 18px rgba(60,140,255,0.5);
+  }
+  .dot.green-mask {
+    /* looks blue at a glance, subtle teal tint */
+    background: radial-gradient(circle at 30% 30%, #8cc0c8, #2a90b0 55%, #0a4858 100%);
+    box-shadow: 0 0 16px rgba(50,160,180,0.45);
+  }
+  .dot.revealed-green {
+    background: radial-gradient(circle at 30% 30%, #a0ffb0, #30c060 55%, #0a5020 100%);
+    box-shadow: 0 0 22px rgba(80,220,120,0.7);
+  }
+  .dot.rejected {
+    animation: dotShake 0.4s ease-in-out;
+  }
+  @keyframes dotShake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    25% { transform: translate(-54%, -50%); }
+    75% { transform: translate(-46%, -50%); }
+  }
+  .return-prompt {
+    position: absolute;
+    top: 6%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,5,30,0.78);
+    border: 1px solid #6040a0;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #d0b8ff;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 4;
+  }
+
+  /* Epilogue — another rocket launches */
+  .epilogue-stage {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #02030a 0%, #1a0c40 50%, #2a1050 75%, #180820 100%);
+  }
+  .epilogue-stage .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 14%;
+    background: linear-gradient(180deg, #1a0c30, #05020c);
+  }
+  .epilogue-rocket {
+    position: absolute;
+    left: 62%;
+    bottom: 10%;
+    font-size: clamp(32px, 5vw, 54px);
+    filter: drop-shadow(0 0 14px #ffa040);
+    animation: epRocket 5s ease-in forwards;
+    z-index: 3;
+  }
+  @keyframes epRocket {
+    0%   { bottom: 10%; opacity: 1; }
+    90%  { bottom: 95%; opacity: 1; }
+    100% { bottom: 110%; opacity: 0; }
+  }
+  .epilogue-flame {
+    position: absolute;
+    left: 62%;
+    transform: translateX(-50%);
+    font-size: clamp(24px, 4vw, 40px);
+    animation: flameFlicker 0.15s linear infinite, epFlame 5s ease-in forwards;
+    z-index: 2;
+  }
+  @keyframes epFlame {
+    0%   { bottom: 7%; opacity: 0.9; }
+    90%  { bottom: 92%; opacity: 0.9; }
+    100% { bottom: 108%; opacity: 0; }
+  }
+  .epilogue-crowd {
+    position: absolute;
+    bottom: 6%;
+    left: 6%;
+    font-size: clamp(18px, 3vw, 28px);
+    filter: drop-shadow(0 1px 2px #000);
+    z-index: 3;
+  }
+  .epilogue-banner {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    font-size: 18px;
+    letter-spacing: 5px;
+    text-shadow: 0 0 12px rgba(255,210,80,0.8);
+    z-index: 4;
+    padding: 5px 14px;
+    background: rgba(10,5,30,0.8);
+    border: 2px solid #ffd060;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
   /* Reveal */
   .reveal-stage {
     position: relative;
@@ -833,13 +961,36 @@
   <!-- ===== REVEAL ===== -->
   <div class="scene hidden" id="scene-reveal">
     <h2 class="scene-title">REVELATION</h2>
-    <p class="scene-prompt">Tap to continue.</p>
+    <p class="scene-prompt">Tap the dialogue to continue.</p>
     <div class="stage reveal-stage" id="revealStage">
       <div class="reveal-planet" id="revealPlanet"></div>
       <div class="dialogue-box" id="dialogueBox">
         <span class="speaker">YOU</span>
         <span id="dialogueText">…</span>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== RETURN (pick Earth) ===== -->
+  <div class="scene hidden" id="scene-return">
+    <h2 class="scene-title">FIND EARTH</h2>
+    <p class="scene-prompt">Earth is the smallest blue planet. Watch out — some blue-looking dots are actually green. Touch them to check.</p>
+    <div class="stage return-stage" id="returnStage">
+      <div class="starfield"></div>
+      <div class="return-prompt" id="returnPromptLive">Tap planets. Find the smallest truly-blue one.</div>
+    </div>
+  </div>
+
+  <!-- ===== EPILOGUE ===== -->
+  <div class="scene hidden" id="scene-epilogue">
+    <h2 class="scene-title">ANOTHER EXPEDITION</h2>
+    <p class="scene-prompt" id="epiPrompt">You report what you saw. The scientists lift off to see for themselves.</p>
+    <div class="stage epilogue-stage" id="epilogueStage">
+      <div class="ground"></div>
+      <div class="epilogue-banner">THE SCIENTISTS LAUNCH</div>
+      <div class="epilogue-crowd">👨‍🔬👩‍🔬🧑‍🚀</div>
+      <div class="epilogue-rocket">🚀</div>
+      <div class="epilogue-flame">🔥</div>
     </div>
   </div>
 </div>
@@ -868,7 +1019,7 @@
 
 <script>
 // ---------- Scene manager ----------
-const SCENE_ORDER = ['room','car','drive','suit','cockpit','takeoff','battle','explore','reveal'];
+const SCENE_ORDER = ['room','car','drive','suit','cockpit','takeoff','battle','explore','reveal','return','epilogue'];
 let currentScene = 'room';
 
 function showScene(id) {
@@ -1270,8 +1421,8 @@ INITS.battle = function() {
   stage.querySelectorAll('.b-player, .b-foe, .bullet, .pop-burst').forEach(e => e.remove());
   battleState = {
     stage,
-    you: { hp: 50, max: 50, x: 50, tx: 50, last: 0 },
-    foe: { hp: 50, max: 50, x: 50, vx: 0.4, last: 0 },
+    you: { hp: 10, max: 10, x: 50, tx: 50, last: 0 },
+    foe: { hp: 10, max: 10, x: 50, vx: 0.4, last: 0 },
     bulletsY: [], bulletsF: [],
     running: true,
   };
@@ -1493,11 +1644,83 @@ function showDialogue() {
 document.getElementById('dialogueBox').addEventListener('click', () => {
   revealIdx++;
   if (revealIdx >= DIALOGUE.length) {
-    endGame(true, 'WEIRDNESS REVEALED', 'Another solar system. Another planet. And the aliens are rising again.');
+    showScene('return');
   } else {
     showDialogue();
   }
 });
+
+// ==== RETURN (pick Earth) ====
+let returnState;
+INITS.return = function() {
+  const stage = document.getElementById('returnStage');
+  stage.querySelectorAll('.dot').forEach(e => e.remove());
+  // Build a set of planets: 3 actually-blue, 3 green-looking (masked)
+  const planets = [];
+  // Blues: sizes 16, 24, 34 (smallest = 16)
+  planets.push({ kind: 'blue',       size: 16, earth: true  });
+  planets.push({ kind: 'blue',       size: 24, earth: false });
+  planets.push({ kind: 'blue',       size: 34, earth: false });
+  // Green-masked (look blue): sizes chosen to include some smaller/equal to earth
+  planets.push({ kind: 'green-mask', size: 14, earth: false });
+  planets.push({ kind: 'green-mask', size: 20, earth: false });
+  planets.push({ kind: 'green-mask', size: 28, earth: false });
+  // shuffle and place at non-overlapping random positions
+  planets.sort(() => Math.random() - 0.5);
+  const placements = [];
+  for (const p of planets) {
+    let tries = 0, x, y;
+    do {
+      x = 12 + Math.random() * 76;
+      y = 22 + Math.random() * 56;
+      tries++;
+    } while (tries < 40 && placements.some(pp => Math.hypot(pp.x - x, pp.y - y) < 14));
+    placements.push({ x, y });
+    const el = document.createElement('div');
+    el.className = 'dot ' + p.kind;
+    el.style.width = el.style.height = p.size + 'px';
+    el.style.left = x + '%';
+    el.style.top  = y + '%';
+    el.dataset.kind = p.kind;
+    el.dataset.earth = p.earth ? '1' : '0';
+    el.addEventListener('click', () => onPlanetClick(el, p));
+    stage.appendChild(el);
+  }
+  returnState = { solved: false };
+  document.getElementById('returnPromptLive').textContent = 'Tap planets. Find the smallest truly-blue one (Earth).';
+};
+
+function onPlanetClick(el, p) {
+  if (!returnState || returnState.solved) return;
+  const prompt = document.getElementById('returnPromptLive');
+  if (p.kind === 'green-mask') {
+    el.classList.remove('green-mask');
+    el.classList.add('revealed-green');
+    prompt.textContent = "That one's green — not Earth. Keep looking.";
+    return;
+  }
+  if (!p.earth) {
+    // blue but not the smallest
+    el.classList.add('rejected');
+    setTimeout(() => el.classList.remove('rejected'), 400);
+    prompt.textContent = 'A blue planet, but too big. Earth should be the smallest blue.';
+    return;
+  }
+  // Earth!
+  returnState.solved = true;
+  el.style.boxShadow = '0 0 40px rgba(120,200,255,0.95)';
+  prompt.textContent = 'EARTH · HOME';
+  banner('EARTH FOUND', 'tell the scientists what you saw');
+  setTimeout(() => showScene('epilogue'), 1400);
+}
+
+// ==== EPILOGUE ====
+INITS.epilogue = function() {
+  // rocket launches automatically; after animation, trigger end overlay
+  setTimeout(() => {
+    endGame(true, 'A NEW EXPEDITION', 'You told the scientists about the other universe. They listened. Another rocket is already on its way.');
+  }, 5200);
+};
 
 // ---------- Music (space ambient) ----------
 let wdCtx = null, wdMaster = null;
