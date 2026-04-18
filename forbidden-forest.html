@@ -414,7 +414,7 @@ const ROSTER = [
   { name: 'wolf',   icon: '🐺', hp: 2, dmg: 1, slow: false, moveRange: 1 },
   { name: 'wolf',   icon: '🐺', hp: 2, dmg: 1, slow: false, moveRange: 1 },
   { name: 'bear',   icon: '🐻', hp: 3, dmg: 2, slow: true,  moveRange: 1 },
-  { name: 'goblin', icon: '👹', hp: 1, dmg: 0, bomber: true, coolMax: 2, moveRange: 2 },
+  { name: 'goblin', icon: '👹', hp: 1, dmg: 0, bomber: true, coolMax: 4, moveRange: 1 },
 ];
 const SLIME = { name: 'slime', icon: '🟢', hp: 2, dmg: 1, blueOnly: true, moveRange: 1 };
 const FOOD_ICONS = ['🍄', '🫐', '🍎', '🌰'];
@@ -943,15 +943,15 @@ function moveAnimal(a) {
 }
 
 function throwBomb(a, target) {
-  const strong = Math.random() < 0.4;
-  const rawDmg = strong ? 3 : 2;
+  const strong = Math.random() < 0.12;
+  const rawDmg = strong ? 2 : 1;
   const pinned = adjacentSlime(target);
   let final, note;
   if (pinned) {
     final = rawDmg;
     note = `${target.label} is pinned by slime — can't defend! Bomb hits for ${final}.`;
   } else if (strong) {
-    final = 3;
+    final = 2;
     note = `A strong bomb cracks through ${target.label}'s shield for ${final}.`;
   } else {
     final = 0;
