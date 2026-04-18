@@ -597,7 +597,7 @@
 
 <div class="scene hidden" id="scene-boss">
   <h2 class="scene-title">VOLCANO MONSTER</h2>
-  <p class="scene-prompt">Click the green poisonous blobs to blast them BACK at the monster. Your time box has 5 HP. 3 deflects beat it.</p>
+  <p class="scene-prompt">Click the green poisonous blobs to blast them BACK at the monster. Time box has 7 HP; deflect 8 blobs to win.</p>
   <div class="stage boss-stage" id="bossStage">
     <div class="boss-hp-row">
       <div class="boss-hp you">
@@ -980,8 +980,8 @@ INITS.boss = function() {
   </svg>`;
   bossState = {
     stage, mon,
-    youHp: 5, youMax: 5,
-    monHp: 3, monMax: 3,
+    youHp: 7, youMax: 7,
+    monHp: 8, monMax: 8,
     blobs: [],
     running: true,
     lastSpit: performance.now() + 800,
