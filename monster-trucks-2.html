@@ -1209,12 +1209,22 @@ function finishLanding(xPx, totalRotAbs) {
 
   // Drive-away: only if we landed on our wheels (and not perched on the platform)
   if (!onPlatform && onWheels) {
+    // Normalize accumulated rotation to shortest path so the correction
+    // is a tiny settle instead of a backward multi-spin.
+    const cssRot = -totalRotAbs;
+    let norm = ((cssRot % 360) + 360) % 360;
+    if (norm > 180) norm -= 360;
+    truck.style.transition = 'none';
+    truck.style.transform = `rotate(${norm}deg)`;
+    void truck.offsetWidth; // force reflow
+    truck.style.transition = 'transform 0.22s cubic-bezier(0.25, 0.8, 0.25, 1)';
+    truck.style.transform = 'rotate(0deg)';
+
     setTimeout(() => {
       if (state !== 'result') return;
       const sceneRect = scene.getBoundingClientRect();
-      truck.style.transition = 'left 1.1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s';
+      truck.style.transition = 'left 1.1s cubic-bezier(0.4, 0, 0.2, 1)';
       truck.style.left = (sceneRect.width + 100) + 'px';
-      truck.style.transform = 'rotate(0deg)';
       const trail = setInterval(() => {
         if (state !== 'result') { clearInterval(trail); return; }
         const tr = truck.getBoundingClientRect();
