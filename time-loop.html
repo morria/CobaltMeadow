@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Time Loop">
+<meta name="theme-color" content="#0a0418">
+<title>Time Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(180,60,40,0.22), transparent 55%),
+      linear-gradient(180deg, #180818 0%, #0a0418 60%, #050208 100%);
+    color: #ffe8c8;
+    margin: 0;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: hidden;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 520px;
+    width: 100%;
+    max-height: 80px;
+    filter: drop-shadow(0 4px 12px rgba(255,140,60,0.4));
+  }
+
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    border-radius: 3px;
+    border: 1px solid #a04820;
+    background: linear-gradient(180deg, #2a1008, #0a0308);
+    color: #ffc890;
+    cursor: pointer;
+  }
+  .music-toggle.on {
+    border-color: #ffb040;
+    background: linear-gradient(180deg, #4a2008, #200a04);
+    color: #ffd890;
+    box-shadow: 0 0 12px rgba(255,170,60,0.55);
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: #0a0408;
+    border: 1px solid #8a4010;
+    border-radius: 3px;
+    overflow: hidden;
+    max-width: 680px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffd060, #ff7020, #c02040);
+    transition: width 0.4s;
+  }
+
+  .scene {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scene.hidden { display: none !important; }
+  .scene-title {
+    text-align: center;
+    font-family: 'Bungee', sans-serif;
+    font-size: 15px;
+    letter-spacing: 4px;
+    margin: 0;
+    color: #ffd060;
+    text-shadow: 0 0 10px rgba(255,210,80,0.5);
+  }
+  .scene-prompt {
+    text-align: center;
+    font-size: 13px;
+    color: #ffd8a0;
+    letter-spacing: 1px;
+    line-height: 1.45;
+    min-height: 36px;
+    padding: 0 10px;
+  }
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 260px;
+    border: 2px solid #8a4010;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 0 24px rgba(255,120,40,0.2);
+    touch-action: none;
+    user-select: none;
+  }
+
+  /* ---------- Home ---------- */
+  .home-stage {
+    background:
+      linear-gradient(180deg, #2a1840 0%, #1a0828 100%);
+  }
+  .home-stage .hs-floor {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
+    background: linear-gradient(180deg, #1a0828, #0a0414);
+  }
+  .home-stage .kid, .home-stage .robot, .home-stage .couch, .home-stage .tv, .home-stage .timemachine {
+    position: absolute;
+    filter: drop-shadow(0 2px 4px #000);
+  }
+  .home-stage .couch { left: 10%; bottom: 18%; font-size: clamp(60px, 10vw, 110px); }
+  .home-stage .kid   { left: 20%; bottom: 30%; font-size: clamp(32px, 5vw, 52px); }
+  .home-stage .tv    { right: 10%; bottom: 28%; font-size: clamp(50px, 8vw, 88px); animation: tvFlicker 0.3s steps(2) infinite; }
+  @keyframes tvFlicker { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4) hue-rotate(20deg); } }
+  .home-stage .robot { left: -80px; bottom: 18%; font-size: clamp(44px, 7vw, 68px); transition: left 2.4s ease-in-out; }
+  .home-stage .robot.in { left: 45%; }
+  .home-stage .timemachine {
+    left: 50%; bottom: 22%;
+    transform: translate(-50%, 0) scale(0);
+    width: clamp(60px, 9vw, 100px);
+    height: clamp(80px, 12vw, 130px);
+    background: linear-gradient(180deg, #c080ff 0%, #6030a0 60%, #300858 100%);
+    border: 3px solid #ffd060;
+    border-radius: 8px 8px 4px 4px;
+    box-shadow: 0 0 24px rgba(180,120,255,0.8), inset 0 0 16px rgba(255,210,80,0.4);
+    cursor: pointer;
+    transition: transform 0.8s ease-out, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px #000;
+  }
+  .home-stage .timemachine.show { transform: translate(-50%, 0) scale(1); }
+  .home-stage .timemachine:hover { box-shadow: 0 0 36px rgba(255,210,80,0.9), inset 0 0 16px rgba(255,210,80,0.6); }
+
+  /* ---------- Portal transition ---------- */
+  .portal-stage {
+    background: #000;
+    position: relative;
+  }
+  .portal-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    border: 12px solid;
+    border-color: #ffd060 #c080ff #60a0ff #ff6080;
+    animation: portalSpin 2s linear forwards, portalGrow 2s ease-out forwards;
+  }
+  @keyframes portalSpin { to { transform: translate(-50%, -50%) rotate(900deg); } }
+  @keyframes portalGrow {
+    0%   { width: 0; height: 0; opacity: 0.6; }
+    70%  { width: 300px; height: 300px; opacity: 1; }
+    100% { width: 700px; height: 700px; opacity: 0; }
+  }
+
+  /* ---------- Past (platformer) ---------- */
+  .past-stage {
+    background:
+      linear-gradient(180deg, #6a2818 0%, #a04020 35%, #c86030 60%, #4a1808 100%);
+    overflow: hidden;
+  }
+  .past-stage .sky-mountains {
+    position: absolute;
+    bottom: 28%; left: 0; right: 0;
+    height: 50%;
+    opacity: 0.6;
+    background-repeat: repeat-x;
+    background-position-y: bottom;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 150' preserveAspectRatio='none'><g fill='%231a0a08'><polygon points='0,150 70,60 140,150'/><polygon points='100,150 180,40 270,150'/><polygon points='230,150 320,70 400,150'/><polygon points='370,150 440,30 520,150'/><polygon points='490,150 570,60 600,150 600,150'/></g></svg>");
+  }
+  .past-stage .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 18%;
+    background:
+      repeating-linear-gradient(90deg, #2a0a04 0 20px, #401a08 20px 22px),
+      linear-gradient(180deg, #5a2010, #1a0604);
+    border-top: 3px solid #ff8040;
+  }
+  .volcano {
+    position: absolute;
+    bottom: 18%;
+    width: clamp(80px, 14vw, 140px);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .volcano svg { width: 100%; height: auto; display: block; }
+  .platform {
+    position: absolute;
+    height: 14px;
+    background: linear-gradient(180deg, #5a2818, #200a04);
+    border-top: 2px solid #ff8040;
+    border-radius: 2px;
+    z-index: 2;
+  }
+  .player-char {
+    position: absolute;
+    font-size: clamp(28px, 4.5vw, 44px);
+    filter: drop-shadow(0 1px 3px #000);
+    z-index: 3;
+    transition: transform 0.1s;
+  }
+  .player-char.facing-left { transform: scaleX(-1); }
+  .launch-pad {
+    position: absolute;
+    right: 2%;
+    bottom: 18%;
+    width: clamp(50px, 8vw, 80px);
+    height: clamp(60px, 10vw, 100px);
+    background: linear-gradient(180deg, #ffd060 0%, #ffa030 50%, #802010 100%);
+    border: 3px solid #fff;
+    border-radius: 6px 6px 2px 2px;
+    z-index: 3;
+    box-shadow: 0 0 24px rgba(255,210,80,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bungee', sans-serif;
+    font-size: 10px;
+    color: #200408;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  .launch-pad::after {
+    content: '🚀';
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(28px, 5vw, 48px);
+    animation: padBob 1.6s ease-in-out infinite;
+  }
+  @keyframes padBob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-6px); } }
+
+  /* ---------- Space lava ---------- */
+  .space-stage {
+    background:
+      radial-gradient(ellipse at 60% 30%, rgba(255,160,60,0.25), transparent 60%),
+      linear-gradient(180deg, #050018 0%, #0a0224 60%, #120214 100%);
+  }
+  .space-stage .starfield {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle, #fff 0.8px, transparent 1px),
+      radial-gradient(circle, #fff 0.6px, transparent 1px);
+    background-size: 120px 120px, 80px 80px;
+    animation: bf 30s linear infinite;
+    opacity: 0.6;
+  }
+  @keyframes bf { from { background-position-y: 0, 40px; } to { background-position-y: 240px, 420px; } }
+  .space-ship {
+    position: absolute;
+    width: clamp(46px, 6vw, 62px);
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(0 0 10px #ffd060);
+    transition: left 0.12s, top 0.12s;
+    transform: translate(-50%, -50%);
+  }
+  .space-ship svg { width: 100%; height: auto; display: block; }
+  .lava-orb {
+    position: absolute;
+    width: clamp(22px, 3vw, 32px);
+    height: clamp(22px, 3vw, 32px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff080, #ff6020 50%, #801008 100%);
+    box-shadow: 0 0 18px rgba(255,140,40,0.8);
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    animation: orbPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes orbPulse {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.3); }
+  }
+  .lava-hud {
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,4,2,0.78);
+    border: 1px solid #ffa040;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #ffd890;
+    z-index: 5;
+  }
+
+  /* ---------- Boss ---------- */
+  .boss-stage {
+    background:
+      linear-gradient(180deg, #4a1010 0%, #7a2010 40%, #401008 80%, #1a0404 100%);
+    overflow: hidden;
+  }
+  .boss-stage .ground {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 16%;
+    background: linear-gradient(180deg, #2a0a04, #0a0202);
+    border-top: 3px solid #ff8040;
+  }
+  .boss-monster {
+    position: absolute;
+    right: 4%;
+    bottom: 16%;
+    width: clamp(120px, 18vw, 180px);
+    z-index: 2;
+  }
+  .boss-monster svg { width: 100%; height: auto; display: block; }
+  @keyframes bossIdle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .boss-monster { animation: bossIdle 1.2s ease-in-out infinite; }
+  .boss-monster.hurt { filter: hue-rotate(90deg) brightness(1.3); }
+  .time-box {
+    position: absolute;
+    left: 4%;
+    bottom: 16%;
+    width: clamp(70px, 10vw, 110px);
+    height: clamp(96px, 14vw, 150px);
+    background: linear-gradient(180deg, #c080ff 0%, #6030a0 60%, #300858 100%);
+    border: 3px solid #ffd060;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(180,120,255,0.7);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 6px #000;
+  }
+  .time-box::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 30%;
+    background: radial-gradient(circle, #fff 0%, #ffd060 40%, #8040c0 80%);
+    border-radius: 4px;
+    animation: tbGlow 1.2s ease-in-out infinite;
+  }
+  @keyframes tbGlow { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; filter: brightness(1.4); } }
+  .lava-blob {
+    position: absolute;
+    width: clamp(26px, 3.5vw, 38px);
+    height: clamp(26px, 3.5vw, 38px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #a0ff60, #30c040 50%, #105020 100%);
+    box-shadow: 0 0 18px rgba(80,220,100,0.8);
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    cursor: pointer;
+    pointer-events: auto;
+    filter: drop-shadow(0 0 6px #60ff80);
+    animation: lavaSpin 0.6s linear infinite;
+  }
+  .lava-blob.returning {
+    background: radial-gradient(circle at 35% 35%, #fff080, #ffa020 50%, #801008 100%);
+    box-shadow: 0 0 22px rgba(255,170,40,0.9);
+    filter: drop-shadow(0 0 8px #ffa040);
+    animation: lavaSpinFast 0.25s linear infinite;
+  }
+  @keyframes lavaSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+  @keyframes lavaSpinFast { to { transform: translate(-50%, -50%) rotate(720deg); } }
+  .boss-hp-row {
+    position: absolute;
+    top: 8px; left: 8px; right: 8px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 5;
+  }
+  .boss-hp {
+    flex: 1;
+    background: rgba(10,6,2,0.78);
+    border: 1px solid #a04810;
+    border-radius: 4px;
+    padding: 3px 8px;
+  }
+  .boss-hp.you { border-color: #80c0ff; }
+  .boss-hp.mon { border-color: #80ff60; }
+  .boss-hp .lbl { font-family: 'Russo One', sans-serif; font-size: 9px; letter-spacing: 2px; color: #ffd890; }
+  .boss-hp.you .lbl { color: #a0c8ff; }
+  .boss-hp.mon .lbl { color: #a0ffb0; }
+  .boss-hp .bar { height: 8px; background: #0a0202; border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .boss-hp .bar .fill { height: 100%; width: 100%; transition: width 0.3s; }
+  .boss-hp.you .bar .fill { background: linear-gradient(90deg, #2060c0, #60a0ff); }
+  .boss-hp.mon .bar .fill { background: linear-gradient(90deg, #208040, #60d060); }
+
+  /* ---------- Generic buttons ---------- */
+  button {
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    border-radius: 3px;
+    border: 1.5px solid #a04810;
+    background: linear-gradient(180deg, #5a1808, #2a0a04);
+    color: #ffd890;
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 44px;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #7a2410, #3a120a); box-shadow: 0 0 10px rgba(255,120,40,0.5); }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #a06020, #6a3010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #c08030, #8a4018); }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ---------- Banner ---------- */
+  .banner {
+    position: fixed;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    letter-spacing: 4px;
+    font-size: 20px;
+    text-shadow: 0 0 12px rgba(255,210,80,0.8);
+    padding: 6px 14px;
+    background: rgba(10,5,2,0.85);
+    border: 2px solid #ffd060;
+    border-radius: 6px;
+    transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  .banner.fade { opacity: 0; }
+
+  /* ---------- End overlay ---------- */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,2,14,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #301040, #08041a);
+    border: 2px solid #ffd060;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 0 40px rgba(255,210,80,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 14px; color: #ffe8c8; }
+
+  @media (max-width: 720px) {
+    .logo { max-height: 58px; }
+    .stage { min-height: 220px; }
+    .scene-title { font-size: 13px; }
+    .scene-prompt { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="music" class="music-toggle">🔇 Music</button>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Time Loop">
+  <defs>
+    <linearGradient id="tlGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#fff4a0"/>
+      <stop offset="35%" stop-color="#ffa030"/>
+      <stop offset="70%" stop-color="#c02040"/>
+      <stop offset="100%" stop-color="#6010a0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="400" cy="80" rx="320" ry="40" fill="#a03010" opacity="0.25"/>
+  <!-- clock rings -->
+  <g fill="none" stroke="#ffd060" stroke-width="2" opacity="0.7">
+    <circle cx="120" cy="70" r="28"/>
+    <circle cx="680" cy="70" r="28"/>
+  </g>
+  <g stroke="#ffd060" stroke-width="3" stroke-linecap="round">
+    <line x1="120" y1="70" x2="120" y2="52"/>
+    <line x1="120" y1="70" x2="136" y2="78"/>
+    <line x1="680" y1="70" x2="680" y2="52"/>
+    <line x1="680" y1="70" x2="696" y2="78"/>
+  </g>
+  <text x="400" y="82" text-anchor="middle"
+        font-family="'Bungee', sans-serif"
+        font-size="54"
+        fill="url(#tlGrad)"
+        letter-spacing="5"
+        style="paint-order: stroke; stroke: #1a0408; stroke-width: 2.5;">TIME LOOP</text>
+  <text x="400" y="108" text-anchor="middle"
+        font-family="'Russo One', sans-serif"
+        font-size="11" fill="#ffb080" letter-spacing="6">home · past · space · boss · home</text>
+</svg>
+
+<div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+
+<div class="scene" id="scene-home">
+  <h2 class="scene-title">YOUR LIVING ROOM</h2>
+  <p class="scene-prompt" id="homePrompt">You're gaming. A robot walks in and drops a time machine. Tap the time machine when it appears.</p>
+  <div class="stage home-stage" id="homeStage">
+    <div class="hs-floor"></div>
+    <div class="couch">🛋️</div>
+    <div class="kid">🧒</div>
+    <div class="tv">📺</div>
+    <div class="robot">🤖</div>
+    <div class="timemachine" id="timeMachine">TIME<br>MACHINE</div>
+  </div>
+</div>
+
+<div class="scene hidden" id="scene-portal">
+  <h2 class="scene-title">TIME WARP</h2>
+  <p class="scene-prompt">…</p>
+  <div class="stage portal-stage"><div class="portal-ring"></div></div>
+</div>
+
+<div class="scene hidden" id="scene-past">
+  <h2 class="scene-title">PREHISTORIC · NO LAVA</h2>
+  <p class="scene-prompt">← → to move, ↑ to jump. Reach the launch pad at the right. (Touch: tap arrows below.)</p>
+  <div class="stage past-stage" id="pastStage">
+    <div class="sky-mountains"></div>
+    <div class="ground"></div>
+    <!-- volcanoes + platforms injected by JS -->
+    <div class="launch-pad">TO<br>SPACE</div>
+    <div class="player-char" id="pastPlayer" style="bottom: 18%; left: 6%;">🧒</div>
+  </div>
+  <div class="action-row" id="touchControls" style="margin-top:4px">
+    <button id="btnLeft">◀</button>
+    <button id="btnJump" class="primary">↑ JUMP</button>
+    <button id="btnRight">▶</button>
+  </div>
+</div>
+
+<div class="scene hidden" id="scene-space">
+  <h2 class="scene-title">SPACE · COLLECT LAVA</h2>
+  <p class="scene-prompt">Drag or arrow keys to fly. Collect all 5 lava orbs.</p>
+  <div class="stage space-stage" id="spaceStage">
+    <div class="starfield"></div>
+    <div class="lava-hud" id="lavaHud">LAVA · 0 / 5</div>
+    <!-- ship + orbs injected by JS -->
+  </div>
+</div>
+
+<div class="scene hidden" id="scene-boss">
+  <h2 class="scene-title">VOLCANO MONSTER</h2>
+  <p class="scene-prompt">Click the green poisonous blobs to blast them BACK at the monster. Your time box has 5 HP. 3 deflects beat it.</p>
+  <div class="stage boss-stage" id="bossStage">
+    <div class="boss-hp-row">
+      <div class="boss-hp you">
+        <div class="lbl">TIME BOX</div>
+        <div class="bar"><div class="fill" id="timeboxHp"></div></div>
+      </div>
+      <div class="boss-hp mon">
+        <div class="lbl">VOLCANO MONSTER</div>
+        <div class="bar"><div class="fill" id="monsterHp"></div></div>
+      </div>
+    </div>
+    <div class="ground"></div>
+    <div class="time-box">TIME<br>BOX</div>
+    <div class="boss-monster" id="bossMon"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <button id="overClose" class="primary">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ---------- Scene manager ----------
+const SCENE_ORDER = ['home','portal','past','space','boss'];
+let currentScene = 'home';
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(e => e.classList.add('hidden'));
+  document.getElementById('scene-' + id).classList.remove('hidden');
+  currentScene = id;
+  const idx = SCENE_ORDER.indexOf(id);
+  document.getElementById('progressFill').style.width = ((idx + 1) / SCENE_ORDER.length * 100) + '%';
+  if (INITS[id]) INITS[id]();
+}
+function banner(text, sub) {
+  document.querySelectorAll('.banner').forEach(e => e.remove());
+  const el = document.createElement('div');
+  el.className = 'banner';
+  el.innerHTML = sub ? `${text}<div style="font-size:11px;letter-spacing:3px;margin-top:4px;color:#ffb080">${sub}</div>` : text;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('fade'), 1500);
+  setTimeout(() => el.remove(), 2200);
+}
+function endGame(won, title, body) {
+  document.getElementById('overTitle').textContent = title;
+  document.getElementById('overBody').textContent = body;
+  document.getElementById('overlay').classList.add('on');
+}
+document.getElementById('overClose').addEventListener('click', () => {
+  document.getElementById('overlay').classList.remove('on');
+  showScene('home');
+});
+
+const INITS = {};
+
+// ==== HOME ====
+INITS.home = function() {
+  const robot = document.querySelector('#homeStage .robot');
+  const tm = document.getElementById('timeMachine');
+  robot.classList.remove('in');
+  tm.classList.remove('show');
+  tm.style.pointerEvents = 'none';
+  // sequence
+  setTimeout(() => robot.classList.add('in'), 400);
+  setTimeout(() => {
+    tm.classList.add('show');
+    tm.style.pointerEvents = 'auto';
+    document.getElementById('homePrompt').textContent = 'The robot drops a time machine. Tap it…';
+  }, 2800);
+  tm.onclick = () => {
+    if (!tm.classList.contains('show')) return;
+    banner('WHOOOOSH', 'time warp engaged');
+    setTimeout(() => showScene('portal'), 700);
+  };
+};
+
+// ==== PORTAL ====
+INITS.portal = function() {
+  setTimeout(() => showScene('past'), 2100);
+};
+
+// ==== PAST (platformer) ====
+let pastState;
+const GRAV = 0.5;
+const MOVE_SPEED = 3.2;
+const JUMP_VEL = -11;
+
+INITS.past = function() {
+  const stage = document.getElementById('pastStage');
+  // remove any injected volcanoes/platforms
+  stage.querySelectorAll('.volcano, .platform').forEach(e => e.remove());
+  // Volcanoes as decoration
+  const volPositions = [14, 32, 55, 78];
+  volPositions.forEach((p, i) => {
+    const v = document.createElement('div');
+    v.className = 'volcano';
+    v.style.left = (p - 6) + '%';
+    const color = i % 2 === 0 ? '#6a2810' : '#4a1808';
+    v.innerHTML = `<svg viewBox="0 0 120 80"><polygon points="10,80 60,10 110,80" fill="${color}" stroke="#200608" stroke-width="2"/><rect x="40" y="10" width="40" height="12" fill="${color}"/></svg>`;
+    stage.appendChild(v);
+  });
+  // Platforms (x%, y% from bottom, width%)
+  const platforms = [
+    { x: 28, y: 36, w: 14 },
+    { x: 52, y: 46, w: 12 },
+    { x: 72, y: 34, w: 14 },
+  ];
+  platforms.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'platform';
+    el.style.left = p.x + '%';
+    el.style.bottom = p.y + '%';
+    el.style.width = p.w + '%';
+    stage.appendChild(el);
+  });
+
+  const player = document.getElementById('pastPlayer');
+  pastState = {
+    stage, player, platforms,
+    x: 6, y: 0,            // x in % of stage width, y in px above ground
+    vx: 0, vy: 0,
+    grounded: true,
+    keys: { left: false, right: false, jump: false },
+    running: true,
+  };
+  player.style.left = '6%';
+  player.style.bottom = '18%';
+  requestAnimationFrame(pastTick);
+};
+
+function pastTick(now) {
+  if (!pastState || !pastState.running || currentScene !== 'past') return;
+  const { stage, player, platforms, keys } = pastState;
+  const stageRect = stage.getBoundingClientRect();
+  const groundY = stageRect.height * 0.18;       // ground top, y measured up from bottom of stage
+  // Horizontal
+  pastState.vx = 0;
+  if (keys.left)  pastState.vx = -MOVE_SPEED * 0.25; // percent per frame
+  if (keys.right) pastState.vx =  MOVE_SPEED * 0.25;
+  pastState.x += pastState.vx;
+  pastState.x = Math.max(2, Math.min(96, pastState.x));
+  // Vertical (y in px above ground)
+  pastState.vy += GRAV;
+  pastState.y -= pastState.vy; // vy positive = falling; invert so y goes down
+  // actually let's use y positive = up from ground; vy positive = down
+  // Re-do: y is height above ground (in px); vy > 0 moves up; gravity pulls vy negative
+  // (Let's fix to simpler model below)
+  // ...
+  // Actually simplest: y is px below stage height/ground; vy positive = downward
+  // Skip: use y = height above ground, vy = velocity upward
+  // Reset for clarity
+  // We'll redo: (see the next implementation in pastTick2)
+  return pastTick2(now);
+}
+
+function pastTick2(now) {
+  if (!pastState || !pastState.running || currentScene !== 'past') return;
+  const { stage, player, platforms, keys } = pastState;
+  const sr = stage.getBoundingClientRect();
+  const groundBottomPct = 18; // ground height in %
+  // Simple model: y is px above ground; +vy is upward; gravity pulls vy downward
+  // Horizontal movement (pct per frame)
+  let speed = 0.28;
+  if (keys.left)  pastState.x -= speed * MOVE_SPEED;
+  if (keys.right) pastState.x += speed * MOVE_SPEED;
+  pastState.x = Math.max(2, Math.min(96, pastState.x));
+  if (keys.left)  player.classList.add('facing-left');
+  if (keys.right) player.classList.remove('facing-left');
+
+  // Gravity + jump (y is px above ground)
+  pastState.vy -= GRAV;
+  pastState.y += pastState.vy * 0.65;
+  if (pastState.vy < -20) pastState.vy = -20;
+
+  // Collide with ground
+  if (pastState.y <= 0) {
+    pastState.y = 0;
+    pastState.vy = 0;
+    pastState.grounded = true;
+  } else {
+    pastState.grounded = false;
+  }
+  // Collide with platforms (only when falling)
+  const playerW = 44;
+  if (pastState.vy <= 0) {
+    for (const p of platforms) {
+      const platX = sr.width * (p.x / 100);
+      const platW = sr.width * (p.w / 100);
+      const platY = sr.height * (p.y / 100) - groundBottomPct / 100 * sr.height; // px above ground
+      const playerCx = sr.width * (pastState.x / 100);
+      if (playerCx > platX && playerCx < platX + platW) {
+        if (pastState.y <= platY + 14 && pastState.y >= platY - 18) {
+          pastState.y = platY + 8;
+          pastState.vy = 0;
+          pastState.grounded = true;
+        }
+      }
+    }
+  }
+
+  // Jump
+  if (keys.jump && pastState.grounded) {
+    pastState.vy = JUMP_VEL;
+    pastState.grounded = false;
+    keys.jump = false; // consume jump press (re-set only on keydown)
+  }
+
+  // Render
+  player.style.left = pastState.x + '%';
+  player.style.bottom = `calc(18% + ${pastState.y}px)`;
+
+  // Win condition
+  if (pastState.x > 92) {
+    pastState.running = false;
+    banner('LAUNCHING TO SPACE', 'chasing lava');
+    setTimeout(() => showScene('space'), 1100);
+    return;
+  }
+
+  requestAnimationFrame(pastTick2);
+}
+
+(function wirePast() {
+  window.addEventListener('keydown', e => {
+    if (!pastState) return;
+    if (e.key === 'ArrowLeft')  pastState.keys.left = true;
+    if (e.key === 'ArrowRight') pastState.keys.right = true;
+    if (e.key === 'ArrowUp' || e.key === ' ') pastState.keys.jump = true;
+  });
+  window.addEventListener('keyup', e => {
+    if (!pastState) return;
+    if (e.key === 'ArrowLeft')  pastState.keys.left = false;
+    if (e.key === 'ArrowRight') pastState.keys.right = false;
+  });
+  function bindTouch(btn, key) {
+    const el = document.getElementById(btn);
+    const press = () => { if (pastState) pastState.keys[key] = true; };
+    const release = () => { if (pastState && key !== 'jump') pastState.keys[key] = false; };
+    el.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+    el.addEventListener('pointerup',   e => { e.preventDefault(); release(); });
+    el.addEventListener('pointercancel', release);
+    el.addEventListener('pointerleave', release);
+  }
+  bindTouch('btnLeft',  'left');
+  bindTouch('btnRight', 'right');
+  bindTouch('btnJump',  'jump');
+})();
+
+// ==== SPACE (collect lava) ====
+let spaceState;
+INITS.space = function() {
+  const stage = document.getElementById('spaceStage');
+  stage.querySelectorAll('.space-ship, .lava-orb').forEach(e => e.remove());
+  const ship = document.createElement('div');
+  ship.className = 'space-ship';
+  ship.innerHTML = `<svg viewBox="0 0 60 60">
+    <polygon points="30,6 44,44 30,38 16,44" fill="#80c0ff" stroke="#fff" stroke-width="1.4"/>
+    <polygon points="30,6 30,38 44,44" fill="#4a8ae0" opacity="0.75"/>
+    <circle cx="30" cy="26" r="5" fill="#ffd060"/>
+    <ellipse cx="30" cy="48" rx="4" ry="7" fill="#ffa030" opacity="0.9"/>
+  </svg>`;
+  ship.style.left = '15%';
+  ship.style.top  = '80%';
+  stage.appendChild(ship);
+  const orbs = [];
+  const positions = [[35,25],[55,45],[80,25],[70,70],[40,65]];
+  positions.forEach(([x,y]) => {
+    const o = document.createElement('div');
+    o.className = 'lava-orb';
+    o.style.left = x + '%';
+    o.style.top  = y + '%';
+    stage.appendChild(o);
+    orbs.push(o);
+  });
+  spaceState = {
+    stage, ship, orbs,
+    x: 15, y: 80, tx: 15, ty: 80,
+    collected: 0,
+    running: true,
+    keys: { left: false, right: false, up: false, down: false },
+  };
+  updateLavaHud();
+  requestAnimationFrame(spaceTick);
+};
+function updateLavaHud() {
+  document.getElementById('lavaHud').textContent = `LAVA · ${spaceState.collected} / 5`;
+}
+function spaceTick(now) {
+  if (!spaceState || !spaceState.running || currentScene !== 'space') return;
+  const { stage, ship, keys } = spaceState;
+  const step = 0.9;
+  if (keys.left)  spaceState.tx = Math.max(6, spaceState.tx - step);
+  if (keys.right) spaceState.tx = Math.min(94, spaceState.tx + step);
+  if (keys.up)    spaceState.ty = Math.max(6, spaceState.ty - step);
+  if (keys.down)  spaceState.ty = Math.min(92, spaceState.ty + step);
+  spaceState.x += (spaceState.tx - spaceState.x) * 0.2;
+  spaceState.y += (spaceState.ty - spaceState.y) * 0.2;
+  ship.style.left = spaceState.x + '%';
+  ship.style.top  = spaceState.y + '%';
+  // Check orbs
+  const shipRect = ship.getBoundingClientRect();
+  const scx = shipRect.left + shipRect.width/2, scy = shipRect.top + shipRect.height/2;
+  for (let i = spaceState.orbs.length - 1; i >= 0; i--) {
+    const o = spaceState.orbs[i];
+    const r = o.getBoundingClientRect();
+    const dx = (r.left + r.width/2) - scx;
+    const dy = (r.top + r.height/2) - scy;
+    if (Math.hypot(dx, dy) < 28) {
+      o.remove();
+      spaceState.orbs.splice(i, 1);
+      spaceState.collected++;
+      updateLavaHud();
+      if (spaceState.collected >= 5) {
+        spaceState.running = false;
+        banner('LAVA SECURED', 'back to the past');
+        setTimeout(() => showScene('boss'), 1100);
+        return;
+      }
+    }
+  }
+  requestAnimationFrame(spaceTick);
+}
+(function wireSpace() {
+  const stage = document.getElementById('spaceStage');
+  let dragging = false;
+  function moveTo(e) {
+    if (!spaceState || currentScene !== 'space') return;
+    const r = stage.getBoundingClientRect();
+    spaceState.tx = Math.max(6, Math.min(94, (e.clientX - r.left) / r.width * 100));
+    spaceState.ty = Math.max(6, Math.min(92, (e.clientY - r.top) / r.height * 100));
+  }
+  stage.addEventListener('pointerdown', e => { dragging = true; moveTo(e); });
+  document.addEventListener('pointermove', e => { if (dragging) moveTo(e); });
+  document.addEventListener('pointerup', () => { dragging = false; });
+  window.addEventListener('keydown', e => {
+    if (!spaceState) return;
+    if (e.key === 'ArrowLeft')  spaceState.keys.left = true;
+    if (e.key === 'ArrowRight') spaceState.keys.right = true;
+    if (e.key === 'ArrowUp')    spaceState.keys.up = true;
+    if (e.key === 'ArrowDown')  spaceState.keys.down = true;
+  });
+  window.addEventListener('keyup', e => {
+    if (!spaceState) return;
+    if (e.key === 'ArrowLeft')  spaceState.keys.left = false;
+    if (e.key === 'ArrowRight') spaceState.keys.right = false;
+    if (e.key === 'ArrowUp')    spaceState.keys.up = false;
+    if (e.key === 'ArrowDown')  spaceState.keys.down = false;
+  });
+})();
+
+// ==== BOSS (deflect lava) ====
+let bossState;
+INITS.boss = function() {
+  const stage = document.getElementById('bossStage');
+  stage.querySelectorAll('.lava-blob').forEach(e => e.remove());
+  const mon = document.getElementById('bossMon');
+  mon.innerHTML = `<svg viewBox="0 0 200 180">
+    <!-- body -->
+    <polygon points="20,180 100,20 180,180" fill="#4a1010" stroke="#ff6040" stroke-width="2"/>
+    <!-- crater -->
+    <ellipse cx="100" cy="28" rx="22" ry="8" fill="#200404"/>
+    <!-- glowing eyes -->
+    <circle cx="70" cy="110" r="8" fill="#ffd060">
+      <animate attributeName="fill" values="#ffd060;#ff4040;#ffd060" dur="0.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="130" cy="110" r="8" fill="#ffd060">
+      <animate attributeName="fill" values="#ffd060;#ff4040;#ffd060" dur="0.8s" repeatCount="indefinite"/>
+    </circle>
+    <!-- mouth -->
+    <path d="M 70 140 Q 100 160 130 140 Q 100 150 70 140 Z" fill="#200404" stroke="#ff6040" stroke-width="1.5"/>
+    <!-- fangs -->
+    <polygon points="82,146 86,158 90,146" fill="#fff"/>
+    <polygon points="110,146 114,158 118,146" fill="#fff"/>
+    <!-- horn spikes -->
+    <polygon points="40,80 50,60 56,82" fill="#3a0808"/>
+    <polygon points="144,82 150,60 160,80" fill="#3a0808"/>
+  </svg>`;
+  bossState = {
+    stage, mon,
+    youHp: 5, youMax: 5,
+    monHp: 3, monMax: 3,
+    blobs: [],
+    running: true,
+    lastSpit: performance.now() + 800,
+  };
+  updateBossHp();
+  banner('TIME MACHINE, HELP!', 'the blast-back gun is online');
+  requestAnimationFrame(bossTick);
+};
+function updateBossHp() {
+  document.getElementById('timeboxHp').style.width = (bossState.youHp / bossState.youMax * 100) + '%';
+  document.getElementById('monsterHp').style.width = (bossState.monHp / bossState.monMax * 100) + '%';
+}
+function spawnLavaBlob() {
+  const stage = bossState.stage;
+  const stageR = stage.getBoundingClientRect();
+  const mon = bossState.mon;
+  const mr = mon.getBoundingClientRect();
+  const startX = mr.left - stageR.left + mr.width * 0.2;
+  const startY = mr.top  - stageR.top  + mr.height * 0.4;
+  const timeBox = stage.querySelector('.time-box').getBoundingClientRect();
+  const endX = timeBox.left - stageR.left + timeBox.width * 0.5;
+  const endY = timeBox.top  - stageR.top  + timeBox.height * 0.5;
+  const el = document.createElement('div');
+  el.className = 'lava-blob';
+  el.style.left = startX + 'px';
+  el.style.top  = startY + 'px';
+  stage.appendChild(el);
+  const blob = {
+    el,
+    startTime: performance.now(),
+    duration: 2200 + Math.random() * 800,
+    startX, startY, endX, endY,
+    returning: false,
+  };
+  el.addEventListener('click', () => deflectBlob(blob));
+  bossState.blobs.push(blob);
+}
+function deflectBlob(blob) {
+  if (blob.returning) return;
+  blob.returning = true;
+  blob.el.classList.add('returning');
+  blob.startTime = performance.now();
+  blob.duration = 900;
+  // swap start/end
+  const r = blob.el.getBoundingClientRect();
+  const stageR = bossState.stage.getBoundingClientRect();
+  blob.startX = r.left - stageR.left + r.width / 2;
+  blob.startY = r.top  - stageR.top  + r.height / 2;
+  const mr = bossState.mon.getBoundingClientRect();
+  blob.endX = mr.left - stageR.left + mr.width * 0.4;
+  blob.endY = mr.top  - stageR.top  + mr.height * 0.4;
+}
+function bossTick(now) {
+  if (!bossState || !bossState.running || currentScene !== 'boss') return;
+  // spawn
+  if (now - bossState.lastSpit > 1800) {
+    bossState.lastSpit = now;
+    spawnLavaBlob();
+  }
+  // move blobs
+  for (let i = bossState.blobs.length - 1; i >= 0; i--) {
+    const b = bossState.blobs[i];
+    const t = Math.min(1, (now - b.startTime) / b.duration);
+    const x = b.startX + (b.endX - b.startX) * t;
+    // arc: subtract a sine bulge from midpoint
+    const arc = Math.sin(t * Math.PI) * 80;
+    const y = b.startY + (b.endY - b.startY) * t - arc;
+    b.el.style.left = x + 'px';
+    b.el.style.top  = y + 'px';
+    if (t >= 1) {
+      b.el.remove();
+      bossState.blobs.splice(i, 1);
+      if (b.returning) {
+        // Hit monster
+        bossState.monHp = Math.max(0, bossState.monHp - 1);
+        bossState.mon.classList.add('hurt');
+        setTimeout(() => bossState.mon.classList.remove('hurt'), 260);
+        updateBossHp();
+        if (bossState.monHp <= 0) { endBoss(true); return; }
+      } else {
+        // Hit player (time box)
+        bossState.youHp = Math.max(0, bossState.youHp - 1);
+        updateBossHp();
+        const tb = bossState.stage.querySelector('.time-box');
+        tb.style.boxShadow = '0 0 30px rgba(255,80,80,0.9)';
+        setTimeout(() => tb.style.boxShadow = '0 0 20px rgba(180,120,255,0.7)', 260);
+        if (bossState.youHp <= 0) { endBoss(false); return; }
+      }
+    }
+  }
+  requestAnimationFrame(bossTick);
+}
+function endBoss(won) {
+  bossState.running = false;
+  if (won) {
+    banner('VOLCANO MONSTER DOWN', 'home time');
+    setTimeout(() => {
+      endGame(true, 'BACK TO YOUR TIME', 'The time machine hums back to life. The robot waves goodbye. Your controller is still warm.');
+    }, 1400);
+  } else {
+    endGame(false, 'THE TIME BOX BURSTS', 'The poisonous lava melts the time machine. You are stuck in the past forever. Try again?');
+  }
+}
+
+// ---------- Music (retro video-game vibe) ----------
+let tlCtx = null, tlMaster = null, tlStep = 0, tlTimer = null;
+const TL_MEL = [
+  392, 523, 659, 784, 659, 523, 440, 349,
+  392, 523, 659, 523, 440, 349, 330, null,
+];
+const TL_BASS = [131, 98, 131, 98];
+const TL_STEP = 150;
+function tlStart() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  tlCtx = new Ctx();
+  tlMaster = tlCtx.createGain();
+  tlMaster.gain.value = 0;
+  tlMaster.connect(tlCtx.destination);
+  tlMaster.gain.linearRampToValueAtTime(0.17, tlCtx.currentTime + 1.6);
+  tlStep = 0;
+  tlLoop();
+  return true;
+}
+function tlLoop() {
+  if (!tlCtx) return;
+  if (tlCtx.state === 'running') tlPlayStep(tlStep);
+  tlStep = (tlStep + 1) % 16;
+  tlTimer = setTimeout(tlLoop, TL_STEP);
+}
+function tlPlayStep(i) {
+  const now = tlCtx.currentTime;
+  if (i % 4 === 0) tlKick(now);
+  if (i === 4 || i === 12) tlSnare(now);
+  if (i % 2 === 1) tlHat(now);
+  if (i % 4 === 0) tlBass(now, TL_BASS[i / 4]);
+  if (TL_MEL[i] != null) tlLead(now, TL_MEL[i], i === 0 || i === 8);
+}
+function tlKick(now) {
+  const o = tlCtx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(110, now);
+  o.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+  const g = tlCtx.createGain();
+  g.gain.setValueAtTime(0.55, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+  o.connect(g); g.connect(tlMaster); o.start(now); o.stop(now + 0.26);
+}
+function tlSnare(now) {
+  const bufSize = Math.floor(0.1 * tlCtx.sampleRate);
+  const buf = tlCtx.createBuffer(1, bufSize, tlCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let n = 0; n < bufSize; n++) d[n] = Math.random() * 2 - 1;
+  const src = tlCtx.createBufferSource(); src.buffer = buf;
+  const hp = tlCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3500;
+  const g = tlCtx.createGain();
+  g.gain.setValueAtTime(0.22, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+  src.connect(hp); hp.connect(g); g.connect(tlMaster);
+  src.start(now);
+}
+function tlHat(now) {
+  const bufSize = Math.floor(0.04 * tlCtx.sampleRate);
+  const buf = tlCtx.createBuffer(1, bufSize, tlCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let n = 0; n < bufSize; n++) d[n] = Math.random() * 2 - 1;
+  const src = tlCtx.createBufferSource(); src.buffer = buf;
+  const hp = tlCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 8000;
+  const g = tlCtx.createGain();
+  g.gain.setValueAtTime(0.07, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+  src.connect(hp); hp.connect(g); g.connect(tlMaster);
+  src.start(now);
+}
+function tlBass(now, f) {
+  const o = tlCtx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+  const lp = tlCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+  const g = tlCtx.createGain();
+  g.gain.setValueAtTime(0.18, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+  o.connect(lp); lp.connect(g); g.connect(tlMaster);
+  o.start(now); o.stop(now + 0.44);
+}
+function tlLead(now, f, accent) {
+  const o = tlCtx.createOscillator(); o.type = 'square'; o.frequency.value = f;
+  const g = tlCtx.createGain();
+  const amp = accent ? 0.15 : 0.09;
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(amp, now + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.001, now + (accent ? 0.22 : 0.14));
+  o.connect(g); g.connect(tlMaster);
+  o.start(now); o.stop(now + (accent ? 0.24 : 0.16));
+}
+function tlToggle() {
+  const btn = document.getElementById('music');
+  if (!tlCtx) { if (!tlStart()) return; btn.textContent = '🔊 Music'; btn.classList.add('on'); return; }
+  if (tlCtx.state === 'running') { tlCtx.suspend(); btn.textContent = '🔇 Music'; btn.classList.remove('on'); }
+  else                           { tlCtx.resume();  btn.textContent = '🔊 Music'; btn.classList.add('on'); }
+}
+document.getElementById('music').addEventListener('click', tlToggle);
+
+// ---------- Start ----------
+showScene('home');
+</script>
+</body>
+</html>
