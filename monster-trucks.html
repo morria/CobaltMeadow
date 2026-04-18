@@ -846,18 +846,24 @@ function finishLanding(xPx, totalRotAbs) {
   let base = rotations * 100;
   let bonus = 0;
   let verdict = '';
+  let onWheels = false;
   if (off < 18) {
     bonus = 300;
     verdict = rotations >= 1 ? `${rotations}× FLIP, clean` : 'clean pop';
     spawnPuff(xPx + rect.left, landPy, 10);
+    onWheels = true;
   } else if (off < 50) {
     bonus = 100;
     verdict = `${rotations}× flip, wobble`;
     spawnPuff(xPx + rect.left, landPy, 6);
+    onWheels = true;
   } else {
     base = Math.floor(base * 0.25);
     verdict = `crash (${rotations} partial)`;
     spawnPuff(xPx + rect.left, landPy, 18);
+    // snap to upside-down-ish so it reads as a crash
+    const finalDeg = (rotations * -360) - 180;
+    truck.style.transform = `rotate(${finalDeg}deg)`;
   }
   const crushPts = crushed * 400;
   if (crushed > 0) verdict += ` · ${crushed} CAR${crushed > 1 ? 'S' : ''} CRUSHED!`;
@@ -869,20 +875,22 @@ function finishLanding(xPx, totalRotAbs) {
   airState = null;
   render();
 
-  // Truck drives off-screen after landing
-  setTimeout(() => {
-    if (state !== 'result') return;
-    const sceneRect = scene.getBoundingClientRect();
-    truck.style.transition = 'left 1.1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s';
-    truck.style.left = (sceneRect.width + 100) + 'px';
-    truck.style.transform = 'rotate(0deg)';
-    const trail = setInterval(() => {
-      if (state !== 'result') { clearInterval(trail); return; }
-      const tr = truck.getBoundingClientRect();
-      spawnPuff(tr.left + 8, tr.top + tr.height - 4, 2);
-    }, 110);
-    setTimeout(() => clearInterval(trail), 1100);
-  }, 450);
+  // Truck drives off-screen only if it landed on its wheels
+  if (onWheels) {
+    setTimeout(() => {
+      if (state !== 'result') return;
+      const sceneRect = scene.getBoundingClientRect();
+      truck.style.transition = 'left 1.1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s';
+      truck.style.left = (sceneRect.width + 100) + 'px';
+      truck.style.transform = 'rotate(0deg)';
+      const trail = setInterval(() => {
+        if (state !== 'result') { clearInterval(trail); return; }
+        const tr = truck.getBoundingClientRect();
+        spawnPuff(tr.left + 8, tr.top + tr.height - 4, 2);
+      }, 110);
+      setTimeout(() => clearInterval(trail), 1100);
+    }, 450);
+  }
 }
 
 // --- Particles ---

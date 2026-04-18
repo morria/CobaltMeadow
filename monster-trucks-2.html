@@ -1162,18 +1162,23 @@ function finishLanding(xPx, totalRotAbs) {
   let base = rotations * 100;
   let bonus = 0;
   let verdict = '';
+  let onWheels = false;
   if (off < 18) {
     bonus = 300;
     verdict = rotations >= 1 ? `${rotations}× FLIP, clean` : 'clean pop';
     spawnPuff(xPx + rect.left, landPy, 10);
+    onWheels = true;
   } else if (off < 50) {
     bonus = 100;
     verdict = `${rotations}× flip, wobble`;
     spawnPuff(xPx + rect.left, landPy, 6);
+    onWheels = true;
   } else {
     base = Math.floor(base * 0.25);
     verdict = `crash (${rotations} partial)`;
     spawnPuff(xPx + rect.left, landPy, 18);
+    const finalDeg = (rotations * -360) - 180;
+    truck.style.transform = `rotate(${finalDeg}deg)`;
   }
   const crushPts = crushed * 400;
   if (crushed > 0) verdict += ` · ${crushed} CAR${crushed > 1 ? 'S' : ''} CRUSHED!`;
@@ -1202,8 +1207,8 @@ function finishLanding(xPx, totalRotAbs) {
   airState = null;
   render();
 
-  // Drive-away: if we landed on the ground, the truck cruises off-screen right.
-  if (!onPlatform) {
+  // Drive-away: only if we landed on our wheels (and not perched on the platform)
+  if (!onPlatform && onWheels) {
     setTimeout(() => {
       if (state !== 'result') return;
       const sceneRect = scene.getBoundingClientRect();
