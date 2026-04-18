@@ -431,6 +431,110 @@
   .boss-hp.you .bar .fill { background: linear-gradient(90deg, #2060c0, #60a0ff); }
   .boss-hp.mon .bar .fill { background: linear-gradient(90deg, #208040, #60d060); }
 
+  /* ---------- Fly transition ---------- */
+  .fly-stage {
+    background:
+      radial-gradient(ellipse at 70% 50%, rgba(80,200,120,0.25), transparent 60%),
+      linear-gradient(180deg, #050018 0%, #0a0224 60%, #120214 100%);
+    overflow: hidden;
+  }
+  .fly-stage .starfield {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, #fff 0.8px, transparent 1px);
+    background-size: 100px 100px;
+    animation: flyStars 1.6s linear infinite;
+    opacity: 0.7;
+  }
+  @keyframes flyStars { from { background-position-x: 0; } to { background-position-x: -400px; } }
+  .fly-ship-el {
+    position: absolute;
+    left: 8%;
+    top: 55%;
+    font-size: clamp(38px, 6.5vw, 58px);
+    transform: translateY(-50%);
+    filter: drop-shadow(0 0 14px #ffa040);
+    animation: shipCross 3s ease-out forwards;
+  }
+  @keyframes shipCross {
+    0%   { left: -15%; top: 65%; }
+    100% { left: 34%;  top: 48%; }
+  }
+  .fly-planet {
+    position: absolute;
+    right: -20%;
+    top: 30%;
+    width: clamp(120px, 22vw, 220px);
+    height: clamp(120px, 22vw, 220px);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, #a0ff80 0%, #40a040 45%, #104020 80%, #041008 100%);
+    box-shadow: 0 0 40px rgba(80,220,100,0.55);
+    animation: planetApproach 3s ease-in forwards;
+  }
+  @keyframes planetApproach {
+    0%   { right: -30%; }
+    100% { right: 12%;  }
+  }
+
+  /* ---------- Slime planet ---------- */
+  .slime-stage {
+    background: linear-gradient(180deg, #0a2810 0%, #185020 35%, #0a1808 100%);
+    overflow: hidden;
+  }
+  .slime-stage .ground {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 18%;
+    background: linear-gradient(180deg, #104020, #041008);
+    border-top: 3px solid #60c060;
+  }
+  .slime-monster {
+    position: absolute;
+    right: 4%;
+    bottom: 18%;
+    width: clamp(120px, 18vw, 200px);
+    z-index: 2;
+    animation: slimeIdle 1.4s ease-in-out infinite;
+  }
+  @keyframes slimeIdle {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    50%      { transform: translateY(-2px) scaleY(1.04); }
+  }
+  .slime-monster svg { width: 100%; height: auto; display: block; }
+  .slime-monster.hurt { filter: hue-rotate(60deg) brightness(1.4); }
+  .slime-monster.open .mouth-closed { display: none; }
+  .slime-monster .mouth-open { display: none; }
+  .slime-monster.open .mouth-open { display: inline; }
+  .slime-lava {
+    position: absolute;
+    right: 11%;
+    bottom: 36%;
+    width: clamp(40px, 5.5vw, 56px);
+    height: clamp(40px, 5.5vw, 56px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff080, #ff7020 50%, #801008 100%);
+    box-shadow: 0 0 22px rgba(255,140,40,0.95);
+    cursor: pointer;
+    z-index: 4;
+    display: none;
+    animation: slimeLavaBounce 0.9s ease-in-out infinite;
+  }
+  .slime-lava.show { display: block; }
+  @keyframes slimeLavaBounce {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.15); }
+  }
+  .slime-lava::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+  }
+  .lava-blob.slime {
+    background: radial-gradient(circle at 35% 35%, #d0a0ff, #8040c8 50%, #3a0a7a 100%);
+    box-shadow: 0 0 22px rgba(180,100,255,0.85);
+    filter: drop-shadow(0 0 8px #c080ff);
+  }
+
   /* ---------- Generic buttons ---------- */
   button {
     font-family: 'Russo One', sans-serif;
@@ -615,6 +719,37 @@
   </div>
 </div>
 
+<div class="scene hidden" id="scene-fly">
+  <h2 class="scene-title">TO THE SLIME PLANET</h2>
+  <p class="scene-prompt">The volcano lava wasn't enough. Maybe the slime planet has more.</p>
+  <div class="stage fly-stage" id="flyStage">
+    <div class="starfield"></div>
+    <div class="fly-planet"></div>
+    <div class="fly-ship-el">🚀</div>
+  </div>
+</div>
+
+<div class="scene hidden" id="scene-slime">
+  <h2 class="scene-title">SLIME MONSTER</h2>
+  <p class="scene-prompt" id="slimePrompt">The slime attacks with purple bombs. Click them to blast them back — three hits open its mouth.</p>
+  <div class="stage slime-stage" id="slimeStage">
+    <div class="boss-hp-row">
+      <div class="boss-hp you">
+        <div class="lbl">TIME BOX</div>
+        <div class="bar"><div class="fill" id="slimeYouHp"></div></div>
+      </div>
+      <div class="boss-hp mon">
+        <div class="lbl">SLIME</div>
+        <div class="bar"><div class="fill" id="slimeMonHp"></div></div>
+      </div>
+    </div>
+    <div class="ground"></div>
+    <div class="time-box">TIME<br>BOX</div>
+    <div class="slime-monster" id="slimeMon"></div>
+    <div class="slime-lava" id="slimeLava"></div>
+  </div>
+</div>
+
 <div class="overlay" id="overlay">
   <div class="overlay-box">
     <h2 id="overTitle">—</h2>
@@ -625,7 +760,7 @@
 
 <script>
 // ---------- Scene manager ----------
-const SCENE_ORDER = ['home','portal','past','space','boss'];
+const SCENE_ORDER = ['home','portal','past','space','boss','fly','slime'];
 let currentScene = 'home';
 function showScene(id) {
   document.querySelectorAll('.scene').forEach(e => e.classList.add('hidden'));
@@ -1077,13 +1212,161 @@ function bossTick(now) {
 function endBoss(won) {
   bossState.running = false;
   if (won) {
-    banner('VOLCANO MONSTER DOWN', 'home time');
-    setTimeout(() => {
-      endGame(true, 'BACK TO YOUR TIME', 'The time machine hums back to life. The robot waves goodbye. Your controller is still warm.');
-    }, 1400);
+    banner('VOLCANO MONSTER DOWN', 'more lava needed — off to another planet');
+    setTimeout(() => showScene('fly'), 1400);
   } else {
     endGame(false, 'THE TIME BOX BURSTS', 'The poisonous lava melts the time machine. You are stuck in the past forever. Try again?');
   }
+}
+
+// ==== FLY TO SLIME PLANET ====
+INITS.fly = function() {
+  setTimeout(() => showScene('slime'), 3000);
+};
+
+// ==== SLIME MONSTER ====
+let slimeState;
+INITS.slime = function() {
+  const stage = document.getElementById('slimeStage');
+  stage.querySelectorAll('.lava-blob').forEach(e => e.remove());
+  const mon = document.getElementById('slimeMon');
+  mon.classList.remove('open', 'hurt');
+  mon.innerHTML = `<svg viewBox="0 0 200 180">
+    <!-- body -->
+    <path d="M 20 180 Q 20 60 60 40 Q 100 20 140 40 Q 180 60 180 180 Z" fill="#40a040" stroke="#206020" stroke-width="2"/>
+    <!-- highlights -->
+    <ellipse cx="64" cy="74" rx="16" ry="10" fill="#80e080" opacity="0.55"/>
+    <ellipse cx="140" cy="110" rx="8" ry="6" fill="#80e080" opacity="0.5"/>
+    <!-- drips -->
+    <circle cx="40" cy="170" r="6" fill="#40a040"/>
+    <circle cx="170" cy="170" r="5" fill="#40a040"/>
+    <!-- eyes -->
+    <circle cx="72" cy="96" r="14" fill="#fff"/>
+    <circle cx="128" cy="96" r="14" fill="#fff"/>
+    <circle cx="72" cy="102" r="7" fill="#1a0a1a"/>
+    <circle cx="128" cy="102" r="7" fill="#1a0a1a"/>
+    <circle cx="74" cy="100" r="2" fill="#fff"/>
+    <circle cx="130" cy="100" r="2" fill="#fff"/>
+    <!-- closed mouth -->
+    <g class="mouth-closed">
+      <ellipse cx="100" cy="138" rx="28" ry="5" fill="#206020"/>
+    </g>
+    <!-- open mouth revealing lava cavity -->
+    <g class="mouth-open">
+      <ellipse cx="100" cy="140" rx="32" ry="18" fill="#2a0810"/>
+      <ellipse cx="100" cy="140" rx="22" ry="12" fill="#801020"/>
+      <!-- teeth -->
+      <polygon points="82,126 88,138 94,126" fill="#fff"/>
+      <polygon points="106,126 112,138 118,126" fill="#fff"/>
+    </g>
+  </svg>`;
+  const lava = document.getElementById('slimeLava');
+  lava.classList.remove('show');
+  lava.onclick = () => {
+    banner('LAVA COLLECTED', 'now we can go home');
+    slimeState.running = false;
+    setTimeout(() => {
+      endGame(true, 'BACK TO YOUR TIME', 'Two lavas, one cracked volcano monster and a very confused slime later — the time machine hums. The robot waves. Your controller is still warm.');
+    }, 1400);
+  };
+  slimeState = {
+    stage, mon, lava,
+    youHp: 5, youMax: 5,
+    monHp: 3, monMax: 3,
+    blobs: [],
+    running: true,
+    lastSpit: performance.now() + 700,
+  };
+  updateSlimeHp();
+  requestAnimationFrame(slimeTick);
+};
+function updateSlimeHp() {
+  document.getElementById('slimeYouHp').style.width = (slimeState.youHp / slimeState.youMax * 100) + '%';
+  document.getElementById('slimeMonHp').style.width = (slimeState.monHp / slimeState.monMax * 100) + '%';
+}
+function spawnSlimeBlob() {
+  const stage = slimeState.stage;
+  const stageR = stage.getBoundingClientRect();
+  const mon = slimeState.mon;
+  const mr = mon.getBoundingClientRect();
+  const startX = mr.left - stageR.left + mr.width * 0.2;
+  const startY = mr.top  - stageR.top  + mr.height * 0.45;
+  const timeBox = stage.querySelector('.time-box').getBoundingClientRect();
+  const endX = timeBox.left - stageR.left + timeBox.width * 0.5;
+  const endY = timeBox.top  - stageR.top  + timeBox.height * 0.5;
+  const el = document.createElement('div');
+  el.className = 'lava-blob slime';
+  el.style.left = startX + 'px';
+  el.style.top  = startY + 'px';
+  stage.appendChild(el);
+  const blob = {
+    el,
+    startTime: performance.now(),
+    duration: 3200 + Math.random() * 1000,
+    startX, startY, endX, endY,
+    returning: false,
+  };
+  el.addEventListener('click', () => deflectSlimeBlob(blob));
+  slimeState.blobs.push(blob);
+}
+function deflectSlimeBlob(blob) {
+  if (blob.returning) return;
+  blob.returning = true;
+  blob.el.classList.add('returning');
+  blob.startTime = performance.now();
+  blob.duration = 900;
+  const r = blob.el.getBoundingClientRect();
+  const stageR = slimeState.stage.getBoundingClientRect();
+  blob.startX = r.left - stageR.left + r.width / 2;
+  blob.startY = r.top  - stageR.top  + r.height / 2;
+  const mr = slimeState.mon.getBoundingClientRect();
+  blob.endX = mr.left - stageR.left + mr.width * 0.4;
+  blob.endY = mr.top  - stageR.top  + mr.height * 0.4;
+}
+function slimeTick(now) {
+  if (!slimeState || !slimeState.running || currentScene !== 'slime') return;
+  if (slimeState.monHp > 0 && now - slimeState.lastSpit > 2600) {
+    slimeState.lastSpit = now;
+    spawnSlimeBlob();
+  }
+  for (let i = slimeState.blobs.length - 1; i >= 0; i--) {
+    const b = slimeState.blobs[i];
+    const t = Math.min(1, (now - b.startTime) / b.duration);
+    const x = b.startX + (b.endX - b.startX) * t;
+    const arc = Math.sin(t * Math.PI) * 80;
+    const y = b.startY + (b.endY - b.startY) * t - arc;
+    b.el.style.left = x + 'px';
+    b.el.style.top  = y + 'px';
+    if (t >= 1) {
+      b.el.remove();
+      slimeState.blobs.splice(i, 1);
+      if (b.returning) {
+        slimeState.monHp = Math.max(0, slimeState.monHp - 1);
+        slimeState.mon.classList.add('hurt');
+        setTimeout(() => slimeState.mon.classList.remove('hurt'), 260);
+        updateSlimeHp();
+        if (slimeState.monHp <= 0) {
+          // Slime defeated: open its mouth and reveal lava
+          slimeState.mon.classList.add('open');
+          slimeState.lava.classList.add('show');
+          document.getElementById('slimePrompt').textContent = 'The slime falls. Click the glowing lava in its mouth to collect it!';
+          // Still keep running so blobs can finish but stop spawning
+        }
+      } else {
+        slimeState.youHp = Math.max(0, slimeState.youHp - 1);
+        updateSlimeHp();
+        const tb = slimeState.stage.querySelector('.time-box');
+        tb.style.boxShadow = '0 0 30px rgba(255,80,80,0.9)';
+        setTimeout(() => tb.style.boxShadow = '0 0 20px rgba(180,120,255,0.7)', 260);
+        if (slimeState.youHp <= 0) {
+          slimeState.running = false;
+          endGame(false, 'THE TIME BOX DISSOLVES', 'The slime\'s poison eats through the time machine. Stuck on an alien world.');
+          return;
+        }
+      }
+    }
+  }
+  requestAnimationFrame(slimeTick);
 }
 
 // ---------- Music (retro video-game vibe) ----------
