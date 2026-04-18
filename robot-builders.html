@@ -500,6 +500,26 @@
 
   .hidden { display: none !important; }
 
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    border-color: #60a0ff;
+    background: linear-gradient(180deg, #182848, #0a1020);
+    color: #a0d0ff;
+  }
+  .music-toggle.on {
+    border-color: #ffd060;
+    background: linear-gradient(180deg, #403010, #1a1208);
+    color: #ffe890;
+    box-shadow: 0 0 12px rgba(255,210,80,0.5);
+  }
+
   @media (max-width: 720px) {
     .builder { grid-template-columns: 1fr; }
     .panel { padding: 8px; gap: 6px; }
@@ -549,6 +569,8 @@
 </svg>
 
 <!-- ===== PHASE 1: BUILDER ===== -->
+<button id="music" class="music-toggle">🔇 Music</button>
+
 <div id="builder" class="builder">
   <div class="panel p1" id="panel1">
     <h2>PLAYER 1</h2>
@@ -1018,6 +1040,198 @@ document.getElementById('btnBomb').addEventListener('click', bomb);
 document.getElementById('overClose').addEventListener('click', () => {
   location.reload();
 });
+
+// ---------- Robot scary music (procedural) ----------
+let rmCtx = null;
+let rmMaster = null;
+let rmStep = 0;
+let rmTimer = null;
+let rmAlarmTimer = null;
+
+const STEP_MS = 160; // ~94 BPM on 16th notes
+
+function startRobotMusic() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  rmCtx = new Ctx();
+  rmMaster = rmCtx.createGain();
+  rmMaster.gain.value = 0;
+  rmMaster.connect(rmCtx.destination);
+  rmMaster.gain.linearRampToValueAtTime(0.18, rmCtx.currentTime + 2);
+
+  // Low industrial drone (sustained, slightly detuning)
+  const drone = rmCtx.createOscillator();
+  drone.type = 'sawtooth';
+  drone.frequency.value = 41.2; // E1, dark
+  const droneFilt = rmCtx.createBiquadFilter();
+  droneFilt.type = 'lowpass';
+  droneFilt.frequency.value = 160;
+  const droneG = rmCtx.createGain();
+  droneG.gain.value = 0.28;
+  drone.connect(droneFilt); droneFilt.connect(droneG); droneG.connect(rmMaster);
+  const droneLFO = rmCtx.createOscillator();
+  droneLFO.frequency.value = 0.12;
+  const droneLFOG = rmCtx.createGain();
+  droneLFOG.gain.value = 1.8;
+  droneLFO.connect(droneLFOG); droneLFOG.connect(drone.frequency);
+  drone.start(); droneLFO.start();
+
+  rmStep = 0;
+  loopStep();
+  scheduleAlarm();
+  return true;
+}
+
+function loopStep() {
+  if (!rmCtx) return;
+  if (rmCtx.state === 'running') playRobotStep(rmStep);
+  rmStep = (rmStep + 1) % 16;
+  rmTimer = setTimeout(loopStep, STEP_MS);
+}
+
+function playRobotStep(i) {
+  const now = rmCtx.currentTime;
+  // Kick on steps 0 and 8 (half-time, menacing)
+  if (i === 0 || i === 8) playKick(now);
+  // Metallic clank on 4 and 12
+  if (i === 4 || i === 12) playClank(now);
+  // Bass pattern (minor key A minor): A2, C3, G2, A2 — one note every 4 steps
+  if (i % 4 === 0) {
+    const bassNotes = [110.0, 130.8, 98.0, 110.0];
+    playBass(now, bassNotes[(i / 4) % 4]);
+  }
+  // Dissonant siren arpeggio: A4, C5, F5, E5 — sparsely
+  if (i === 2 || i === 10) {
+    const leadNotes = [440.0, 523.2, 698.4, 659.2];
+    playSiren(now, leadNotes[(i === 2) ? 0 : 2]);
+  }
+  if (i === 6) playSiren(now, 523.2); // C5 accent
+  if (i === 14) playSiren(now, 466.1); // A#4 dissonance
+}
+
+function playKick(now) {
+  const osc = rmCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(90, now);
+  osc.frequency.exponentialRampToValueAtTime(28, now + 0.22);
+  const g = rmCtx.createGain();
+  g.gain.setValueAtTime(0.0, now);
+  g.gain.linearRampToValueAtTime(0.55, now + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+  osc.connect(g); g.connect(rmMaster);
+  osc.start(now); osc.stop(now + 0.4);
+}
+
+function playClank(now) {
+  // Metallic clank: short noise burst through a resonant bandpass
+  const bufSize = Math.floor(0.1 * rmCtx.sampleRate);
+  const buf = rmCtx.createBuffer(1, bufSize, rmCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let n = 0; n < bufSize; n++) data[n] = (Math.random() * 2 - 1);
+  const src = rmCtx.createBufferSource();
+  src.buffer = buf;
+  const bp = rmCtx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 1800;
+  bp.Q.value = 8;
+  const g = rmCtx.createGain();
+  g.gain.setValueAtTime(0.35, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+  src.connect(bp); bp.connect(g); g.connect(rmMaster);
+  src.start(now);
+  // second ringing hit at a different pitch
+  const ring = rmCtx.createOscillator();
+  ring.type = 'triangle';
+  ring.frequency.setValueAtTime(1100, now);
+  ring.frequency.exponentialRampToValueAtTime(600, now + 0.3);
+  const rg = rmCtx.createGain();
+  rg.gain.setValueAtTime(0.05, now);
+  rg.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+  ring.connect(rg); rg.connect(rmMaster);
+  ring.start(now); ring.stop(now + 0.32);
+}
+
+function playBass(now, freq) {
+  const osc = rmCtx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.value = freq;
+  const lp = rmCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(400, now);
+  lp.frequency.exponentialRampToValueAtTime(180, now + 0.35);
+  const g = rmCtx.createGain();
+  g.gain.setValueAtTime(0.14, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+  osc.connect(lp); lp.connect(g); g.connect(rmMaster);
+  osc.start(now); osc.stop(now + 0.6);
+}
+
+function playSiren(now, freq) {
+  const osc = rmCtx.createOscillator();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(freq, now);
+  osc.frequency.linearRampToValueAtTime(freq * 0.9, now + 0.18);
+  const bp = rmCtx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 1400;
+  bp.Q.value = 2.5;
+  const g = rmCtx.createGain();
+  g.gain.setValueAtTime(0.0, now);
+  g.gain.linearRampToValueAtTime(0.06, now + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+  osc.connect(bp); bp.connect(g); g.connect(rmMaster);
+  osc.start(now); osc.stop(now + 0.25);
+}
+
+function scheduleAlarm() {
+  const t = setTimeout(() => {
+    if (rmCtx && rmCtx.state === 'running') playAlarm();
+    scheduleAlarm();
+  }, 7000 + Math.random() * 11000);
+  rmAlarmTimer = t;
+}
+
+function playAlarm() {
+  const now = rmCtx.currentTime;
+  for (let k = 0; k < 4; k++) {
+    const osc = rmCtx.createOscillator();
+    osc.type = 'square';
+    const f = 760 - (k % 2) * 180; // alternating
+    osc.frequency.setValueAtTime(f, now + k * 0.16);
+    osc.frequency.exponentialRampToValueAtTime(f * 0.6, now + k * 0.16 + 0.12);
+    const g = rmCtx.createGain();
+    g.gain.setValueAtTime(0.0, now + k * 0.16);
+    g.gain.linearRampToValueAtTime(0.08, now + k * 0.16 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, now + k * 0.16 + 0.14);
+    const bp = rmCtx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1100;
+    bp.Q.value = 3;
+    osc.connect(bp); bp.connect(g); g.connect(rmMaster);
+    osc.start(now + k * 0.16);
+    osc.stop(now + k * 0.16 + 0.16);
+  }
+}
+
+function toggleRobotMusic() {
+  const btn = document.getElementById('music');
+  if (!rmCtx) {
+    if (!startRobotMusic()) return;
+    btn.textContent = '🔊 Music';
+    btn.classList.add('on');
+    return;
+  }
+  if (rmCtx.state === 'running') {
+    rmCtx.suspend();
+    btn.textContent = '🔇 Music';
+    btn.classList.remove('on');
+  } else {
+    rmCtx.resume();
+    btn.textContent = '🔊 Music';
+    btn.classList.add('on');
+  }
+}
+document.getElementById('music').addEventListener('click', toggleRobotMusic);
 </script>
 </body>
 </html>
