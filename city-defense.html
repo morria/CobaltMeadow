@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="City Defense">
+<meta name="theme-color" content="#040810">
+<title>City Defense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(80,160,255,0.18), transparent 55%),
+      linear-gradient(180deg, #0a1420, #040810);
+    color: #d8e8ff;
+    margin: 0;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: hidden;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 520px;
+    width: 100%;
+    max-height: 92px;
+    filter: drop-shadow(0 4px 12px rgba(80,160,255,0.4));
+  }
+
+  /* ---------- Picker ---------- */
+  .picker {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .picker h2 {
+    font-family: 'Bungee', sans-serif;
+    font-size: 15px;
+    letter-spacing: 4px;
+    text-align: center;
+    color: #a0d0ff;
+    margin: 0;
+  }
+  .flyers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+  .flyer {
+    background: linear-gradient(180deg, rgba(20,40,70,0.75), rgba(8,16,30,0.9));
+    border: 1.5px solid #4060a0;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.15s, box-shadow 0.15s;
+    min-height: 0;
+  }
+  .flyer:hover { transform: translateY(-3px); }
+  .flyer.selected {
+    border-color: #ffd060;
+    box-shadow: 0 0 18px rgba(255,210,80,0.4);
+    background: linear-gradient(180deg, rgba(60,40,10,0.6), rgba(20,12,4,0.9));
+  }
+  .flyer .art {
+    width: 100%;
+    flex: 1;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .flyer .art svg { width: 100%; height: auto; max-height: 120px; }
+  .flyer h3 {
+    margin: 6px 0 2px;
+    font-family: 'Bungee', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #ffd060;
+  }
+  .flyer p {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #a0c0e0;
+    line-height: 1.3;
+  }
+
+  .start-row {
+    text-align: center;
+  }
+  button {
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 4px;
+    border: 1.5px solid #60a0ff;
+    background: linear-gradient(180deg, #203860, #0c1830);
+    color: #d8e8ff;
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 44px;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #2a4a80, #142040); box-shadow: 0 0 10px rgba(100,160,255,0.5); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #a06020, #6a3010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #c08028, #8a4018); }
+  button.fire {
+    border-color: #ff4a5a;
+    background: linear-gradient(180deg, #c02038, #50101a);
+    color: #fff;
+    font-size: 15px;
+    padding: 14px 22px;
+  }
+  button.fire:active:not(:disabled) { transform: scale(0.96); }
+
+  /* ---------- Battle ---------- */
+  .battle { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+  .battle.hidden { display: none; }
+  .picker.hidden { display: none; }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1.3fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .hud-box {
+    background: rgba(10,20,40,0.75);
+    border: 1px solid #4060a0;
+    border-radius: 4px;
+    padding: 4px 8px;
+  }
+  .hud-box .lbl {
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #a0c0e0;
+  }
+  .hud-bar {
+    position: relative;
+    height: 12px;
+    background: #181828;
+    border: 1px solid #4060a0;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 3px;
+  }
+  .hud-bar .fill { height: 100%; transition: width 0.25s; }
+  .hud-bar.bird .fill  { background: linear-gradient(90deg, #ffa040, #ffd080); }
+  .hud-bar.city .fill  { background: linear-gradient(90deg, #30c050, #90ff90); }
+  .hud-bar.robot .fill { background: linear-gradient(90deg, #a060ff, #ff60a0); }
+  .hud-bar .txt {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700;
+    text-shadow: 0 1px 2px #000;
+    letter-spacing: 1px;
+  }
+  .hud-box.bird .lbl { color: #ffd080; }
+  .hud-box.city .lbl { color: #90ff90; }
+  .hud-box.robot .lbl { color: #ff60a0; }
+
+  .scene {
+    position: relative;
+    flex: 1;
+    min-height: 260px;
+    overflow: hidden;
+    border-radius: 6px;
+    border: 1.5px solid #4060a0;
+    background:
+      linear-gradient(180deg, #1a2858 0%, #3a2050 40%, #6a2040 75%, #301010 100%);
+    touch-action: none;
+    user-select: none;
+  }
+  .moon {
+    position: absolute;
+    top: 8%; left: 78%;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #fff8d8 0%, #d8c890 60%, rgba(200,180,120,0) 85%);
+    box-shadow: 0 0 20px rgba(255,240,180,0.3);
+  }
+  .stars {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 5% 8%, #fff 0.6px, transparent 1px),
+      radial-gradient(circle at 15% 15%, #fff 0.6px, transparent 1px),
+      radial-gradient(circle at 28% 6%, #fff 0.6px, transparent 1px),
+      radial-gradient(circle at 40% 12%, #fff 0.6px, transparent 1px),
+      radial-gradient(circle at 55% 5%, #fff 0.6px, transparent 1px),
+      radial-gradient(circle at 65% 20%, #fff 0.6px, transparent 1px),
+      radial-gradient(circle at 88% 10%, #fff 0.6px, transparent 1px),
+      radial-gradient(circle at 95% 24%, #fff 0.6px, transparent 1px);
+    background-size: 200px 200px;
+  }
+
+  /* scrolling city (parallax) */
+  @keyframes scrollBg {
+    from { background-position-x: 0; }
+    to   { background-position-x: -600px; }
+  }
+  .far-city {
+    position: absolute;
+    bottom: 20%; left: 0; right: 0;
+    height: 34%;
+    opacity: 0.55;
+    background-repeat: repeat-x;
+    background-position-y: bottom;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 120' preserveAspectRatio='none'><g fill='%23141035'><rect x='0' y='70' width='50' height='50'/><rect x='50' y='55' width='40' height='65'/><rect x='90' y='65' width='60' height='55'/><rect x='150' y='50' width='45' height='70'/><rect x='195' y='60' width='55' height='60'/><rect x='250' y='45' width='50' height='75'/><rect x='300' y='62' width='60' height='58'/><rect x='360' y='50' width='45' height='70'/><rect x='405' y='68' width='55' height='52'/><rect x='460' y='52' width='45' height='68'/><rect x='505' y='65' width='60' height='55'/><rect x='565' y='50' width='35' height='70'/></g></svg>");
+    animation: scrollBg 16s linear infinite;
+  }
+  .near-city {
+    position: absolute;
+    bottom: 8%; left: 0; right: 0;
+    height: 28%;
+    background-repeat: repeat-x;
+    background-position-y: bottom;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 100' preserveAspectRatio='none'><g><rect x='0' y='40' width='70' height='60' fill='%23181240'/><g fill='%23ffd060'><rect x='10' y='50' width='6' height='6'/><rect x='24' y='50' width='6' height='6'/><rect x='38' y='50' width='6' height='6'/><rect x='52' y='50' width='6' height='6'/><rect x='10' y='64' width='6' height='6'/><rect x='38' y='64' width='6' height='6'/><rect x='52' y='64' width='6' height='6'/><rect x='24' y='78' width='6' height='6'/><rect x='38' y='78' width='6' height='6'/></g><rect x='70' y='20' width='45' height='80' fill='%231a1448'/><g fill='%23a0ffc0'><rect x='78' y='30' width='5' height='5'/><rect x='90' y='30' width='5' height='5'/><rect x='102' y='30' width='5' height='5'/><rect x='78' y='44' width='5' height='5'/><rect x='102' y='44' width='5' height='5'/><rect x='90' y='58' width='5' height='5'/><rect x='78' y='72' width='5' height='5'/><rect x='102' y='72' width='5' height='5'/></g><rect x='115' y='50' width='60' height='50' fill='%23120e34'/><g fill='%23ff9a60'><rect x='125' y='60' width='6' height='6'/><rect x='140' y='60' width='6' height='6'/><rect x='155' y='60' width='6' height='6'/><rect x='125' y='76' width='6' height='6'/><rect x='155' y='76' width='6' height='6'/></g><rect x='175' y='30' width='40' height='70' fill='%231a1440'/><g fill='%23c0e8ff'><rect x='182' y='40' width='5' height='5'/><rect x='194' y='40' width='5' height='5'/><rect x='206' y='40' width='5' height='5'/><rect x='182' y='54' width='5' height='5'/><rect x='206' y='54' width='5' height='5'/><rect x='194' y='70' width='5' height='5'/><rect x='206' y='84' width='5' height='5'/></g><rect x='215' y='45' width='55' height='55' fill='%23141028'/><g fill='%23ffd060'><rect x='224' y='55' width='6' height='6'/><rect x='238' y='55' width='6' height='6'/><rect x='252' y='55' width='6' height='6'/><rect x='224' y='70' width='6' height='6'/><rect x='252' y='70' width='6' height='6'/></g><rect x='270' y='35' width='50' height='65' fill='%231a1440'/><g fill='%23ffc060'><rect x='278' y='46' width='5' height='5'/><rect x='292' y='46' width='5' height='5'/><rect x='306' y='46' width='5' height='5'/><rect x='278' y='60' width='5' height='5'/><rect x='306' y='60' width='5' height='5'/><rect x='292' y='74' width='5' height='5'/></g><rect x='320' y='50' width='70' height='50' fill='%23120e30'/><g fill='%23a0ffc0'><rect x='330' y='60' width='5' height='5'/><rect x='344' y='60' width='5' height='5'/><rect x='358' y='60' width='5' height='5'/><rect x='372' y='60' width='5' height='5'/><rect x='330' y='74' width='5' height='5'/><rect x='358' y='74' width='5' height='5'/></g><rect x='390' y='28' width='42' height='72' fill='%231a1448'/><g fill='%23c0e8ff'><rect x='398' y='38' width='5' height='5'/><rect x='410' y='38' width='5' height='5'/><rect x='422' y='38' width='5' height='5'/><rect x='398' y='52' width='5' height='5'/><rect x='422' y='52' width='5' height='5'/><rect x='410' y='66' width='5' height='5'/></g><rect x='432' y='55' width='60' height='45' fill='%23141024'/><g fill='%23ffd060'><rect x='442' y='64' width='6' height='6'/><rect x='456' y='64' width='6' height='6'/><rect x='470' y='64' width='6' height='6'/><rect x='484' y='64' width='6' height='6'/></g><rect x='492' y='32' width='45' height='68' fill='%231a1440'/><g fill='%2390ffc0'><rect x='500' y='42' width='5' height='5'/><rect x='512' y='42' width='5' height='5'/><rect x='524' y='42' width='5' height='5'/><rect x='500' y='56' width='5' height='5'/><rect x='524' y='56' width='5' height='5'/></g><rect x='537' y='48' width='63' height='52' fill='%23120e28'/><g fill='%23ffa060'><rect x='548' y='58' width='6' height='6'/><rect x='562' y='58' width='6' height='6'/><rect x='576' y='58' width='6' height='6'/><rect x='548' y='74' width='6' height='6'/><rect x='576' y='74' width='6' height='6'/></g></g></svg>");
+    animation: scrollBg 9s linear infinite;
+  }
+  .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 8%;
+    background: linear-gradient(180deg, #1a1028, #05020a);
+  }
+
+  .bird {
+    position: absolute;
+    left: 18%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+    transition: top 0.18s ease-out;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .bird svg { width: clamp(70px, 11vw, 110px); height: auto; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6)); }
+  .bird.flap svg .wing-up  { display: none; }
+  .bird.flap svg .wing-dn  { display: inline; }
+  @keyframes flap {
+    0%, 50%, 100% { transform: translate(-50%, -50%) scaleY(1); }
+    25%, 75%      { transform: translate(-50%, -50%) scaleY(0.96); }
+  }
+  .bird { animation: flap 0.4s infinite; }
+
+  .robot-wrap {
+    position: absolute;
+    right: 6%;
+    bottom: 8%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .robot-wrap svg { width: clamp(90px, 16vw, 160px); height: auto; filter: drop-shadow(0 3px 10px rgba(180,60,220,0.4)); }
+  @keyframes runStomp {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+  }
+  .robot-wrap { animation: runStomp 0.35s infinite; }
+  .robot-wrap.damaged { animation: runStomp 0.35s infinite, shake 0.2s 2; }
+  @keyframes shake {
+    0%, 100% { filter: drop-shadow(0 3px 10px rgba(180,60,220,0.4)); }
+    50%      { filter: drop-shadow(0 3px 10px rgba(255,60,60,0.9)) hue-rotate(-30deg); }
+  }
+
+  .bomb, .blast {
+    position: absolute;
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 4;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 1px 2px #000);
+  }
+  .blast { color: #ff6a7a; text-shadow: 0 0 8px #ff2030, 0 0 14px #a00010; }
+
+  @keyframes boom {
+    0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.3); }
+    50%  { opacity: 1; transform: translate(-50%, -50%) scale(1.8); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.3); }
+  }
+  .boom {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff8a0 0%, #ff8020 55%, rgba(200,0,0,0) 85%);
+    animation: boom 0.45s ease-out forwards;
+  }
+
+  .battle-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(2,6,16,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #14203a, #060818);
+    border: 2px solid #60a0ff;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 0 40px rgba(100,160,255,0.4);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    margin: 0 0 10px;
+    color: #ffd060;
+    letter-spacing: 4px;
+    font-size: 26px;
+  }
+  .overlay-box p { margin: 6px 0 14px; color: #d8e8ff; line-height: 1.4; }
+
+  @media (max-width: 720px) {
+    .flyers { grid-template-columns: repeat(2, 1fr); }
+    .logo { max-height: 70px; }
+    .scene { min-height: 280px; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="City Defense">
+  <defs>
+    <linearGradient id="cdGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#c8e0ff"/>
+      <stop offset="40%" stop-color="#60a0ff"/>
+      <stop offset="70%" stop-color="#ff60a0"/>
+      <stop offset="100%" stop-color="#ff9a40"/>
+    </linearGradient>
+    <filter id="cdGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <ellipse cx="400" cy="80" rx="320" ry="40" fill="#4060a0" opacity="0.22"/>
+  <!-- silhouette city -->
+  <g fill="#141035" opacity="0.8">
+    <rect x="60"  y="98" width="18" height="24"/>
+    <rect x="80"  y="88" width="14" height="34"/>
+    <rect x="96"  y="92" width="22" height="30"/>
+    <rect x="682" y="94" width="20" height="28"/>
+    <rect x="704" y="86" width="16" height="36"/>
+    <rect x="722" y="92" width="24" height="30"/>
+  </g>
+  <!-- flying bird silhouettes -->
+  <g fill="#ffd060" filter="url(#cdGlow)">
+    <path d="M 70 50 Q 78 44 84 50 Q 88 48 90 44 Q 92 48 95 48 Q 98 44 100 50 Q 92 54 86 50 Q 78 54 70 50 Z"/>
+    <path d="M 705 42 Q 713 36 719 42 Q 723 40 725 36 Q 727 40 730 40 Q 733 36 735 42 Q 727 46 721 42 Q 713 46 705 42 Z"/>
+  </g>
+  <text x="400" y="82" text-anchor="middle"
+        font-family="'Bungee', sans-serif"
+        font-size="50"
+        fill="url(#cdGrad)"
+        letter-spacing="4"
+        style="paint-order: stroke; stroke: #04080e; stroke-width: 2.5;">CITY DEFENSE</text>
+  <text x="400" y="112" text-anchor="middle"
+        font-family="'Russo One', sans-serif"
+        font-size="12" fill="#a0c8ff" letter-spacing="6">soar · bomb · save the skyline</text>
+</svg>
+
+<!-- ===== PICKER ===== -->
+<div id="picker" class="picker">
+  <h2>⬢ CHOOSE YOUR FLYER ⬢</h2>
+  <div class="flyers" id="flyerList"></div>
+  <div class="start-row">
+    <button class="primary" id="startBtn" disabled>Take Flight</button>
+  </div>
+</div>
+
+<!-- ===== BATTLE ===== -->
+<div id="battle" class="battle hidden">
+  <div class="hud">
+    <div class="hud-box bird">
+      <div class="lbl">Bird <span id="birdName"></span></div>
+      <div class="hud-bar bird"><div class="fill" id="fill-bird"></div><div class="txt" id="txt-bird">5/5</div></div>
+    </div>
+    <div class="hud-box city">
+      <div class="lbl">City</div>
+      <div class="hud-bar city"><div class="fill" id="fill-city"></div><div class="txt" id="txt-city">40/40</div></div>
+    </div>
+    <div class="hud-box robot">
+      <div class="lbl">Robot</div>
+      <div class="hud-bar robot"><div class="fill" id="fill-robot"></div><div class="txt" id="txt-robot">50/50</div></div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="moon"></div>
+    <div class="stars"></div>
+    <div class="far-city"></div>
+    <div class="near-city"></div>
+    <div class="ground"></div>
+    <div class="bird" id="birdEl"></div>
+    <div class="robot-wrap" id="robotEl"></div>
+  </div>
+
+  <div class="battle-controls">
+    <button class="fire" id="fireBtn">🔥 FIRE</button>
+    <button id="abortBtn">Quit</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">VICTORY</h2>
+    <p id="overBody"></p>
+    <button id="overClose">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ---------- Flyer SVGs ----------
+const FLYERS = [
+  {
+    id: 'eagle',
+    name: 'Bald Eagle',
+    blurb: 'Heavy bomber · slow',
+    dmg: 4, cooldown: 1200, bombs: 1,
+    svg: `<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- tail -->
+      <path d="M 10 50 L 2 40 L 6 58 L 12 54 Z" fill="#f8f5ea" stroke="#604830" stroke-width="1"/>
+      <!-- body -->
+      <path d="M 14 50 Q 24 32 58 32 Q 84 34 92 46 Q 84 58 58 60 Q 24 60 14 50 Z" fill="#5c3a22" stroke="#2a1808" stroke-width="1.2"/>
+      <!-- belly highlight -->
+      <path d="M 30 52 Q 45 58 60 55" stroke="#7a4e2e" stroke-width="3" fill="none"/>
+      <!-- wing -->
+      <path d="M 42 42 Q 32 18 58 14 Q 78 18 76 38 Q 62 48 42 42 Z" fill="#3e2814" stroke="#1a0e04" stroke-width="1.2"/>
+      <g stroke="#1a0e04" stroke-width="0.7" fill="none">
+        <path d="M 44 40 Q 48 28 54 20"/>
+        <path d="M 54 42 Q 58 30 63 22"/>
+        <path d="M 64 42 Q 67 32 72 26"/>
+      </g>
+      <!-- neck/head -->
+      <ellipse cx="100" cy="36" rx="13" ry="11" fill="#f8f5ea" stroke="#2a1808" stroke-width="1.2"/>
+      <!-- beak -->
+      <path d="M 112 34 L 126 36 L 122 43 L 112 41 Z" fill="#ffc230" stroke="#805010" stroke-width="1"/>
+      <path d="M 112 40 L 118 42" stroke="#805010" stroke-width="1"/>
+      <!-- eye -->
+      <circle cx="105" cy="33" r="2" fill="#0a0600"/>
+      <circle cx="105.8" cy="32.3" r="0.6" fill="#fff"/>
+      <!-- legs -->
+      <path d="M 54 60 L 56 72 L 52 74 M 64 60 L 66 72 L 62 74" stroke="#ffc230" stroke-width="2.2" fill="none"/>
+    </svg>`
+  },
+  {
+    id: 'falcon',
+    name: 'Peregrine Falcon',
+    blurb: 'Fast burst · light dmg',
+    dmg: 2, cooldown: 450, bombs: 1,
+    svg: `<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- tail -->
+      <path d="M 12 48 L 2 38 L 4 55 L 14 54 Z" fill="#404a58" stroke="#1a2028" stroke-width="1"/>
+      <!-- body -->
+      <path d="M 16 48 Q 26 30 56 30 Q 82 32 92 44 Q 82 58 56 60 Q 26 60 16 48 Z" fill="#596476" stroke="#1a2028" stroke-width="1.2"/>
+      <!-- underside -->
+      <path d="M 28 52 Q 45 60 62 56" stroke="#c0cbd8" stroke-width="4" fill="none"/>
+      <g fill="#304050">
+        <circle cx="35" cy="52" r="1.4"/>
+        <circle cx="45" cy="56" r="1.4"/>
+        <circle cx="55" cy="54" r="1.4"/>
+      </g>
+      <!-- pointed wing -->
+      <path d="M 40 42 Q 35 12 68 18 Q 78 38 60 46 Q 50 48 40 42 Z" fill="#2e3644" stroke="#0a0c14" stroke-width="1.2"/>
+      <g stroke="#0a0c14" stroke-width="0.8" fill="none">
+        <path d="M 42 38 Q 48 24 58 18"/>
+        <path d="M 52 42 Q 56 28 64 22"/>
+      </g>
+      <!-- head (darker cap) -->
+      <ellipse cx="100" cy="36" rx="12" ry="10" fill="#d0d8e0" stroke="#1a2028" stroke-width="1.2"/>
+      <path d="M 92 30 Q 100 24 108 30 Q 110 36 100 38 Q 92 36 92 30 Z" fill="#1a2028"/>
+      <!-- beak -->
+      <path d="M 110 36 L 124 38 L 120 44 L 110 42 Z" fill="#303844" stroke="#0a0c14" stroke-width="1"/>
+      <path d="M 110 40 L 116 42" stroke="#0a0c14" stroke-width="1"/>
+      <!-- eye -->
+      <circle cx="104" cy="33" r="1.8" fill="#0a0600"/>
+      <!-- cheek stripe -->
+      <path d="M 102 38 L 100 44" stroke="#1a2028" stroke-width="2"/>
+      <!-- legs -->
+      <path d="M 54 60 L 56 70 L 52 73 M 64 60 L 66 70 L 62 73" stroke="#ffc060" stroke-width="2" fill="none"/>
+    </svg>`
+  },
+  {
+    id: 'owl',
+    name: 'Great Horned Owl',
+    blurb: 'Steady mid-range',
+    dmg: 3, cooldown: 850, bombs: 1,
+    svg: `<svg viewBox="0 0 130 110" xmlns="http://www.w3.org/2000/svg">
+      <!-- body -->
+      <ellipse cx="60" cy="60" rx="32" ry="28" fill="#8a6a44" stroke="#3a2810" stroke-width="1.2"/>
+      <!-- streaks -->
+      <g stroke="#3a2810" stroke-width="1" fill="none" opacity="0.6">
+        <path d="M 40 50 Q 42 58 40 66"/>
+        <path d="M 48 48 Q 50 60 48 70"/>
+        <path d="M 56 48 Q 58 60 56 72"/>
+        <path d="M 64 48 Q 66 60 64 72"/>
+        <path d="M 72 50 Q 74 58 72 68"/>
+      </g>
+      <!-- belly lighter -->
+      <path d="M 44 68 Q 60 82 78 68" stroke="#d0a870" stroke-width="4" fill="none"/>
+      <!-- wing -->
+      <path d="M 30 54 Q 18 40 40 36 Q 48 50 34 60 Z" fill="#5a3e20" stroke="#2a1808" stroke-width="1.2"/>
+      <!-- head (attached, big) -->
+      <ellipse cx="60" cy="30" rx="25" ry="22" fill="#8a6a44" stroke="#3a2810" stroke-width="1.2"/>
+      <!-- ear tufts -->
+      <path d="M 42 12 L 38 4 L 48 14 Z" fill="#5a3e20"/>
+      <path d="M 78 12 L 82 4 L 72 14 Z" fill="#5a3e20"/>
+      <!-- facial disc -->
+      <ellipse cx="50" cy="32" rx="10" ry="12" fill="#f0dcb0" stroke="#3a2810" stroke-width="1"/>
+      <ellipse cx="70" cy="32" rx="10" ry="12" fill="#f0dcb0" stroke="#3a2810" stroke-width="1"/>
+      <!-- big eyes -->
+      <circle cx="50" cy="32" r="5" fill="#ffd060"/>
+      <circle cx="70" cy="32" r="5" fill="#ffd060"/>
+      <circle cx="50" cy="32" r="2.4" fill="#0a0600"/>
+      <circle cx="70" cy="32" r="2.4" fill="#0a0600"/>
+      <circle cx="50.8" cy="31" r="0.7" fill="#fff"/>
+      <circle cx="70.8" cy="31" r="0.7" fill="#fff"/>
+      <!-- beak -->
+      <path d="M 60 40 L 55 48 L 65 48 Z" fill="#ffc230" stroke="#805010" stroke-width="0.8"/>
+      <!-- legs/talons -->
+      <path d="M 52 86 L 52 100 L 46 104 M 52 100 L 52 104 M 52 100 L 58 104" stroke="#ffc060" stroke-width="1.8" fill="none"/>
+      <path d="M 68 86 L 68 100 L 62 104 M 68 100 L 68 104 M 68 100 L 74 104" stroke="#ffc060" stroke-width="1.8" fill="none"/>
+    </svg>`
+  },
+  {
+    id: 'dragon',
+    name: 'Dragon',
+    blurb: 'Dual nostril bombs',
+    dmg: 2, cooldown: 950, bombs: 2,
+    svg: `<svg viewBox="0 0 150 110" xmlns="http://www.w3.org/2000/svg">
+      <!-- tail -->
+      <path d="M 6 60 Q 14 52 20 62 Q 24 66 18 70 Q 12 68 6 60 Z" fill="#2a6a38" stroke="#103818" stroke-width="1.2"/>
+      <path d="M 18 64 L 8 72 L 22 66 Z" fill="#4aa048"/>
+      <!-- body -->
+      <path d="M 22 56 Q 40 38 82 40 Q 108 42 118 54 Q 108 68 82 70 Q 42 68 22 56 Z" fill="#4a9038" stroke="#183818" stroke-width="1.4"/>
+      <!-- belly scales -->
+      <g fill="#ffd060" opacity="0.7">
+        <ellipse cx="40" cy="62" rx="5" ry="3"/>
+        <ellipse cx="54" cy="64" rx="5" ry="3"/>
+        <ellipse cx="68" cy="64" rx="5" ry="3"/>
+        <ellipse cx="82" cy="64" rx="5" ry="3"/>
+      </g>
+      <!-- back spikes -->
+      <g fill="#2a6020" stroke="#103818" stroke-width="0.8">
+        <polygon points="32,42 36,34 40,42"/>
+        <polygon points="46,40 50,30 54,40"/>
+        <polygon points="62,40 66,28 70,40"/>
+        <polygon points="78,40 82,30 86,40"/>
+      </g>
+      <!-- wing -->
+      <path d="M 50 48 Q 44 14 82 16 Q 92 20 90 40 Q 72 46 50 48 Z" fill="#308a30" stroke="#103818" stroke-width="1.4"/>
+      <g fill="#2a6020">
+        <path d="M 58 16 Q 62 34 58 46" opacity="0.6"/>
+        <path d="M 70 16 Q 74 34 70 46" opacity="0.6"/>
+        <path d="M 82 20 Q 84 34 82 46" opacity="0.6"/>
+      </g>
+      <!-- head -->
+      <path d="M 108 48 Q 120 38 138 44 Q 144 52 138 60 Q 124 64 108 60 Q 104 54 108 48 Z" fill="#4a9038" stroke="#183818" stroke-width="1.4"/>
+      <!-- horns -->
+      <path d="M 118 40 L 116 28 L 121 40 Z" fill="#c0c0b0" stroke="#404038" stroke-width="0.8"/>
+      <path d="M 126 38 L 126 26 L 131 38 Z" fill="#c0c0b0" stroke="#404038" stroke-width="0.8"/>
+      <!-- eye -->
+      <ellipse cx="122" cy="49" rx="2.6" ry="3.2" fill="#ffe060"/>
+      <ellipse cx="122" cy="49" rx="1" ry="2.4" fill="#0a0600"/>
+      <!-- nostrils -->
+      <circle cx="138" cy="51" r="1.4" fill="#0a0600"/>
+      <circle cx="138" cy="57" r="1.4" fill="#0a0600"/>
+      <!-- mouth/teeth -->
+      <path d="M 128 58 L 144 58" stroke="#1a0600" stroke-width="1"/>
+      <path d="M 134 58 L 134 62 M 138 58 L 138 62" stroke="#fff" stroke-width="0.8"/>
+      <!-- legs -->
+      <path d="M 56 70 L 60 82 L 52 86 M 56 82 L 62 86" stroke="#308a30" stroke-width="3" fill="none"/>
+      <path d="M 82 70 L 86 82 L 78 86 M 82 82 L 88 86" stroke="#308a30" stroke-width="3" fill="none"/>
+    </svg>`
+  }
+];
+
+// ---------- Robot SVG ----------
+const ROBOT_SVG = `<svg viewBox="0 0 120 170" xmlns="http://www.w3.org/2000/svg">
+  <!-- chimney smoke -->
+  <g fill="#606070" opacity="0.6">
+    <ellipse cx="40" cy="8" rx="8" ry="5"/>
+    <ellipse cx="50" cy="2" rx="10" ry="4"/>
+  </g>
+  <!-- head -->
+  <rect x="30" y="14" width="40" height="30" fill="#605868" stroke="#201824" stroke-width="1.5"/>
+  <rect x="36" y="22" width="8" height="6" fill="#ff4040"/>
+  <rect x="56" y="22" width="8" height="6" fill="#ff4040"/>
+  <rect x="38" y="36" width="24" height="3" fill="#101018"/>
+  <g stroke="#101018" stroke-width="1">
+    <line x1="41" y1="36" x2="41" y2="39"/>
+    <line x1="46" y1="36" x2="46" y2="39"/>
+    <line x1="51" y1="36" x2="51" y2="39"/>
+    <line x1="56" y1="36" x2="56" y2="39"/>
+  </g>
+  <!-- chimneys -->
+  <rect x="36" y="4" width="10" height="14" fill="#403040"/>
+  <rect x="48" y="0" width="8" height="18" fill="#504050"/>
+  <!-- body -->
+  <rect x="20" y="44" width="60" height="60" fill="#504a58" stroke="#201824" stroke-width="1.5"/>
+  <!-- chest light -->
+  <circle cx="50" cy="74" r="8" fill="#ff4040" stroke="#8a1010" stroke-width="1.5">
+    <animate attributeName="fill" values="#ff4040;#ff8060;#ff4040" dur="1s" repeatCount="indefinite"/>
+  </circle>
+  <!-- rivets -->
+  <g fill="#20181e">
+    <circle cx="24" cy="48" r="1.4"/>
+    <circle cx="76" cy="48" r="1.4"/>
+    <circle cx="24" cy="100" r="1.4"/>
+    <circle cx="76" cy="100" r="1.4"/>
+  </g>
+  <!-- exhaust port (back) -->
+  <rect x="0" y="58" width="22" height="20" fill="#201824"/>
+  <rect x="4" y="62" width="14" height="12" fill="#ff4040"/>
+  <!-- arm -->
+  <rect x="78" y="50" width="16" height="40" fill="#403640" stroke="#201824" stroke-width="1.2"/>
+  <rect x="88" y="86" width="18" height="12" fill="#504050" stroke="#201824" stroke-width="1.2"/>
+  <!-- legs -->
+  <g stroke="#201824" stroke-width="1.5">
+    <rect x="24" y="104" width="18" height="40" fill="#403848">
+      <animate attributeName="y" values="104;100;104" dur="0.35s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="58" y="104" width="18" height="40" fill="#403848">
+      <animate attributeName="y" values="104;108;104" dur="0.35s" repeatCount="indefinite"/>
+    </rect>
+    <!-- feet -->
+    <rect x="20" y="142" width="26" height="10" fill="#30283a">
+      <animate attributeName="y" values="142;138;142" dur="0.35s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="54" y="142" width="26" height="10" fill="#30283a">
+      <animate attributeName="y" values="142;146;142" dur="0.35s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+  <!-- ground dust -->
+  <g fill="#443030" opacity="0.6">
+    <ellipse cx="30" cy="158" rx="16" ry="4"/>
+    <ellipse cx="68" cy="160" rx="18" ry="4"/>
+  </g>
+</svg>`;
+
+// ---------- Picker ----------
+let chosen = null;
+function renderPicker() {
+  const list = document.getElementById('flyerList');
+  list.innerHTML = '';
+  for (const f of FLYERS) {
+    const el = document.createElement('div');
+    el.className = 'flyer' + (chosen && chosen.id === f.id ? ' selected' : '');
+    el.innerHTML = `<div class="art">${f.svg}</div>
+      <h3>${f.name.toUpperCase()}</h3>
+      <p>${f.blurb}<br>dmg ${f.dmg} · ${(1000/f.cooldown).toFixed(1)}/s${f.bombs > 1 ? ` · ×${f.bombs}` : ''}</p>`;
+    el.addEventListener('click', () => {
+      chosen = f;
+      renderPicker();
+      document.getElementById('startBtn').disabled = false;
+    });
+    list.appendChild(el);
+  }
+}
+renderPicker();
+document.getElementById('startBtn').addEventListener('click', startBattle);
+
+// ---------- Battle state ----------
+const ROBOT_HP = 50;
+const CITY_HP = 40;
+const BIRD_HP = 5;
+const BIRD_BOMB_SPEED = 7;    // px per frame
+const BLAST_SPEED = 5;
+const BLAST_INTERVAL = 1700;  // ms
+const CITY_DECAY_MS = 1400;   // robot crushes 1 per interval
+
+let birdX = 18, birdY = 50;   // percent
+let targetY = 50;
+let bird, robot, city;
+let bombs = [], blasts = [];
+let lastShot = 0, lastBlast = 0, lastCityTick = 0;
+let running = false;
+let flipDirection = false;
+
+function startBattle() {
+  if (!chosen) return;
+  document.getElementById('picker').classList.add('hidden');
+  document.getElementById('battle').classList.remove('hidden');
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('birdName').textContent = '· ' + chosen.name;
+  document.getElementById('birdEl').innerHTML = chosen.svg;
+  document.getElementById('robotEl').innerHTML = ROBOT_SVG;
+
+  bird = { hp: BIRD_HP, maxHp: BIRD_HP };
+  robot = { hp: ROBOT_HP, maxHp: ROBOT_HP };
+  city = { hp: CITY_HP, maxHp: CITY_HP };
+  bombs = []; blasts = [];
+  birdY = targetY = 50;
+  lastShot = lastBlast = lastCityTick = performance.now();
+  running = true;
+  updateHud();
+  requestAnimationFrame(loop);
+}
+
+function stopBattle() {
+  running = false;
+  document.getElementById('picker').classList.remove('hidden');
+  document.getElementById('battle').classList.add('hidden');
+  // clean up stray projectiles
+  document.querySelectorAll('.bomb,.blast,.boom').forEach(e => e.remove());
+}
+
+function updateHud() {
+  document.getElementById('fill-bird').style.width  = (bird.hp  / bird.maxHp  * 100) + '%';
+  document.getElementById('fill-city').style.width  = (city.hp  / city.maxHp  * 100) + '%';
+  document.getElementById('fill-robot').style.width = (robot.hp / robot.maxHp * 100) + '%';
+  document.getElementById('txt-bird').textContent  = `${Math.max(0, bird.hp)}/${bird.maxHp}`;
+  document.getElementById('txt-city').textContent  = `${Math.max(0, city.hp)}/${city.maxHp}`;
+  document.getElementById('txt-robot').textContent = `${Math.max(0, robot.hp)}/${robot.maxHp}`;
+  document.getElementById('robotEl').classList.toggle('damaged', robot.hp < robot.maxHp * 0.4);
+}
+
+// ---------- Main loop ----------
+function loop(now) {
+  if (!running) return;
+
+  // ease bird toward targetY
+  birdY += (targetY - birdY) * 0.15;
+  const birdEl = document.getElementById('birdEl');
+  birdEl.style.top = birdY + '%';
+
+  // city decay (robot crushing)
+  if (now - lastCityTick > CITY_DECAY_MS) {
+    lastCityTick = now;
+    city.hp = Math.max(0, city.hp - 1);
+    updateHud();
+    if (city.hp <= 0) return endBattle(false, 'the city is in ruins');
+  }
+
+  // robot back-blasts
+  if (now - lastBlast > BLAST_INTERVAL) {
+    lastBlast = now;
+    spawnBlast();
+  }
+
+  // move blasts
+  for (let i = blasts.length - 1; i >= 0; i--) {
+    const b = blasts[i];
+    b.x -= BLAST_SPEED;
+    b.el.style.left = b.x + 'px';
+    // check collision with bird
+    if (hits(b, birdRect())) {
+      detonate(b.x, b.y);
+      b.el.remove();
+      blasts.splice(i, 1);
+      bird.hp = Math.max(0, bird.hp - 1);
+      updateHud();
+      if (bird.hp <= 0) return endBattle(false, 'your wings have fallen');
+    } else if (b.x < -30) {
+      b.el.remove();
+      blasts.splice(i, 1);
+    }
+  }
+
+  // move bombs
+  for (let i = bombs.length - 1; i >= 0; i--) {
+    const b = bombs[i];
+    b.x += BIRD_BOMB_SPEED;
+    b.y += b.vy;
+    b.vy += 0.12; // gravity arc
+    b.el.style.left = b.x + 'px';
+    b.el.style.top  = b.y + 'px';
+    const rect = document.getElementById('robotEl').getBoundingClientRect();
+    const sceneRect = document.getElementById('scene').getBoundingClientRect();
+    const robotBox = {
+      left: rect.left - sceneRect.left + 10,
+      right: rect.left - sceneRect.left + rect.width - 10,
+      top: rect.top - sceneRect.top + 10,
+      bottom: rect.top - sceneRect.top + rect.height - 10,
+    };
+    if (b.x >= robotBox.left && b.x <= robotBox.right && b.y >= robotBox.top && b.y <= robotBox.bottom) {
+      detonate(b.x, b.y);
+      b.el.remove();
+      bombs.splice(i, 1);
+      robot.hp = Math.max(0, robot.hp - b.dmg);
+      updateHud();
+      if (robot.hp <= 0) return endBattle(true, 'the megabot collapses in a heap of scrap');
+    } else if (b.x > sceneRect.width + 30 || b.y > sceneRect.height + 30) {
+      b.el.remove();
+      bombs.splice(i, 1);
+    }
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function birdRect() {
+  const sceneRect = document.getElementById('scene').getBoundingClientRect();
+  const b = document.getElementById('birdEl').getBoundingClientRect();
+  return {
+    left: b.left - sceneRect.left,
+    right: b.right - sceneRect.left,
+    top: b.top - sceneRect.top,
+    bottom: b.bottom - sceneRect.top,
+  };
+}
+
+function hits(blast, rect) {
+  return blast.x > rect.left && blast.x < rect.right &&
+         blast.y > rect.top  && blast.y < rect.bottom;
+}
+
+function spawnBlast() {
+  const sceneRect = document.getElementById('scene').getBoundingClientRect();
+  const robotRect = document.getElementById('robotEl').getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'blast';
+  el.textContent = '🔥';
+  const startX = robotRect.left - sceneRect.left + 8;
+  const startY = robotRect.top  - sceneRect.top + robotRect.height * 0.4;
+  el.style.left = startX + 'px';
+  el.style.top = startY + 'px';
+  document.getElementById('scene').appendChild(el);
+  blasts.push({ el, x: startX, y: startY });
+}
+
+function fireBird() {
+  if (!running) return;
+  const now = performance.now();
+  if (now - lastShot < chosen.cooldown) return;
+  lastShot = now;
+  const sceneRect = document.getElementById('scene').getBoundingClientRect();
+  const birdEl = document.getElementById('birdEl').getBoundingClientRect();
+  const startX = birdEl.right - sceneRect.left - 8;
+  const startY = birdEl.top + birdEl.height * 0.45 - sceneRect.top;
+  for (let i = 0; i < chosen.bombs; i++) {
+    const offsetY = chosen.bombs > 1 ? (i === 0 ? -5 : 5) : 0;
+    const el = document.createElement('div');
+    el.className = 'bomb';
+    el.textContent = '💣';
+    el.style.left = startX + 'px';
+    el.style.top = (startY + offsetY) + 'px';
+    document.getElementById('scene').appendChild(el);
+    bombs.push({ el, x: startX, y: startY + offsetY, vy: -1.4 + offsetY * 0.1, dmg: chosen.dmg });
+  }
+}
+
+function detonate(x, y) {
+  const el = document.createElement('div');
+  el.className = 'boom';
+  el.style.left = (x - 14) + 'px';
+  el.style.top  = (y - 14) + 'px';
+  document.getElementById('scene').appendChild(el);
+  setTimeout(() => el.remove(), 500);
+}
+
+function endBattle(won, reason) {
+  running = false;
+  document.getElementById('overTitle').textContent = won ? 'CITY SAVED' : 'CITY LOST';
+  document.getElementById('overBody').textContent = won
+    ? `You crushed the megabot. City intact · ${city.hp}/${city.maxHp} HP.`
+    : `The attempt ends — ${reason}.`;
+  document.getElementById('overlay').classList.add('on');
+}
+
+// ---------- Inputs ----------
+const scene = document.getElementById('scene');
+function pointerToY(e) {
+  const rect = scene.getBoundingClientRect();
+  const y = ('touches' in e && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+  const pct = (y - rect.top) / rect.height * 100;
+  targetY = Math.max(10, Math.min(82, pct));
+}
+scene.addEventListener('pointermove', pointerToY);
+scene.addEventListener('pointerdown', pointerToY);
+
+document.getElementById('fireBtn').addEventListener('click', fireBird);
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); fireBird(); }
+  if (e.key === 'ArrowUp')   { targetY = Math.max(10, targetY - 6); }
+  if (e.key === 'ArrowDown') { targetY = Math.min(82, targetY + 6); }
+});
+document.getElementById('abortBtn').addEventListener('click', stopBattle);
+document.getElementById('overClose').addEventListener('click', () => {
+  document.getElementById('overlay').classList.remove('on');
+  stopBattle();
+});
+</script>
+</body>
+</html>

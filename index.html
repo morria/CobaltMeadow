@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arcade">
+<meta name="theme-color" content="#0a0716">
 <title>The Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,6 +137,14 @@
   .tile.forest:hover { border-color: #b0d088; box-shadow: 0 0 22px rgba(140,200,80,0.4); }
   .tile.forest h2 { font-family: 'Cinzel Decorative', serif; color: #c8e8a0; letter-spacing: 4px; font-size: 22px; }
 
+  /* City Defense — twilight blue/pink */
+  .tile.city {
+    border-color: #4060a0;
+    background: linear-gradient(180deg, rgba(20,32,60,0.85), rgba(6,10,22,0.95));
+  }
+  .tile.city:hover { border-color: #ff80b8; box-shadow: 0 0 22px rgba(255,120,180,0.4); }
+  .tile.city h2 { font-family: 'Bungee', sans-serif; color: #a0d0ff; letter-spacing: 3px; font-size: 22px; }
+
 
   footer {
     margin-top: 6px;
@@ -247,6 +260,40 @@
     </div>
     <h2>FORBIDDEN FOREST</h2>
     <p>Bow & arrows · climb trees · five beasts hunt you.</p>
+  </a>
+
+  <a class="tile city" href="city-defense.html">
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g7" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#c8e0ff"/>
+            <stop offset="60%" stop-color="#60a0ff"/>
+            <stop offset="100%" stop-color="#ff60a0"/>
+          </linearGradient>
+        </defs>
+        <!-- moon -->
+        <circle cx="12" cy="12" r="5" fill="#fff4c8" opacity="0.85"/>
+        <!-- city silhouette -->
+        <g fill="#141035">
+          <rect x="4"  y="36" width="12" height="20"/>
+          <rect x="16" y="28" width="10" height="28"/>
+          <rect x="26" y="34" width="14" height="22"/>
+          <rect x="40" y="26" width="10" height="30"/>
+          <rect x="50" y="32" width="12" height="24"/>
+          <rect x="62" y="22" width="14" height="34"/>
+        </g>
+        <!-- flying bird -->
+        <g fill="#ffd060" stroke="#8a5010" stroke-width="0.6">
+          <path d="M 42 12 Q 50 8 55 12 Q 58 10 60 8 Q 62 10 64 8 Q 66 10 70 12 Q 62 14 56 12 Q 50 14 42 12 Z"/>
+        </g>
+        <!-- bomb -->
+        <circle cx="58" cy="20" r="1.8" fill="#101018"/>
+        <rect  x="57" y="17" width="2" height="2" fill="#ff9030"/>
+      </svg>
+    </div>
+    <h2>CITY DEFENSE</h2>
+    <p>Fly · bomb · stop the megabot crushing the city.</p>
   </a>
 </div>
 
