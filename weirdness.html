@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Weirdness">
+<meta name="theme-color" content="#07041a">
+<title>Weirdness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(120,60,200,0.22), transparent 55%),
+      linear-gradient(180deg, #0a0628, #05020c);
+    color: #e0d8ff;
+    margin: 0;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: hidden;
+  }
+
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 520px;
+    width: 100%;
+    max-height: 86px;
+    filter: drop-shadow(0 4px 12px rgba(160,80,220,0.5));
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 10px;
+    align-items: center;
+  }
+  .hud-box {
+    background: rgba(10,6,30,0.75);
+    border: 1px solid #4a3890;
+    border-radius: 4px;
+    padding: 5px 10px;
+  }
+  .hud-box .lbl {
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #a090d0;
+  }
+  .hud-box .v {
+    font-family: 'Russo One', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+  .hud-box.ship { border-color: #60a0ff; }
+  .hud-box.ship .v { color: #a0c8ff; }
+  .hud-box.theme { border-color: #ff6ac0; text-align: center; }
+  .hud-box.theme .v { color: #ffbae0; font-size: 14px; letter-spacing: 3px; }
+  .hud-box.puzz { border-color: #90ff90; }
+  .hud-box.puzz .v { color: #b0ffb0; }
+
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ---------- PILOT ---------- */
+  .pilot {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 2px solid #3a70d0;
+    background:
+      radial-gradient(ellipse at 50% 120%, rgba(60,140,255,0.3), transparent 70%),
+      linear-gradient(180deg, #02030a 0%, #0a0620 100%);
+    touch-action: none;
+    user-select: none;
+    cursor: crosshair;
+    box-shadow: inset 0 0 24px rgba(60,100,200,0.25);
+  }
+  .pilot .console-frame {
+    position: absolute;
+    inset: 0;
+    border: 14px solid transparent;
+    border-image: linear-gradient(135deg, #3060a0 0%, #1a2040 50%, #3060a0 100%) 1;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .pilot .console-label {
+    position: absolute;
+    top: 4px; left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Bungee', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #a0c8ff;
+    text-shadow: 0 0 8px rgba(100,160,255,0.7);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .pilot .starfield {
+    position: absolute;
+    inset: 14px;
+    background-image:
+      radial-gradient(circle, #fff 0.8px, transparent 1px),
+      radial-gradient(circle, #fff 0.6px, transparent 1px),
+      radial-gradient(circle, #a0c8ff 0.8px, transparent 1px);
+    background-size: 120px 120px, 80px 80px, 180px 180px;
+    background-position: 0 0, 40px 60px, 90px 120px;
+    animation: starScroll 20s linear infinite;
+    opacity: 0.85;
+  }
+  @keyframes starScroll {
+    from { background-position-y: 0, 60px, 120px; }
+    to   { background-position-y: 240px, 540px, 720px; }
+  }
+  .pilot .reticle {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 52px; height: 52px;
+    margin-left: -26px; margin-top: -26px;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0.6;
+  }
+  .anomaly {
+    position: absolute;
+    width: clamp(40px, 6vw, 60px);
+    height: clamp(40px, 6vw, 60px);
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
+  }
+  .anomaly svg { width: 100%; height: 100%; filter: drop-shadow(0 0 10px currentColor); }
+  .anomaly.melt   { color: #ff6080; }
+  .anomaly.fog    { color: #80ff90; }
+  .anomaly.echo   { color: #60b0ff; }
+  .anomaly.void   { color: #c060ff; }
+  .anomaly.cryst  { color: #70ffea; }
+  @keyframes pop {
+    0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; }
+    60%  { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+  }
+  .pop-burst {
+    position: absolute;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #ffa040 40%, rgba(255,50,0,0) 80%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: pop 0.45s ease-out forwards;
+    z-index: 4;
+  }
+
+  /* ---------- SCIENCE ---------- */
+  .science {
+    position: relative;
+    border-radius: 8px;
+    border: 2px solid #9060d0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(180,120,255,0.18), transparent 70%),
+      linear-gradient(180deg, #0c0620 0%, #05020c 100%);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    box-shadow: inset 0 0 24px rgba(160,100,220,0.18);
+  }
+  .science .science-label {
+    font-family: 'Bungee', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #d8b4ff;
+    text-align: center;
+    text-shadow: 0 0 8px rgba(200,120,255,0.6);
+    margin-bottom: 2px;
+  }
+  .science h3 {
+    margin: 0;
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-align: center;
+    color: #ffd060;
+  }
+  .science p.instr {
+    margin: 0;
+    font-size: 12px;
+    text-align: center;
+    color: #a0c0ff;
+    letter-spacing: 1px;
+    min-height: 32px;
+    line-height: 1.3;
+  }
+  .puzzle-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 0;
+  }
+
+  /* sequence puzzle */
+  .seq-pad {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: min(260px, 100%);
+    aspect-ratio: 1;
+  }
+  .seq-btn {
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bungee', sans-serif;
+    font-size: 22px;
+    transition: transform 0.1s, filter 0.1s, box-shadow 0.1s;
+    user-select: none;
+  }
+  .seq-btn.flash { filter: brightness(2); transform: scale(1.05); box-shadow: 0 0 24px currentColor; }
+  .seq-btn.c0 { background: linear-gradient(180deg, #ff4070, #801030); color: #ffd8e0; }
+  .seq-btn.c1 { background: linear-gradient(180deg, #40ff80, #108040); color: #d8ffe8; }
+  .seq-btn.c2 { background: linear-gradient(180deg, #4070ff, #102080); color: #d8e4ff; }
+  .seq-btn.c3 { background: linear-gradient(180deg, #ffd040, #a06010); color: #fff4c0; }
+
+  /* slider puzzle */
+  .sliders { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row .slabel { width: 40px; font-family: 'Russo One', sans-serif; font-size: 11px; letter-spacing: 2px; color: #a0c0ff; }
+  .slider-row .bar {
+    flex: 1;
+    height: 22px;
+    background: #1a1038;
+    border: 1.5px solid #5a4080;
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+  }
+  .slider-row .bar .mark {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 3px;
+    background: #ffd060;
+    box-shadow: 0 0 8px #ffa040;
+  }
+  .slider-row .bar .val {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 16px;
+    background: linear-gradient(180deg, #c080ff, #5a3090);
+    border: 2px solid #fff;
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(200,120,255,0.8);
+    transform: translateX(-50%);
+  }
+  .slider-row .num {
+    width: 30px;
+    text-align: right;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    color: #ffd060;
+  }
+
+  /* code puzzle */
+  .code-disp {
+    font-family: 'Russo One', sans-serif;
+    font-size: 28px;
+    letter-spacing: 8px;
+    color: #80ffa0;
+    text-shadow: 0 0 12px rgba(100,255,140,0.6);
+    background: rgba(10,30,15,0.8);
+    border: 2px solid #408040;
+    border-radius: 4px;
+    padding: 6px 16px;
+    min-width: 120px;
+    text-align: center;
+  }
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+    max-width: 220px;
+  }
+  .keypad button {
+    aspect-ratio: 1.3;
+    font-size: 18px;
+    letter-spacing: 2px;
+    padding: 0;
+    min-height: 42px;
+  }
+
+  /* wire puzzle */
+  .wire-area { width: 100%; aspect-ratio: 1.2; max-width: 320px; position: relative; }
+  .wire-area svg { width: 100%; height: 100%; }
+  .wire-node {
+    fill: #2a1840;
+    stroke-width: 2;
+    cursor: pointer;
+  }
+  .wire-node.left { stroke: #ff6080; }
+  .wire-node.right { stroke: #60c0ff; }
+  .wire-node.selected { fill: currentColor; filter: brightness(1.4); }
+
+  /* ---------- Buttons ---------- */
+  button {
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    border-radius: 3px;
+    border: 1.5px solid #8060c0;
+    background: linear-gradient(180deg, #3a2068, #1a0a38);
+    color: #e0d8ff;
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 44px;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #4a2880, #241048); box-shadow: 0 0 10px rgba(180,120,255,0.45); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #8040a8, #40206a); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #a054c8, #583088); }
+
+  /* ---------- Picker / Result ---------- */
+  .start-screen, .end-screen {
+    text-align: center;
+    padding: 16px 10px;
+    background: rgba(10,4,30,0.65);
+    border: 1.5px solid #6040a0;
+    border-radius: 8px;
+    max-width: 520px;
+    margin: 12px auto;
+  }
+  .start-screen h2, .end-screen h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    letter-spacing: 4px;
+    font-size: 22px;
+    margin: 0 0 10px;
+    text-shadow: 0 0 12px rgba(255,210,80,0.6);
+  }
+  .start-screen p, .end-screen p {
+    color: #c0b0e8;
+    letter-spacing: 1px;
+    line-height: 1.45;
+    margin: 6px 0;
+    font-size: 13px;
+  }
+
+  .banner {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 30;
+    text-align: center;
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    letter-spacing: 4px;
+    font-size: 22px;
+    text-shadow: 0 0 12px rgba(255,210,80,0.8);
+    padding: 6px 14px;
+    background: rgba(10,5,26,0.7);
+    border: 2px solid #ffd060;
+    border-radius: 6px;
+    transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  .banner.fade { opacity: 0; }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,2,14,0.9);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #201040, #08041a);
+    border: 2px solid #c080ff;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 0 40px rgba(180,100,255,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 14px; color: #d8c8f5; }
+
+  @media (max-width: 720px) {
+    .split { grid-template-columns: 1fr; }
+    .pilot { min-height: 180px; }
+    .science { min-height: 260px; }
+    .hud { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .hud-box.theme { grid-column: 1 / -1; }
+    .hud-box .v { font-size: 14px; }
+    .logo { max-height: 64px; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Weirdness">
+  <defs>
+    <linearGradient id="wdGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#d8b4ff"/>
+      <stop offset="40%" stop-color="#a060ff"/>
+      <stop offset="70%" stop-color="#ff60a0"/>
+      <stop offset="100%" stop-color="#ffd060"/>
+    </linearGradient>
+    <filter id="wdGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <ellipse cx="400" cy="80" rx="320" ry="40" fill="#6030a0" opacity="0.22"/>
+  <!-- planet silhouette + rings -->
+  <g transform="translate(90, 70)">
+    <circle r="16" fill="#5a3ca0"/>
+    <ellipse rx="28" ry="6" fill="none" stroke="#c080ff" stroke-width="1.5" opacity="0.8"/>
+  </g>
+  <g transform="translate(710, 70)">
+    <circle r="14" fill="#a040c0"/>
+    <ellipse rx="24" ry="5" fill="none" stroke="#ff60a0" stroke-width="1.5" opacity="0.8"/>
+  </g>
+  <!-- floating question marks -->
+  <g fill="#ffd060" filter="url(#wdGlow)" font-family="Bungee, sans-serif" font-size="28">
+    <text x="150" y="58">?</text>
+    <text x="650" y="46">?</text>
+  </g>
+  <text x="400" y="82" text-anchor="middle"
+        font-family="'Bungee', sans-serif"
+        font-size="52"
+        fill="url(#wdGrad)"
+        letter-spacing="5"
+        style="paint-order: stroke; stroke: #04020e; stroke-width: 2.5;">WEIRDNESS</text>
+  <text x="400" y="108" text-anchor="middle"
+        font-family="'Russo One', sans-serif"
+        font-size="11" fill="#c0a0ff" letter-spacing="6">two voyagers · one strange sky</text>
+</svg>
+
+<div id="startScreen" class="start-screen">
+  <h2>SOMETHING'S WRONG OUT THERE</h2>
+  <p>Player 1 flies the ship — click the drifting anomalies on the left viewport before they clip the hull.</p>
+  <p>Player 2 runs the lab — solve the puzzle on the right to diagnose the weirdness. Five puzzles, one anomaly type per run.</p>
+  <p>Stop the weirdness before the ship is overwhelmed.</p>
+  <div style="margin-top:10px;">
+    <button id="beginBtn" class="primary">Begin Mission</button>
+  </div>
+</div>
+
+<div id="hud" class="hud" style="display:none">
+  <div class="hud-box ship">
+    <div class="lbl">Hull</div>
+    <div class="v" id="hullV">5/5</div>
+  </div>
+  <div class="hud-box theme">
+    <div class="lbl">Anomaly</div>
+    <div class="v" id="themeV">—</div>
+  </div>
+  <div class="hud-box puzz">
+    <div class="lbl">Puzzles Solved</div>
+    <div class="v" id="puzzV">0 / 5</div>
+  </div>
+</div>
+
+<div id="splitArea" class="split" style="display:none">
+  <div class="pilot" id="pilot">
+    <div class="console-frame"></div>
+    <div class="console-label">PILOT · CLICK ANOMALIES</div>
+    <div class="starfield"></div>
+    <svg class="reticle" viewBox="0 0 52 52" aria-hidden="true">
+      <circle cx="26" cy="26" r="20" fill="none" stroke="#80c0ff" stroke-width="1.5" opacity="0.8"/>
+      <line x1="26" y1="4" x2="26" y2="14" stroke="#80c0ff" stroke-width="1.5"/>
+      <line x1="26" y1="38" x2="26" y2="48" stroke="#80c0ff" stroke-width="1.5"/>
+      <line x1="4" y1="26" x2="14" y2="26" stroke="#80c0ff" stroke-width="1.5"/>
+      <line x1="38" y1="26" x2="48" y2="26" stroke="#80c0ff" stroke-width="1.5"/>
+      <circle cx="26" cy="26" r="2" fill="#ff6080"/>
+    </svg>
+  </div>
+
+  <div class="science">
+    <div class="science-label">SCIENCE LAB · SOLVE THE PUZZLE</div>
+    <h3 id="puzzTitle">—</h3>
+    <p class="instr" id="puzzInstr">—</p>
+    <div class="puzzle-area" id="puzzArea"></div>
+    <div style="text-align:center">
+      <button id="skipBtn" style="font-size:10px;padding:6px 10px;min-height:32px">Abandon Ship</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">MISSION COMPLETE</h2>
+    <p id="overBody"></p>
+    <button id="overClose">Try Again</button>
+  </div>
+</div>
+
+<script>
+// ---------- Themes (random per run) ----------
+const THEMES = [
+  { id: 'melt',  label: 'MELTING STARS',    glyph: 'drop',  color: '#ff6080' },
+  { id: 'fog',   label: 'EMERALD FOG',      glyph: 'blob',  color: '#80ff90' },
+  { id: 'echo',  label: 'TIME ECHOES',      glyph: 'ring',  color: '#60b0ff' },
+  { id: 'void',  label: 'VOID TENTACLES',   glyph: 'spike', color: '#c060ff' },
+  { id: 'cryst', label: 'CRYSTAL STORM',    glyph: 'star',  color: '#70ffea' },
+];
+
+// ---------- State ----------
+const MAX_HULL = 5;
+const PUZZLE_COUNT = 5;
+let theme = THEMES[0];
+let hull = MAX_HULL;
+let solved = 0;
+let running = false;
+let anomalyInterval = null;
+let anomalies = [];
+let puzzleState = null;
+
+// ---------- Start/End ----------
+document.getElementById('beginBtn').addEventListener('click', start);
+document.getElementById('overClose').addEventListener('click', () => {
+  document.getElementById('overlay').classList.remove('on');
+  showStart();
+});
+document.getElementById('skipBtn').addEventListener('click', () => endGame(false, 'abandoned the mission'));
+
+function showStart() {
+  document.getElementById('startScreen').style.display = '';
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('splitArea').style.display = 'none';
+  stopLoop();
+}
+
+function start() {
+  theme = THEMES[Math.floor(Math.random() * THEMES.length)];
+  hull = MAX_HULL;
+  solved = 0;
+  anomalies = [];
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('hud').style.display = '';
+  document.getElementById('splitArea').style.display = '';
+  document.getElementById('themeV').textContent = theme.label;
+  document.getElementById('themeV').style.color = theme.color;
+  document.querySelector('.hud-box.theme').style.borderColor = theme.color;
+  updateHud();
+  nextPuzzle();
+  running = true;
+  anomalyInterval = setInterval(spawnAnomaly, 1800);
+  requestAnimationFrame(tick);
+  showBanner(`${theme.label}`);
+}
+
+function showBanner(text) {
+  const pilot = document.getElementById('pilot');
+  const old = pilot.querySelector('.banner');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'banner';
+  el.textContent = text;
+  pilot.appendChild(el);
+  setTimeout(() => el.classList.add('fade'), 1400);
+  setTimeout(() => el.remove(), 2100);
+}
+
+function updateHud() {
+  document.getElementById('hullV').textContent = `${hull}/${MAX_HULL}`;
+  document.getElementById('puzzV').textContent = `${solved} / ${PUZZLE_COUNT}`;
+}
+
+function endGame(won, reason) {
+  running = false;
+  stopLoop();
+  document.getElementById('overTitle').textContent = won ? 'WEIRDNESS RESOLVED' : 'THE STRANGE WON';
+  document.getElementById('overBody').textContent = won
+    ? `Five puzzles cracked, ${theme.label.toLowerCase()} dispelled, hull ${hull}/${MAX_HULL}.`
+    : `The ship ${reason}. The universe stays weird.`;
+  document.getElementById('overlay').classList.add('on');
+}
+
+function stopLoop() {
+  if (anomalyInterval) { clearInterval(anomalyInterval); anomalyInterval = null; }
+  document.querySelectorAll('.anomaly,.pop-burst').forEach(e => e.remove());
+  anomalies = [];
+}
+
+// ---------- PILOT SIDE ----------
+function spawnAnomaly() {
+  if (!running) return;
+  const pilot = document.getElementById('pilot');
+  const r = pilot.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'anomaly ' + theme.id;
+  const xPct = 15 + Math.random() * 70;
+  el.style.left = xPct + '%';
+  el.style.top = '14px';
+  el.innerHTML = glyphSvg(theme.glyph);
+  pilot.appendChild(el);
+  const speed = 25 + Math.random() * 30; // px/sec
+  anomalies.push({ el, xPct, yPx: 14, speed });
+  el.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    burstAt(el);
+    removeAnomaly(el);
+  });
+}
+
+function tick(now) {
+  if (!running) return;
+  const pilot = document.getElementById('pilot');
+  const r = pilot.getBoundingClientRect();
+  const dt = 16 / 1000;
+  for (let i = anomalies.length - 1; i >= 0; i--) {
+    const a = anomalies[i];
+    a.yPx += a.speed * dt;
+    a.el.style.top = a.yPx + 'px';
+    if (a.yPx > r.height - 20) {
+      // hit hull
+      a.el.remove();
+      anomalies.splice(i, 1);
+      hull = Math.max(0, hull - 1);
+      updateHud();
+      flashPilotHit();
+      if (hull <= 0) return endGame(false, 'hull has been shredded');
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function flashPilotHit() {
+  const pilot = document.getElementById('pilot');
+  pilot.style.boxShadow = 'inset 0 0 40px rgba(255,80,80,0.65)';
+  setTimeout(() => pilot.style.boxShadow = '', 250);
+}
+
+function removeAnomaly(el) {
+  const idx = anomalies.findIndex(a => a.el === el);
+  if (idx >= 0) anomalies.splice(idx, 1);
+  el.remove();
+}
+
+function burstAt(el) {
+  const r = el.getBoundingClientRect();
+  const parent = el.parentElement;
+  const parentR = parent.getBoundingClientRect();
+  const burst = document.createElement('div');
+  burst.className = 'pop-burst';
+  burst.style.left = (r.left - parentR.left + r.width / 2) + 'px';
+  burst.style.top  = (r.top - parentR.top + r.height / 2) + 'px';
+  parent.appendChild(burst);
+  setTimeout(() => burst.remove(), 450);
+}
+
+function glyphSvg(kind) {
+  if (kind === 'drop') return `<svg viewBox="0 0 60 60"><path d="M30 8 C20 22 14 32 14 40 A16 16 0 0 0 46 40 C46 32 40 22 30 8 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/></svg>`;
+  if (kind === 'blob') return `<svg viewBox="0 0 60 60"><path d="M30 10 Q46 14 48 30 Q52 46 34 50 Q14 52 12 36 Q10 16 30 10 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/><circle cx="22" cy="28" r="3" fill="#fff" opacity="0.8"/><circle cx="36" cy="34" r="2" fill="#fff" opacity="0.6"/></svg>`;
+  if (kind === 'ring') return `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="30" cy="30" r="14" fill="none" stroke="currentColor" stroke-width="3" opacity="0.7"/><circle cx="30" cy="30" r="6"  fill="currentColor"/></svg>`;
+  if (kind === 'spike') return `<svg viewBox="0 0 60 60"><polygon points="30,4 36,22 56,22 40,34 46,54 30,42 14,54 20,34 4,22 24,22" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/></svg>`;
+  if (kind === 'star') return `<svg viewBox="0 0 60 60"><polygon points="30,6 35,24 54,24 39,34 44,54 30,42 16,54 21,34 6,24 25,24" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/></svg>`;
+  return `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="18" fill="currentColor"/></svg>`;
+}
+
+// ---------- SCIENCE SIDE ----------
+const PUZZLE_TYPES = ['sequence', 'slider', 'code', 'wire'];
+
+function nextPuzzle() {
+  if (solved >= PUZZLE_COUNT) return endGame(true);
+  const type = PUZZLE_TYPES[Math.floor(Math.random() * PUZZLE_TYPES.length)];
+  const area = document.getElementById('puzzArea');
+  area.innerHTML = '';
+  if (type === 'sequence') buildSequence(area);
+  else if (type === 'slider') buildSlider(area);
+  else if (type === 'code') buildCode(area);
+  else if (type === 'wire') buildWire(area);
+}
+
+function puzzleSolved() {
+  solved++;
+  updateHud();
+  if (solved >= PUZZLE_COUNT) {
+    running = false;
+    return endGame(true);
+  }
+  showBanner(`PUZZLE ${solved}/${PUZZLE_COUNT} SOLVED`);
+  setTimeout(nextPuzzle, 900);
+}
+
+function setPuzzleHeader(title, instr) {
+  document.getElementById('puzzTitle').textContent = title;
+  document.getElementById('puzzInstr').textContent = instr;
+}
+
+// -- Sequence puzzle --
+function buildSequence(area) {
+  const len = 3 + Math.min(2, solved); // ramp up
+  const pattern = [];
+  for (let i = 0; i < len; i++) pattern.push(Math.floor(Math.random() * 4));
+  puzzleState = { pattern, userIdx: 0 };
+  setPuzzleHeader('SIGNAL SEQUENCE', `Watch the order, then tap the ${len} pads back in the same order.`);
+  const pad = document.createElement('div');
+  pad.className = 'seq-pad';
+  const glyphs = ['▲', '●', '■', '◆'];
+  for (let i = 0; i < 4; i++) {
+    const b = document.createElement('div');
+    b.className = 'seq-btn c' + i;
+    b.textContent = glyphs[i];
+    b.addEventListener('click', () => {
+      if (!puzzleState || puzzleState.playing) return;
+      flashSeq(b);
+      if (i === pattern[puzzleState.userIdx]) {
+        puzzleState.userIdx++;
+        if (puzzleState.userIdx >= pattern.length) {
+          puzzleSolved();
+        }
+      } else {
+        puzzleState.userIdx = 0;
+        setPuzzleHeader('SIGNAL SEQUENCE', 'Wrong order. Watch again…');
+        setTimeout(() => playbackSeq(pattern), 600);
+      }
+    });
+    pad.appendChild(b);
+  }
+  area.appendChild(pad);
+  playbackSeq(pattern);
+}
+
+function flashSeq(btn) {
+  btn.classList.add('flash');
+  setTimeout(() => btn.classList.remove('flash'), 180);
+}
+
+function playbackSeq(pattern) {
+  if (!puzzleState) return;
+  puzzleState.playing = true;
+  puzzleState.userIdx = 0;
+  const btns = document.querySelectorAll('.seq-btn');
+  pattern.forEach((idx, i) => {
+    setTimeout(() => {
+      if (!puzzleState) return;
+      flashSeq(btns[idx]);
+      if (i === pattern.length - 1) {
+        setTimeout(() => {
+          puzzleState.playing = false;
+          setPuzzleHeader('SIGNAL SEQUENCE', `Your turn — tap the ${pattern.length} pads in order.`);
+        }, 350);
+      }
+    }, i * 550 + 400);
+  });
+}
+
+// -- Slider puzzle --
+function buildSlider(area) {
+  const targets = [Math.random(), Math.random(), Math.random()].map(v => Math.round(v * 10) / 10);
+  puzzleState = { targets, values: [0.5, 0.5, 0.5] };
+  setPuzzleHeader('CALIBRATE INSTRUMENTS', 'Drag each slider to match the gold mark.');
+  const wrap = document.createElement('div');
+  wrap.className = 'sliders';
+  const labels = ['ALPHA', 'BETA', 'GAMMA'];
+  targets.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'slider-row';
+    row.innerHTML = `
+      <div class="slabel">${labels[i]}</div>
+      <div class="bar" data-i="${i}">
+        <div class="mark" style="left:${t * 100}%"></div>
+        <div class="val" style="left:${0.5 * 100}%"></div>
+      </div>
+      <div class="num">${(0.5 * 10).toFixed(1)}</div>
+    `;
+    wrap.appendChild(row);
+    const bar = row.querySelector('.bar');
+    const val = row.querySelector('.val');
+    const num = row.querySelector('.num');
+    let dragging = false;
+    function setFromEvent(e) {
+      const r = bar.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const v = Math.max(0, Math.min(1, x));
+      puzzleState.values[i] = Math.round(v * 10) / 10;
+      val.style.left = (puzzleState.values[i] * 100) + '%';
+      num.textContent = (puzzleState.values[i] * 10).toFixed(1);
+      checkSlider();
+    }
+    bar.addEventListener('pointerdown', e => { dragging = true; bar.setPointerCapture(e.pointerId); setFromEvent(e); });
+    bar.addEventListener('pointermove', e => { if (dragging) setFromEvent(e); });
+    bar.addEventListener('pointerup', e => { dragging = false; try { bar.releasePointerCapture(e.pointerId); } catch(_) {} });
+  });
+  area.appendChild(wrap);
+}
+
+function checkSlider() {
+  if (!puzzleState || !puzzleState.targets) return;
+  const ok = puzzleState.targets.every((t, i) => Math.abs(puzzleState.values[i] - t) < 0.05);
+  if (ok) puzzleSolved();
+}
+
+// -- Code puzzle --
+function buildCode(area) {
+  const ops = [['+2', x => x + 2], ['-1', x => x - 1], ['x2', x => x * 2], ['next square', null]];
+  // Build a simple arithmetic riddle: 4 numbers, guess the 5th
+  const start = 1 + Math.floor(Math.random() * 5);
+  const op = ops[Math.floor(Math.random() * 3)];
+  const seq = [start];
+  for (let i = 1; i < 5; i++) seq.push(op[1](seq[i - 1]));
+  const answer = seq[4];
+  puzzleState = { answer, input: '' };
+  setPuzzleHeader('DECODE THE SIGNAL', `Sequence: ${seq.slice(0, 4).join(', ')} , ?`);
+  const disp = document.createElement('div');
+  disp.className = 'code-disp';
+  disp.textContent = '_ _';
+  area.appendChild(disp);
+  const pad = document.createElement('div');
+  pad.className = 'keypad';
+  for (let n = 1; n <= 9; n++) pad.appendChild(makeKey(n, disp));
+  const clear = document.createElement('button');
+  clear.textContent = '⌫';
+  clear.addEventListener('click', () => { puzzleState.input = puzzleState.input.slice(0, -1); updateCodeDisp(disp); });
+  pad.appendChild(clear);
+  pad.appendChild(makeKey(0, disp));
+  const enter = document.createElement('button');
+  enter.textContent = 'ENTER';
+  enter.style.fontSize = '9px';
+  enter.addEventListener('click', () => {
+    if (parseInt(puzzleState.input) === puzzleState.answer) puzzleSolved();
+    else { puzzleState.input = ''; updateCodeDisp(disp); disp.style.color = '#ff6080'; setTimeout(() => disp.style.color = '#80ffa0', 300); }
+  });
+  pad.appendChild(enter);
+  area.appendChild(pad);
+}
+function makeKey(n, disp) {
+  const b = document.createElement('button');
+  b.textContent = String(n);
+  b.addEventListener('click', () => {
+    if (puzzleState.input.length < 3) puzzleState.input += n;
+    updateCodeDisp(disp);
+  });
+  return b;
+}
+function updateCodeDisp(disp) {
+  disp.textContent = puzzleState.input.padEnd(2, '_').split('').join(' ');
+}
+
+// -- Wire puzzle --
+function buildWire(area) {
+  const n = 4;
+  const left = [];
+  const right = [];
+  const pairs = [];
+  const colorsL = ['#ff6080', '#80ff90', '#60b0ff', '#ffd060'];
+  const order = [0,1,2,3].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < n; i++) {
+    left.push({ i, y: 20 + i * 60, color: colorsL[i] });
+    right.push({ i: order[i], y: 20 + i * 60, color: colorsL[order[i]] });
+  }
+  puzzleState = { connections: {}, selected: null, total: n };
+  setPuzzleHeader('REWIRE THE CORE', 'Connect each left dot to the matching color on the right.');
+  const wa = document.createElement('div');
+  wa.className = 'wire-area';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 320 260');
+  for (let i = 0; i < n; i++) {
+    const lc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    lc.setAttribute('cx', 30); lc.setAttribute('cy', left[i].y); lc.setAttribute('r', 14);
+    lc.setAttribute('class', 'wire-node left');
+    lc.style.color = left[i].color;
+    lc.dataset.side = 'L'; lc.dataset.idx = i; lc.dataset.color = left[i].color;
+    lc.addEventListener('click', () => nodeClick(lc, svg));
+    svg.appendChild(lc);
+    const rc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    rc.setAttribute('cx', 290); rc.setAttribute('cy', right[i].y); rc.setAttribute('r', 14);
+    rc.setAttribute('class', 'wire-node right');
+    rc.style.color = right[i].color;
+    rc.dataset.side = 'R'; rc.dataset.idx = i; rc.dataset.color = right[i].color;
+    rc.addEventListener('click', () => nodeClick(rc, svg));
+    svg.appendChild(rc);
+  }
+  wa.appendChild(svg);
+  area.appendChild(wa);
+}
+
+function nodeClick(node, svg) {
+  if (!puzzleState) return;
+  if (!puzzleState.selected) {
+    puzzleState.selected = node;
+    node.classList.add('selected');
+    return;
+  }
+  if (puzzleState.selected === node) {
+    node.classList.remove('selected');
+    puzzleState.selected = null;
+    return;
+  }
+  const a = puzzleState.selected;
+  const b = node;
+  if (a.dataset.side === b.dataset.side) {
+    a.classList.remove('selected');
+    a.classList.remove('selected');
+    puzzleState.selected = b;
+    b.classList.add('selected');
+    return;
+  }
+  // check color match
+  if (a.dataset.color !== b.dataset.color) {
+    // flash fail
+    a.classList.remove('selected');
+    puzzleState.selected = null;
+    a.style.filter = b.style.filter = 'brightness(2) hue-rotate(90deg)';
+    setTimeout(() => { a.style.filter = b.style.filter = ''; }, 300);
+    return;
+  }
+  // draw line
+  const left = a.dataset.side === 'L' ? a : b;
+  const right = a.dataset.side === 'R' ? a : b;
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', left.getAttribute('cx'));
+  line.setAttribute('y1', left.getAttribute('cy'));
+  line.setAttribute('x2', right.getAttribute('cx'));
+  line.setAttribute('y2', right.getAttribute('cy'));
+  line.setAttribute('stroke', a.dataset.color);
+  line.setAttribute('stroke-width', 4);
+  line.setAttribute('opacity', 0.85);
+  svg.insertBefore(line, svg.firstChild);
+  a.classList.remove('selected');
+  puzzleState.selected = null;
+  puzzleState.connections[a.dataset.color] = true;
+  if (Object.keys(puzzleState.connections).length >= puzzleState.total) puzzleSolved();
+}
+</script>
+</body>
+</html>

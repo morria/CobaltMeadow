@@ -153,6 +153,14 @@
   .tile.city:hover { border-color: #ff80b8; box-shadow: 0 0 22px rgba(255,120,180,0.4); }
   .tile.city h2 { font-family: 'Bungee', sans-serif; color: #a0d0ff; letter-spacing: 3px; font-size: 22px; }
 
+  /* Weirdness — cosmic violet */
+  .tile.weird {
+    border-color: #6040a0;
+    background: linear-gradient(180deg, rgba(24,12,48,0.9), rgba(8,4,22,0.95));
+  }
+  .tile.weird:hover { border-color: #c080ff; box-shadow: 0 0 22px rgba(180,120,255,0.5); }
+  .tile.weird h2 { font-family: 'Bungee', sans-serif; color: #d8b4ff; letter-spacing: 3px; font-size: 22px; }
+
 
   footer {
     margin-top: 6px;
@@ -342,6 +350,36 @@
     </div>
     <h2>CITY DEFENSE</h2>
     <p>Fly · bomb · stop the megabot crushing the city.</p>
+  </a>
+
+  <a class="tile weird" href="weirdness.html">
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="gW" cx="50%" cy="45%" r="60%">
+            <stop offset="0%" stop-color="#fff0ff"/>
+            <stop offset="55%" stop-color="#c080ff"/>
+            <stop offset="100%" stop-color="#4a1a7a"/>
+          </radialGradient>
+        </defs>
+        <!-- starfield specks -->
+        <g fill="#fff" opacity="0.9">
+          <circle cx="8" cy="10" r="1"/>
+          <circle cx="22" cy="18" r="0.8"/>
+          <circle cx="68" cy="8" r="1"/>
+          <circle cx="60" cy="22" r="0.8"/>
+          <circle cx="14" cy="42" r="0.8"/>
+        </g>
+        <!-- planet -->
+        <circle cx="40" cy="28" r="14" fill="url(#gW)"/>
+        <!-- ring -->
+        <ellipse cx="40" cy="28" rx="22" ry="5" fill="none" stroke="#ff8ae0" stroke-width="1.5" opacity="0.75"/>
+        <!-- question mark -->
+        <text x="40" y="34" text-anchor="middle" font-family="Bungee, sans-serif" font-size="15" fill="#ffd060">?</text>
+      </svg>
+    </div>
+    <h2>WEIRDNESS</h2>
+    <p>Two-player ship · pilot shoots anomalies, scientist solves puzzles.</p>
   </a>
 </div>
 
