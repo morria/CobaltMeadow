@@ -34,493 +34,14 @@
     gap: 8px;
     overflow-x: hidden;
   }
-
   .logo {
     display: block;
     margin: 0 auto;
     max-width: 520px;
     width: 100%;
-    max-height: 86px;
+    max-height: 78px;
     filter: drop-shadow(0 4px 12px rgba(160,80,220,0.5));
   }
-
-  .hud {
-    display: grid;
-    grid-template-columns: 1fr 1.4fr 1fr;
-    gap: 10px;
-    align-items: center;
-  }
-  .hud-box {
-    background: rgba(10,6,30,0.75);
-    border: 1px solid #4a3890;
-    border-radius: 4px;
-    padding: 5px 10px;
-  }
-  .hud-box .lbl {
-    font-family: 'Russo One', sans-serif;
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #a090d0;
-  }
-  .hud-box .v {
-    font-family: 'Russo One', sans-serif;
-    font-size: 16px;
-    letter-spacing: 2px;
-  }
-  .hud-box.ship { border-color: #60a0ff; }
-  .hud-box.ship .v { color: #a0c8ff; }
-  .hud-box.theme { border-color: #ff6ac0; text-align: center; }
-  .hud-box.theme .v { color: #ffbae0; font-size: 14px; letter-spacing: 3px; }
-  .hud-box.puzz { border-color: #90ff90; }
-  .hud-box.puzz .v { color: #b0ffb0; }
-
-  .split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    flex: 1;
-    min-height: 0;
-  }
-
-  /* ---------- PILOT ---------- */
-  .pilot {
-    position: relative;
-    overflow: hidden;
-    border-radius: 8px;
-    border: 2px solid #3a70d0;
-    background:
-      radial-gradient(ellipse at 50% 120%, rgba(60,140,255,0.3), transparent 70%),
-      linear-gradient(180deg, #02030a 0%, #0a0620 100%);
-    touch-action: none;
-    user-select: none;
-    cursor: crosshair;
-    box-shadow: inset 0 0 24px rgba(60,100,200,0.25);
-    transition: opacity 0.3s, filter 0.3s, box-shadow 0.3s;
-  }
-  .pilot.active   { box-shadow: inset 0 0 24px rgba(60,100,200,0.25), 0 0 24px rgba(100,180,255,0.55); border-color: #80c8ff; }
-  .pilot.inactive { opacity: 0.3; filter: saturate(0.4); pointer-events: none; cursor: default; }
-  .pilot .console-frame {
-    position: absolute;
-    inset: 0;
-    border: 14px solid transparent;
-    border-image: linear-gradient(135deg, #3060a0 0%, #1a2040 50%, #3060a0 100%) 1;
-    pointer-events: none;
-    z-index: 4;
-  }
-  .pilot .console-label {
-    position: absolute;
-    top: 4px; left: 50%;
-    transform: translateX(-50%);
-    font-family: 'Bungee', sans-serif;
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: #a0c8ff;
-    text-shadow: 0 0 8px rgba(100,160,255,0.7);
-    z-index: 5;
-    pointer-events: none;
-  }
-  .pilot .starfield {
-    position: absolute;
-    inset: 14px;
-    background-image:
-      radial-gradient(circle, #fff 0.8px, transparent 1px),
-      radial-gradient(circle, #fff 0.6px, transparent 1px),
-      radial-gradient(circle, #a0c8ff 0.8px, transparent 1px);
-    background-size: 120px 120px, 80px 80px, 180px 180px;
-    background-position: 0 0, 40px 60px, 90px 120px;
-    animation: starScroll 20s linear infinite;
-    opacity: 0.85;
-  }
-  @keyframes starScroll {
-    from { background-position-y: 0, 60px, 120px; }
-    to   { background-position-y: 240px, 540px, 720px; }
-  }
-  .pilot .reticle {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 52px; height: 52px;
-    margin-left: -26px; margin-top: -26px;
-    pointer-events: none;
-    z-index: 3;
-    opacity: 0.6;
-  }
-  .anomaly {
-    position: absolute;
-    width: clamp(40px, 6vw, 60px);
-    height: clamp(40px, 6vw, 60px);
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    cursor: pointer;
-    pointer-events: auto;
-    user-select: none;
-  }
-  .anomaly svg { width: 100%; height: 100%; filter: drop-shadow(0 0 10px currentColor); }
-  .anomaly.melt   { color: #ff6080; }
-  .anomaly.fog    { color: #80ff90; }
-  .anomaly.echo   { color: #60b0ff; }
-  .anomaly.void   { color: #c060ff; }
-  .anomaly.cryst  { color: #70ffea; }
-
-  /* ship battle */
-  .player-ship, .alien-ship {
-    position: absolute;
-    pointer-events: none;
-    z-index: 3;
-    transform: translate(-50%, 0);
-  }
-  .player-ship {
-    width: clamp(40px, 5.5vw, 58px);
-    bottom: 18px;
-    left: 50%;
-    filter: drop-shadow(0 0 10px #60a8ff);
-  }
-  .player-ship svg, .alien-ship svg { width: 100%; height: auto; display: block; }
-  .alien-ship {
-    width: clamp(36px, 5vw, 52px);
-    filter: drop-shadow(0 0 8px currentColor);
-  }
-  .alien-ship.melt   { color: #ff6080; }
-  .alien-ship.fog    { color: #80ff90; }
-  .alien-ship.echo   { color: #60b0ff; }
-  .alien-ship.void   { color: #c060ff; }
-  .alien-ship.cryst  { color: #70ffea; }
-
-  .p-bullet, .a-bullet {
-    position: absolute;
-    width: 4px; height: 14px;
-    transform: translate(-50%, 0);
-    border-radius: 2px;
-    z-index: 4;
-    pointer-events: none;
-  }
-  .p-bullet { background: linear-gradient(180deg, #fff, #80c8ff); box-shadow: 0 0 8px #80c8ff; }
-  .a-bullet { background: linear-gradient(180deg, #ffd060, #ff5060); box-shadow: 0 0 8px #ff8040; }
-  @keyframes pop {
-    0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; }
-    60%  { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
-  }
-  .pop-burst {
-    position: absolute;
-    width: 60px; height: 60px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #fff 0%, #ffa040 40%, rgba(255,50,0,0) 80%);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    animation: pop 0.45s ease-out forwards;
-    z-index: 4;
-  }
-
-  /* ---------- SCIENCE ---------- */
-  .science {
-    position: relative;
-    border-radius: 8px;
-    border: 2px solid #9060d0;
-    background:
-      radial-gradient(ellipse at 50% 0%, rgba(180,120,255,0.18), transparent 70%),
-      linear-gradient(180deg, #0c0620 0%, #05020c 100%);
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-height: 0;
-    box-shadow: inset 0 0 24px rgba(160,100,220,0.18);
-    transition: opacity 0.3s, filter 0.3s, box-shadow 0.3s;
-  }
-  .science.active   { box-shadow: inset 0 0 24px rgba(160,100,220,0.18), 0 0 24px rgba(200,120,255,0.55); border-color: #d080ff; }
-  .science.inactive { opacity: 0.3; filter: saturate(0.4); pointer-events: none; }
-  .science .science-label {
-    font-family: 'Bungee', sans-serif;
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: #d8b4ff;
-    text-align: center;
-    text-shadow: 0 0 8px rgba(200,120,255,0.6);
-    margin-bottom: 2px;
-  }
-  .science h3 {
-    margin: 0;
-    font-family: 'Russo One', sans-serif;
-    font-size: 14px;
-    letter-spacing: 2px;
-    text-align: center;
-    color: #ffd060;
-  }
-  .science p.instr {
-    margin: 0;
-    font-size: 12px;
-    text-align: center;
-    color: #a0c0ff;
-    letter-spacing: 1px;
-    min-height: 32px;
-    line-height: 1.3;
-  }
-  .puzzle-area {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    min-height: 0;
-  }
-
-  /* sequence puzzle */
-  .seq-pad {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    width: min(260px, 100%);
-    aspect-ratio: 1;
-  }
-  .seq-btn {
-    border-radius: 8px;
-    border: 2px solid rgba(255,255,255,0.3);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Bungee', sans-serif;
-    font-size: 22px;
-    transition: transform 0.1s, filter 0.1s, box-shadow 0.1s;
-    user-select: none;
-  }
-  .seq-btn.flash { filter: brightness(2); transform: scale(1.05); box-shadow: 0 0 24px currentColor; }
-  .seq-btn.c0 { background: linear-gradient(180deg, #ff4070, #801030); color: #ffd8e0; }
-  .seq-btn.c1 { background: linear-gradient(180deg, #40ff80, #108040); color: #d8ffe8; }
-  .seq-btn.c2 { background: linear-gradient(180deg, #4070ff, #102080); color: #d8e4ff; }
-  .seq-btn.c3 { background: linear-gradient(180deg, #ffd040, #a06010); color: #fff4c0; }
-
-  /* slider puzzle */
-  .sliders { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-  .slider-row { display: flex; align-items: center; gap: 8px; }
-  .slider-row .slabel { width: 40px; font-family: 'Russo One', sans-serif; font-size: 11px; letter-spacing: 2px; color: #a0c0ff; }
-  .slider-row .bar {
-    flex: 1;
-    height: 22px;
-    background: #1a1038;
-    border: 1.5px solid #5a4080;
-    border-radius: 3px;
-    position: relative;
-    cursor: pointer;
-  }
-  .slider-row .bar .mark {
-    position: absolute;
-    top: 0; bottom: 0;
-    width: 3px;
-    background: #ffd060;
-    box-shadow: 0 0 8px #ffa040;
-  }
-  .slider-row .bar .val {
-    position: absolute;
-    top: 0; bottom: 0;
-    width: 16px;
-    background: linear-gradient(180deg, #c080ff, #5a3090);
-    border: 2px solid #fff;
-    border-radius: 2px;
-    box-shadow: 0 0 10px rgba(200,120,255,0.8);
-    transform: translateX(-50%);
-  }
-  .slider-row .num {
-    width: 30px;
-    text-align: right;
-    font-family: 'Russo One', sans-serif;
-    font-size: 12px;
-    color: #ffd060;
-  }
-
-  /* code puzzle */
-  .code-disp {
-    font-family: 'Russo One', sans-serif;
-    font-size: 28px;
-    letter-spacing: 8px;
-    color: #80ffa0;
-    text-shadow: 0 0 12px rgba(100,255,140,0.6);
-    background: rgba(10,30,15,0.8);
-    border: 2px solid #408040;
-    border-radius: 4px;
-    padding: 6px 16px;
-    min-width: 120px;
-    text-align: center;
-  }
-  .keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    margin-top: 10px;
-    max-width: 220px;
-  }
-  .keypad button {
-    aspect-ratio: 1.3;
-    font-size: 18px;
-    letter-spacing: 2px;
-    padding: 0;
-    min-height: 42px;
-  }
-
-  /* wire puzzle */
-  .wire-area { width: 100%; aspect-ratio: 1.2; max-width: 320px; position: relative; }
-  .wire-area svg { width: 100%; height: 100%; }
-  .wire-node {
-    fill: #2a1840;
-    stroke-width: 2;
-    cursor: pointer;
-  }
-  .wire-node.left { stroke: #ff6080; }
-  .wire-node.right { stroke: #60c0ff; }
-  .wire-node.selected { fill: currentColor; filter: brightness(1.4); }
-
-  /* ---------- Buttons ---------- */
-  button {
-    font-family: 'Russo One', sans-serif;
-    font-size: 13px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 9px 14px;
-    border-radius: 3px;
-    border: 1.5px solid #8060c0;
-    background: linear-gradient(180deg, #3a2068, #1a0a38);
-    color: #e0d8ff;
-    cursor: pointer;
-    font-weight: 700;
-    min-height: 44px;
-  }
-  button:hover:not(:disabled) { background: linear-gradient(180deg, #4a2880, #241048); box-shadow: 0 0 10px rgba(180,120,255,0.45); }
-  button:disabled { opacity: 0.35; cursor: not-allowed; }
-  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #8040a8, #40206a); color: #fff; }
-  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #a054c8, #583088); }
-
-  /* ---------- Picker / Result ---------- */
-  .start-screen, .end-screen {
-    text-align: center;
-    padding: 10px 10px 16px;
-    background: rgba(10,4,30,0.65);
-    border: 1.5px solid #6040a0;
-    border-radius: 8px;
-    max-width: 640px;
-    margin: 8px auto;
-  }
-  .earth-scene {
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto 8px;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid #40306a;
-    box-shadow: inset 0 0 24px rgba(60,30,100,0.35), 0 0 20px rgba(100,60,180,0.25);
-    aspect-ratio: 2.5 / 1;
-    background: #0a0822;
-    cursor: pointer;
-    user-select: none;
-    touch-action: none;
-  }
-  .earth-scene svg { display: block; width: 100%; height: 100%; }
-  .earth-player {
-    position: absolute;
-    bottom: 14%;
-    left: 10%;
-    transform: translateX(-50%);
-    font-size: clamp(22px, 4.5vw, 38px);
-    line-height: 1;
-    filter: drop-shadow(0 2px 4px #000);
-    transition: left 1.4s linear;
-    z-index: 3;
-  }
-  .earth-player.walking::after {
-    content: '';
-    position: absolute;
-    bottom: -4px; left: 50%;
-    transform: translateX(-50%);
-    width: 60%; height: 3px;
-    background: radial-gradient(ellipse, rgba(255,255,255,0.4), transparent 70%);
-    animation: walkDust 0.4s linear infinite;
-  }
-  @keyframes walkDust {
-    0%, 100% { transform: translateX(-60%) scaleX(0.8); opacity: 0.4; }
-    50%      { transform: translateX(-40%) scaleX(1.1); opacity: 0.7; }
-  }
-  .earth-rocket {
-    position: absolute;
-    bottom: 12%;
-    right: 8%;
-    font-size: clamp(32px, 5.5vw, 52px);
-    line-height: 1;
-    filter: drop-shadow(0 0 14px #ffd060);
-    animation: rocketIdle 2s ease-in-out infinite;
-    z-index: 3;
-    transform: translateY(0) rotate(-12deg);
-  }
-  @keyframes rocketIdle {
-    0%, 100% { transform: translateY(0) rotate(-12deg); }
-    50%      { transform: translateY(-3px) rotate(-12deg); }
-  }
-  .earth-prompt {
-    position: absolute;
-    top: 8%; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(10,5,30,0.78);
-    border: 1px solid #6040a0;
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-family: 'Russo One', sans-serif;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: #d0b8ff;
-    text-transform: uppercase;
-    white-space: nowrap;
-    z-index: 4;
-  }
-  .earth-prompt.ready { border-color: #60ff80; color: #a0ffb0; box-shadow: 0 0 12px rgba(100,255,140,0.4); }
-  @keyframes skyPulse {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.18); }
-  }
-  .earth-anomaly { animation: skyPulse 2.2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
-  @keyframes twinkle {
-    0%, 100% { opacity: 0.35; }
-    50%      { opacity: 1; }
-  }
-  .earth-scene .twk-a { animation: twinkle 2.8s ease-in-out infinite; }
-  .earth-scene .twk-b { animation: twinkle 3.6s ease-in-out 0.6s infinite; }
-  .earth-scene .twk-c { animation: twinkle 4.4s ease-in-out 1.2s infinite; }
-  .earth-scene .window-light { animation: twinkle 4s ease-in-out infinite; }
-  .start-screen h2, .end-screen h2 {
-    font-family: 'Bungee', sans-serif;
-    color: #ffd060;
-    letter-spacing: 4px;
-    font-size: 22px;
-    margin: 0 0 10px;
-    text-shadow: 0 0 12px rgba(255,210,80,0.6);
-  }
-  .start-screen p, .end-screen p {
-    color: #c0b0e8;
-    letter-spacing: 1px;
-    line-height: 1.45;
-    margin: 6px 0;
-    font-size: 13px;
-  }
-
-  .banner {
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 30;
-    text-align: center;
-    font-family: 'Bungee', sans-serif;
-    color: #ffd060;
-    letter-spacing: 4px;
-    font-size: 22px;
-    text-shadow: 0 0 12px rgba(255,210,80,0.8);
-    padding: 6px 14px;
-    background: rgba(10,5,26,0.7);
-    border: 2px solid #ffd060;
-    border-radius: 6px;
-    transition: opacity 0.6s;
-    pointer-events: none;
-  }
-  .banner.fade { opacity: 0; }
 
   .music-toggle {
     position: fixed;
@@ -545,9 +66,548 @@
     box-shadow: 0 0 12px rgba(180,120,255,0.55);
   }
 
+  .progress-bar {
+    height: 6px;
+    background: #0a051a;
+    border: 1px solid #5a3890;
+    border-radius: 3px;
+    overflow: hidden;
+    max-width: 680px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #60a0ff, #c080ff, #ff60a0, #ffd060);
+    transition: width 0.4s;
+  }
+
+  .scene-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scene {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scene.hidden { display: none !important; }
+
+  .scene-title {
+    text-align: center;
+    font-family: 'Bungee', sans-serif;
+    font-size: 15px;
+    letter-spacing: 4px;
+    margin: 0;
+    color: #ffd060;
+    text-shadow: 0 0 10px rgba(255,210,80,0.5);
+  }
+  .scene-prompt {
+    text-align: center;
+    font-size: 13px;
+    color: #c0b0e8;
+    letter-spacing: 1px;
+    line-height: 1.45;
+    min-height: 38px;
+    padding: 0 10px;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 200px;
+    border: 2px solid #6040a0;
+    border-radius: 8px;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(180,120,255,0.15), transparent 70%),
+      linear-gradient(180deg, #0c0620, #05020c);
+    overflow: hidden;
+    box-shadow: inset 0 0 24px rgba(160,100,220,0.18);
+    touch-action: none;
+    user-select: none;
+  }
+  .stage svg { display: block; width: 100%; height: 100%; }
+
+  /* Clickable hotspots */
+  .hotspot {
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  .hotspot:hover { filter: brightness(1.3) drop-shadow(0 0 8px #fff); }
+  .hotspot.found {
+    stroke: #60ff90;
+    stroke-width: 2;
+    animation: foundPulse 1s ease-in-out 2;
+  }
+  @keyframes foundPulse {
+    0%, 100% { filter: drop-shadow(0 0 6px #60ff90); }
+    50%      { filter: drop-shadow(0 0 16px #a0ffb0); }
+  }
+
+  /* Padlock modal */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(3,2,14,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 350;
+  }
+  .modal.on { display: flex; }
+  .modal-box {
+    background: linear-gradient(180deg, #1a0c40, #05020c);
+    border: 2px solid #9060d0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+  }
+  .modal-box h3 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 10px;
+    letter-spacing: 3px;
+  }
+  .modal-disp {
+    font-family: 'Russo One', sans-serif;
+    font-size: 32px;
+    letter-spacing: 10px;
+    color: #80ffa0;
+    text-shadow: 0 0 12px rgba(100,255,140,0.6);
+    background: rgba(10,30,15,0.8);
+    border: 2px solid #408040;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin: 10px 0;
+  }
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-width: 260px;
+    margin: 10px auto 0;
+  }
+  .keypad button {
+    aspect-ratio: 1.3;
+    font-size: 20px;
+    padding: 0;
+    min-height: 48px;
+  }
+
+  /* Buttons */
+  button {
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    border-radius: 3px;
+    border: 1.5px solid #8060c0;
+    background: linear-gradient(180deg, #3a2068, #1a0a38);
+    color: #e0d8ff;
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 44px;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #4a2880, #241048); box-shadow: 0 0 10px rgba(180,120,255,0.45); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #8040a8, #40206a); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #a054c8, #583088); }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* Banners */
+  .banner {
+    position: fixed;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    letter-spacing: 4px;
+    font-size: 20px;
+    text-shadow: 0 0 12px rgba(255,210,80,0.8);
+    padding: 6px 14px;
+    background: rgba(10,5,26,0.85);
+    border: 2px solid #ffd060;
+    border-radius: 6px;
+    transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  .banner.fade { opacity: 0; }
+
+  /* ==== Scene-specific styles ==== */
+
+  /* Room */
+  .tv-screen.static { animation: tvStatic 0.3s steps(2) 3; }
+  @keyframes tvStatic {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+  .red-star {
+    animation: starPulse 2.4s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  @keyframes starPulse {
+    0%, 100% { filter: drop-shadow(0 0 4px #ff6060); transform: scale(1); }
+    50%      { filter: drop-shadow(0 0 18px #ff6060); transform: scale(1.12); }
+  }
+
+  /* Car ignition */
+  .ignition-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 10px;
+  }
+  .ign-step {
+    background: linear-gradient(180deg, #2a1840, #0c0620);
+    border: 2px solid #6a4098;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s, filter 0.1s;
+  }
+  .ign-step.done {
+    border-color: #60ff90;
+    filter: brightness(1.2);
+    background: linear-gradient(180deg, #104030, #021810);
+  }
+  .ign-step .ico { font-size: 28px; margin-bottom: 4px; }
+  .ign-step .lbl { font-family: 'Russo One', sans-serif; font-size: 11px; letter-spacing: 2px; color: #c0a0ff; }
+  .ign-step.done .lbl { color: #a0ffb0; }
+  .ign-step.locked { opacity: 0.4; cursor: not-allowed; }
+
+  /* Drive scene */
+  .drive-scene {
+    position: relative;
+    overflow: hidden;
+  }
+  .road-lines {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(0deg,
+      transparent 0 40px,
+      #ffd060 40px 64px);
+    background-size: 6px 120px;
+    background-position-x: 20%, 80%;
+    opacity: 0.85;
+    animation: roadScroll 0.4s linear infinite;
+  }
+  @keyframes roadScroll { from { background-position-y: 0; } to { background-position-y: 120px; } }
+  .road-lines::before, .road-lines::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 20%;
+    background: repeating-linear-gradient(180deg, transparent 0 30px, rgba(255,220,80,0.45) 30px 60px);
+  }
+  .road-lines::before { left: 18%; }
+  .road-lines::after { right: 18%; }
+  .car-sprite {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(36px, 6vw, 52px);
+    filter: drop-shadow(0 2px 6px #000);
+    z-index: 3;
+    transition: left 0.15s ease-out;
+  }
+  .road-obstacle {
+    position: absolute;
+    font-size: clamp(28px, 5vw, 44px);
+    filter: drop-shadow(0 1px 3px #000);
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+
+  /* Suit / ladder */
+  .suit-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .suit-piece {
+    aspect-ratio: 1;
+    background: linear-gradient(180deg, #2a1840, #0c0620);
+    border: 2px solid #6a4098;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s;
+    position: relative;
+  }
+  .suit-piece.done {
+    border-color: #60ff90;
+    background: linear-gradient(180deg, #104030, #021810);
+  }
+  .suit-piece .ico { font-size: 32px; }
+  .suit-piece .lbl { font-family: 'Russo One', sans-serif; font-size: 10px; letter-spacing: 2px; color: #c0a0ff; margin-top: 4px; }
+  .suit-piece.locked { opacity: 0.3; cursor: not-allowed; }
+  .ladder-box {
+    text-align: center;
+    padding: 10px;
+  }
+  .ladder {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 6px;
+    align-items: center;
+    margin: 0 auto;
+  }
+  .rung {
+    width: 160px;
+    padding: 8px 0;
+    background: linear-gradient(90deg, #8a6028, #603818, #8a6028);
+    border: 1.5px solid #ffd060;
+    border-radius: 3px;
+    color: #2a1408;
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 2px;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0.35;
+  }
+  .rung.active { opacity: 1; box-shadow: 0 0 12px rgba(255,210,80,0.8); }
+  .rung.done { opacity: 0.5; background: linear-gradient(90deg, #4a6028, #184818); }
+
+  /* Cockpit puzzle */
+  .cockpit-panel {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+  .switch {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bungee', sans-serif;
+    font-size: 22px;
+    transition: transform 0.1s, filter 0.1s, box-shadow 0.1s;
+  }
+  .switch.c0 { background: linear-gradient(180deg, #ff4070, #801030); color: #ffd8e0; }
+  .switch.c1 { background: linear-gradient(180deg, #40ff80, #108040); color: #d8ffe8; }
+  .switch.c2 { background: linear-gradient(180deg, #4070ff, #102080); color: #d8e4ff; }
+  .switch.c3 { background: linear-gradient(180deg, #ffd040, #a06010); color: #fff4c0; }
+  .switch.flash { filter: brightness(2); transform: scale(1.05); box-shadow: 0 0 24px currentColor; }
+
+  /* Takeoff */
+  .takeoff-stage {
+    position: relative;
+    overflow: hidden;
+  }
+  .streak {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    animation: streak 0.4s linear forwards;
+  }
+  @keyframes streak {
+    from { transform: translateY(-30px); opacity: 0.8; }
+    to   { transform: translateY(700px); opacity: 0; }
+  }
+  .rocket-sprite {
+    position: absolute;
+    left: 50%;
+    bottom: 10%;
+    transform: translateX(-50%);
+    font-size: clamp(48px, 8vw, 80px);
+    filter: drop-shadow(0 0 20px #ffa040);
+    z-index: 3;
+    animation: rocketLaunch 2.8s cubic-bezier(0.5, 0, 0.9, 0.3) forwards;
+  }
+  @keyframes rocketLaunch {
+    0%   { bottom: 10%; }
+    100% { bottom: 110%; }
+  }
+  .flame {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(32px, 6vw, 56px);
+    animation: flameFlicker 0.15s linear infinite;
+  }
+  @keyframes flameFlicker {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50%      { transform: translateX(-50%) scale(1.15, 0.9); }
+  }
+
+  /* Battle */
+  .battle-stage { position: relative; overflow: hidden; }
+  .battle-stage .starfield {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle, #fff 0.8px, transparent 1px),
+      radial-gradient(circle, #fff 0.6px, transparent 1px);
+    background-size: 120px 120px, 80px 80px;
+    background-position: 0 0, 40px 60px;
+    animation: bf 15s linear infinite;
+    opacity: 0.8;
+  }
+  @keyframes bf { from { background-position-y: 0, 60px; } to { background-position-y: 240px, 540px; } }
+  .hp-row {
+    position: absolute;
+    top: 8px; left: 8px; right: 8px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 5;
+    gap: 10px;
+  }
+  .hp-box {
+    flex: 1;
+    background: rgba(10,6,30,0.75);
+    border: 1px solid #4a3890;
+    border-radius: 4px;
+    padding: 3px 8px;
+  }
+  .hp-box.you { border-color: #60a0ff; }
+  .hp-box.foe { border-color: #ff6080; }
+  .hp-box .lbl { font-size: 9px; letter-spacing: 2px; font-family: 'Russo One', sans-serif; color: #a0a0c0; }
+  .hp-box.you .lbl { color: #a0c8ff; }
+  .hp-box.foe .lbl { color: #ffb0b8; }
+  .hp-bar {
+    position: relative;
+    height: 8px;
+    background: #0a0618;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .hp-bar .fill { height: 100%; width: 100%; transition: width 0.2s; }
+  .hp-box.you .hp-bar .fill { background: linear-gradient(90deg, #2060c0, #60a0ff); }
+  .hp-box.foe .hp-bar .fill { background: linear-gradient(90deg, #a02030, #ff6080); }
+
+  .b-player, .b-foe {
+    position: absolute;
+    pointer-events: none;
+    z-index: 3;
+    transform: translateX(-50%);
+    width: clamp(44px, 6vw, 62px);
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+  .b-player { bottom: 20px; left: 50%; color: #60a8ff; }
+  .b-foe    { top: 40px; left: 50%; color: #ff6080; }
+  .b-player svg, .b-foe svg { width: 100%; height: auto; display: block; }
+
+  .bullet {
+    position: absolute;
+    width: 3px; height: 12px;
+    transform: translate(-50%, 0);
+    border-radius: 2px;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .bullet.you { background: linear-gradient(180deg, #fff, #80c8ff); box-shadow: 0 0 8px #80c8ff; }
+  .bullet.foe { background: linear-gradient(180deg, #ffa060, #ff2040); box-shadow: 0 0 8px #ff4040; }
+
+  /* Explore */
+  .explore-stage { position: relative; overflow: hidden; }
+  .explore-stage .starfield { position: absolute; inset: 0;
+    background-image: radial-gradient(circle, #fff 0.8px, transparent 1px);
+    background-size: 100px 100px;
+    animation: bf2 25s linear infinite; opacity: 0.6; }
+  @keyframes bf2 { from { background-position-y: 0; } to { background-position-y: 200px; } }
+  .explore-ship {
+    position: absolute;
+    width: clamp(44px, 6vw, 62px);
+    pointer-events: none;
+    z-index: 3;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 0 10px #60a8ff);
+    transition: left 0.4s ease-out, top 0.4s ease-out;
+  }
+  .red-star-target {
+    position: absolute;
+    font-size: clamp(28px, 5vw, 44px);
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 0 12px #ff4060);
+    cursor: pointer;
+    transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+  }
+
+  /* Reveal */
+  .reveal-stage {
+    position: relative;
+    overflow: hidden;
+  }
+  .reveal-planet {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    transform: translate(-50%, -50%);
+    width: clamp(140px, 26vw, 240px);
+    height: clamp(140px, 26vw, 240px);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, #6080d0 0%, #1a3060 50%, #0a1030 100%);
+    box-shadow: 0 0 40px rgba(100,140,220,0.5);
+    transition: background 2s, box-shadow 2s, filter 2s;
+  }
+  .reveal-planet.alien {
+    background:
+      radial-gradient(circle at 30% 30%, #ffd060 0%, #ff6030 40%, #801030 80%, #200008 100%);
+    box-shadow: 0 0 60px rgba(255,120,80,0.7);
+    filter: hue-rotate(20deg);
+  }
+  .dialogue-box {
+    position: absolute;
+    left: 10%; right: 10%;
+    bottom: 10%;
+    background: rgba(10,5,30,0.9);
+    border: 2px solid #a060ff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #d8c8f5;
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+    min-height: 60px;
+  }
+  .dialogue-box .speaker {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  /* Generic overlay for end-of-game */
   .overlay {
     position: fixed; inset: 0;
-    background: rgba(3,2,14,0.9);
+    background: rgba(3,2,14,0.92);
     display: none; align-items: center; justify-content: center;
     z-index: 400;
   }
@@ -570,13 +630,10 @@
   .overlay-box p { margin: 6px 0 14px; color: #d8c8f5; }
 
   @media (max-width: 720px) {
-    .split { grid-template-columns: 1fr; }
-    .pilot { min-height: 180px; }
-    .science { min-height: 260px; }
-    .hud { grid-template-columns: 1fr 1fr; gap: 6px; }
-    .hud-box.theme { grid-column: 1 / -1; }
-    .hud-box .v { font-size: 14px; }
-    .logo { max-height: 64px; }
+    .logo { max-height: 56px; }
+    .stage { min-height: 200px; }
+    .scene-title { font-size: 13px; }
+    .scene-prompt { font-size: 12px; }
   }
 </style>
 </head>
@@ -592,26 +649,8 @@
       <stop offset="70%" stop-color="#ff60a0"/>
       <stop offset="100%" stop-color="#ffd060"/>
     </linearGradient>
-    <filter id="wdGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="2.4" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
   <ellipse cx="400" cy="80" rx="320" ry="40" fill="#6030a0" opacity="0.22"/>
-  <!-- planet silhouette + rings -->
-  <g transform="translate(90, 70)">
-    <circle r="16" fill="#5a3ca0"/>
-    <ellipse rx="28" ry="6" fill="none" stroke="#c080ff" stroke-width="1.5" opacity="0.8"/>
-  </g>
-  <g transform="translate(710, 70)">
-    <circle r="14" fill="#a040c0"/>
-    <ellipse rx="24" ry="5" fill="none" stroke="#ff60a0" stroke-width="1.5" opacity="0.8"/>
-  </g>
-  <!-- floating question marks -->
-  <g fill="#ffd060" filter="url(#wdGlow)" font-family="Bungee, sans-serif" font-size="28">
-    <text x="150" y="58">?</text>
-    <text x="650" y="46">?</text>
-  </g>
   <text x="400" y="82" text-anchor="middle"
         font-family="'Bungee', sans-serif"
         font-size="52"
@@ -620,817 +659,848 @@
         style="paint-order: stroke; stroke: #04020e; stroke-width: 2.5;">WEIRDNESS</text>
   <text x="400" y="108" text-anchor="middle"
         font-family="'Russo One', sans-serif"
-        font-size="11" fill="#c0a0ff" letter-spacing="6">one voyager · one strange sky</text>
+        font-size="11" fill="#c0a0ff" letter-spacing="6">escape · drive · launch · discover</text>
 </svg>
 
-<div id="startScreen" class="start-screen">
-  <div class="earth-scene">
-    <svg viewBox="0 0 600 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="earthSkyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stop-color="#0a0624"/>
-          <stop offset="60%" stop-color="#1a0c3c"/>
-          <stop offset="100%" stop-color="#2a0830"/>
-        </linearGradient>
-      </defs>
-      <rect width="600" height="240" fill="url(#earthSkyGrad)"/>
-      <!-- stars -->
-      <g fill="#fff">
-        <circle cx="40"  cy="30" r="1" class="twk-a"/>
-        <circle cx="95"  cy="52" r="0.8" class="twk-b"/>
-        <circle cx="160" cy="24" r="1" class="twk-c"/>
-        <circle cx="220" cy="70" r="0.8" class="twk-a"/>
-        <circle cx="320" cy="34" r="1" class="twk-b"/>
-        <circle cx="380" cy="60" r="0.8" class="twk-c"/>
-        <circle cx="430" cy="40" r="1" class="twk-a"/>
-        <circle cx="470" cy="86" r="0.8" class="twk-b"/>
-        <circle cx="540" cy="28" r="1" class="twk-c"/>
-        <circle cx="110" cy="100" r="0.6" class="twk-a"/>
-        <circle cx="350" cy="110" r="0.6" class="twk-b"/>
-        <circle cx="250" cy="140" r="0.6" class="twk-c"/>
-      </g>
-      <!-- moon -->
-      <circle cx="500" cy="52" r="18" fill="#fff4c8" opacity="0.85"/>
-      <circle cx="506" cy="48" r="16" fill="#0a0624"/>
-      <!-- weirdness in the sky -->
-      <g id="earthAnomalyWrap" class="earth-anomaly" transform="translate(250, 78)">
-        <!-- populated by JS based on theme -->
-      </g>
-      <!-- ground silhouette -->
-      <path d="M 0 200 Q 100 172 200 196 T 400 192 Q 500 172 600 198 L 600 240 L 0 240 Z" fill="#04020a"/>
-      <!-- house silhouette -->
-      <g fill="#03010a">
-        <rect x="144" y="186" width="44" height="22"/>
-        <polygon points="142,186 166,166 190,186"/>
-        <rect x="230" y="192" width="36" height="18"/>
-        <polygon points="228,192 248,176 268,192"/>
-      </g>
-      <!-- window glows -->
-      <rect x="160" y="192" width="4" height="6" fill="#ffd060" class="window-light"/>
-      <rect x="240" y="198" width="4" height="5" fill="#ffb060" class="window-light"/>
-    </svg>
-    <div class="earth-prompt" id="earthPrompt">TAP THE GROUND TO WALK TO THE ROCKET</div>
-    <div class="earth-player" id="earthPlayer">🚶</div>
-    <div class="earth-rocket" id="earthRocket">🚀</div>
-  </div>
-  <h2 id="earthTitle">SOMETHING IN THE SKY</h2>
-  <p>Out on the rooftop you look up and see <span id="earthThemeLabel" style="color:#ffd060; font-weight:700; letter-spacing:2px;">—</span> above the horizon.</p>
-  <p>Board your ship, pilot out to it, and figure out what's going on.</p>
-  <div style="margin-top:10px;">
-    <button id="beginBtn" class="primary" disabled>Board Ship</button>
-  </div>
-</div>
+<div class="progress-bar"><div class="fill" id="progressFill"></div></div>
 
-<div id="hud" class="hud" style="display:none">
-  <div class="hud-box ship">
-    <div class="lbl">Hull</div>
-    <div class="v" id="hullV">5/5</div>
-  </div>
-  <div class="hud-box theme">
-    <div class="lbl">Anomaly</div>
-    <div class="v" id="themeV">—</div>
-  </div>
-  <div class="hud-box puzz">
-    <div class="lbl">Puzzles Solved</div>
-    <div class="v" id="puzzV">0 / 5</div>
-  </div>
-</div>
-
-<div id="splitArea" class="split" style="display:none">
-  <div class="pilot" id="pilot">
-    <div class="console-frame"></div>
-    <div class="console-label">PILOT · DRAG TO STEER · AUTO-FIRES</div>
-    <div class="starfield"></div>
-    <svg class="reticle" viewBox="0 0 52 52" aria-hidden="true">
-      <circle cx="26" cy="26" r="20" fill="none" stroke="#80c0ff" stroke-width="1.5" opacity="0.8"/>
-      <line x1="26" y1="4" x2="26" y2="14" stroke="#80c0ff" stroke-width="1.5"/>
-      <line x1="26" y1="38" x2="26" y2="48" stroke="#80c0ff" stroke-width="1.5"/>
-      <line x1="4" y1="26" x2="14" y2="26" stroke="#80c0ff" stroke-width="1.5"/>
-      <line x1="38" y1="26" x2="48" y2="26" stroke="#80c0ff" stroke-width="1.5"/>
-      <circle cx="26" cy="26" r="2" fill="#ff6080"/>
-    </svg>
+<div class="scene-wrap" id="sceneWrap">
+  <!-- ===== ROOM ===== -->
+  <div class="scene" id="scene-room">
+    <h2 class="scene-title">YOUR APARTMENT</h2>
+    <p class="scene-prompt" id="roomPrompt">Something flashed on TV. Look around — click the TV, window, and bookshelf for clues, then open the door padlock.</p>
+    <div class="stage">
+      <svg viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice">
+        <!-- wall -->
+        <rect width="800" height="400" fill="#2a1840"/>
+        <!-- wall pattern -->
+        <g opacity="0.2" stroke="#ffd060">
+          <line x1="100" y1="0" x2="100" y2="320"/>
+          <line x1="400" y1="0" x2="400" y2="320"/>
+          <line x1="700" y1="0" x2="700" y2="320"/>
+        </g>
+        <!-- floor -->
+        <rect x="0" y="320" width="800" height="80" fill="#180820"/>
+        <rect x="0" y="320" width="800" height="4" fill="#2a1848"/>
+        <!-- rug -->
+        <ellipse cx="400" cy="360" rx="200" ry="18" fill="#6a3098" opacity="0.75"/>
+        <!-- TV on stand -->
+        <g id="tv" class="hotspot" data-which="tv">
+          <rect x="120" y="200" width="160" height="100" rx="6" fill="#0a0a1a" stroke="#ffd060" stroke-width="3"/>
+          <rect x="128" y="208" width="144" height="84" class="tv-screen" fill="#1a1a3a" id="tvScreen"/>
+          <rect x="140" y="300" width="120" height="14" fill="#302058"/>
+        </g>
+        <!-- window with star -->
+        <g id="window" class="hotspot" data-which="window">
+          <rect x="480" y="40" width="160" height="140" fill="#120a30" stroke="#ffd060" stroke-width="4"/>
+          <line x1="560" y1="40" x2="560" y2="180" stroke="#ffd060" stroke-width="2"/>
+          <line x1="480" y1="110" x2="640" y2="110" stroke="#ffd060" stroke-width="2"/>
+          <!-- stars -->
+          <g fill="#fff">
+            <circle cx="510" cy="70" r="1"/>
+            <circle cx="600" cy="65" r="0.8"/>
+            <circle cx="530" cy="130" r="0.8"/>
+            <circle cx="610" cy="155" r="1"/>
+          </g>
+          <!-- red star -->
+          <polygon class="red-star"
+            points="572,82 578,96 594,96 582,106 587,120 572,112 557,120 562,106 550,96 566,96"
+            fill="#ff4040" stroke="#ff8060" stroke-width="1"/>
+        </g>
+        <!-- bookshelf -->
+        <g id="shelf" class="hotspot" data-which="shelf">
+          <rect x="680" y="170" width="100" height="150" fill="#4a2818" stroke="#ffd060" stroke-width="2"/>
+          <line x1="680" y1="210" x2="780" y2="210" stroke="#ffd060" stroke-width="2"/>
+          <line x1="680" y1="260" x2="780" y2="260" stroke="#ffd060" stroke-width="2"/>
+          <g fill="#c04060">
+            <rect x="688" y="178" width="8" height="28"/>
+            <rect x="700" y="178" width="8" height="28"/>
+          </g>
+          <g fill="#4060a0">
+            <rect x="688" y="218" width="8" height="38"/>
+            <rect x="700" y="218" width="10" height="38"/>
+            <rect x="716" y="218" width="8" height="38"/>
+          </g>
+          <g fill="#40a060">
+            <rect x="688" y="268" width="10" height="48"/>
+            <rect x="702" y="268" width="8" height="48"/>
+          </g>
+        </g>
+        <!-- door with padlock -->
+        <g id="door" class="hotspot" data-which="door">
+          <rect x="320" y="60" width="140" height="240" fill="#4a2818" stroke="#ffd060" stroke-width="3"/>
+          <rect x="336" y="80" width="108" height="200" fill="#3a1808" stroke="#ffd060" stroke-width="1.5"/>
+          <circle cx="430" cy="180" r="3" fill="#ffd060"/>
+          <!-- padlock shackle -->
+          <path d="M 378 150 Q 378 130 400 130 Q 422 130 422 150" fill="none" stroke="#c0c0c0" stroke-width="5"/>
+          <!-- padlock body -->
+          <rect x="370" y="150" width="60" height="50" rx="4" fill="#808090" stroke="#303040" stroke-width="1.5"/>
+          <text x="400" y="180" text-anchor="middle" font-family="Russo One, sans-serif" font-size="10" fill="#303040" letter-spacing="2">LOCK</text>
+        </g>
+      </svg>
+    </div>
   </div>
 
-  <div class="science">
-    <div class="science-label">SCIENCE LAB · SOLVE THE PUZZLE</div>
-    <h3 id="puzzTitle">—</h3>
-    <p class="instr" id="puzzInstr">—</p>
-    <div class="puzzle-area" id="puzzArea"></div>
-    <div style="text-align:center">
-      <button id="skipBtn" style="font-size:10px;padding:6px 10px;min-height:32px">Abandon Ship</button>
+  <!-- ===== CAR ===== -->
+  <div class="scene hidden" id="scene-car">
+    <h2 class="scene-title">YOUR CAR</h2>
+    <p class="scene-prompt">Hit each ignition step in order: KEY, CHOKE, THROTTLE. Get it started.</p>
+    <div class="stage">
+      <svg viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+        <!-- garage -->
+        <rect width="800" height="240" fill="#1a0830"/>
+        <rect x="0" y="180" width="800" height="60" fill="#0a0418"/>
+        <!-- car body -->
+        <g transform="translate(200, 120)">
+          <rect x="0" y="0" width="400" height="50" rx="8" fill="#ff4060" stroke="#200408" stroke-width="2"/>
+          <path d="M 70 0 L 120 -30 L 280 -30 L 330 0 Z" fill="#1a0408" stroke="#200408" stroke-width="2"/>
+          <rect x="120" y="-26" width="160" height="22" rx="2" fill="#80c8ff" opacity="0.7"/>
+          <circle cx="80" cy="55" r="18" fill="#141418"/>
+          <circle cx="80" cy="55" r="10" fill="#6a6a78"/>
+          <circle cx="320" cy="55" r="18" fill="#141418"/>
+          <circle cx="320" cy="55" r="10" fill="#6a6a78"/>
+          <rect x="360" y="12" width="8" height="10" fill="#ffd060"/>
+        </g>
+      </svg>
+    </div>
+    <div class="ignition-steps" id="ignitionSteps"></div>
+  </div>
+
+  <!-- ===== DRIVE ===== -->
+  <div class="scene hidden" id="scene-drive">
+    <h2 class="scene-title">HEADING TO THE ROCKET</h2>
+    <p class="scene-prompt">Drag left/right (or arrow keys) to dodge traffic. Arrive in one piece.</p>
+    <div class="stage drive-scene" id="driveStage">
+      <div class="road-lines"></div>
+      <div class="car-sprite" id="driveCar">🚗</div>
+    </div>
+  </div>
+
+  <!-- ===== SUIT & LADDER ===== -->
+  <div class="scene hidden" id="scene-suit">
+    <h2 class="scene-title">SUIT UP · CLIMB UP</h2>
+    <p class="scene-prompt" id="suitPrompt">Put your suit on in order, then climb the ladder rung by rung.</p>
+    <div class="suit-grid" id="suitGrid"></div>
+    <div class="ladder-box" id="ladderBox" style="display:none">
+      <div class="ladder" id="ladder"></div>
+    </div>
+  </div>
+
+  <!-- ===== COCKPIT ===== -->
+  <div class="scene hidden" id="scene-cockpit">
+    <h2 class="scene-title">COCKPIT · INITIALIZE</h2>
+    <p class="scene-prompt" id="cockpitPrompt">Watch the launch sequence, then tap the switches back in the same order.</p>
+    <div class="cockpit-panel" id="cockpitPanel"></div>
+  </div>
+
+  <!-- ===== TAKEOFF ===== -->
+  <div class="scene hidden" id="scene-takeoff">
+    <h2 class="scene-title">LIFTOFF</h2>
+    <p class="scene-prompt">Hold on.</p>
+    <div class="stage takeoff-stage" id="takeoffStage">
+      <div class="rocket-sprite">🚀</div>
+    </div>
+  </div>
+
+  <!-- ===== BATTLE ===== -->
+  <div class="scene hidden" id="scene-battle">
+    <h2 class="scene-title">ENEMY INTERCEPT</h2>
+    <p class="scene-prompt">Both ships are armored. Trade shots until one of you falls.</p>
+    <div class="stage battle-stage" id="battleStage">
+      <div class="starfield"></div>
+      <div class="hp-row">
+        <div class="hp-box you">
+          <div class="lbl">YOU</div>
+          <div class="hp-bar"><div class="fill" id="youHp"></div></div>
+        </div>
+        <div class="hp-box foe">
+          <div class="lbl">ENEMY</div>
+          <div class="hp-bar"><div class="fill" id="foeHp"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EXPLORE ===== -->
+  <div class="scene hidden" id="scene-explore">
+    <h2 class="scene-title">SEARCH FOR THE RED STAR</h2>
+    <p class="scene-prompt" id="explorePrompt">Drag to fly. Get close to the red star — it keeps sneaking away.</p>
+    <div class="stage explore-stage" id="exploreStage">
+      <div class="starfield"></div>
+    </div>
+  </div>
+
+  <!-- ===== REVEAL ===== -->
+  <div class="scene hidden" id="scene-reveal">
+    <h2 class="scene-title">REVELATION</h2>
+    <p class="scene-prompt">Tap to continue.</p>
+    <div class="stage reveal-stage" id="revealStage">
+      <div class="reveal-planet" id="revealPlanet"></div>
+      <div class="dialogue-box" id="dialogueBox">
+        <span class="speaker">YOU</span>
+        <span id="dialogueText">…</span>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- Padlock modal -->
+<div class="modal" id="padlockModal">
+  <div class="modal-box">
+    <h3>DOOR LOCK</h3>
+    <div class="modal-disp" id="padlockDisp">_ _ _</div>
+    <div class="keypad" id="padlockKeys"></div>
+    <div class="action-row" style="margin-top:12px">
+      <button id="padlockClear">Clear</button>
+      <button class="primary" id="padlockTry">Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- End overlay -->
 <div class="overlay" id="overlay">
   <div class="overlay-box">
-    <h2 id="overTitle">MISSION COMPLETE</h2>
-    <p id="overBody"></p>
-    <button id="overClose">Try Again</button>
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <button id="overClose" class="primary">Try Again</button>
   </div>
 </div>
 
 <script>
-// ---------- Themes (random per run) ----------
-const THEMES = [
-  { id: 'melt',  label: 'MELTING STARS',    glyph: 'drop',  color: '#ff6080' },
-  { id: 'fog',   label: 'EMERALD FOG',      glyph: 'blob',  color: '#80ff90' },
-  { id: 'echo',  label: 'TIME ECHOES',      glyph: 'ring',  color: '#60b0ff' },
-  { id: 'void',  label: 'VOID TENTACLES',   glyph: 'spike', color: '#c060ff' },
-  { id: 'cryst', label: 'CRYSTAL STORM',    glyph: 'star',  color: '#70ffea' },
-];
+// ---------- Scene manager ----------
+const SCENE_ORDER = ['room','car','drive','suit','cockpit','takeoff','battle','explore','reveal'];
+let currentScene = 'room';
 
-// ---------- State ----------
-const MAX_HULL = 5;
-const PUZZLE_COUNT = 5;
-let theme = THEMES[0];
-let hull = MAX_HULL;
-let solved = 0;
-let running = false;
-let anomalies = [];
-let puzzleState = null;
-let phase = 'pilot';      // 'pilot' | 'science'
-let firstWaveDone = false;
-
-// ---------- Start/End ----------
-document.getElementById('beginBtn').addEventListener('click', start);
-document.getElementById('overClose').addEventListener('click', () => {
-  document.getElementById('overlay').classList.remove('on');
-  rollTheme(); // re-roll the sky weirdness for a new run
-  showStart();
-});
-document.getElementById('skipBtn').addEventListener('click', () => endGame(false, 'abandoned the mission'));
-
-// Pre-roll the theme so the Earth sky shows the right anomaly type at load
-rollTheme();
-paintEarthSky();
-wireEarthWalk();
-
-function wireEarthWalk() {
-  const scene = document.querySelector('.earth-scene');
-  const player = document.getElementById('earthPlayer');
-  const prompt = document.getElementById('earthPrompt');
-  const rocket = document.getElementById('earthRocket');
-  const btn = document.getElementById('beginBtn');
-  let playerXPct = 10;
-
-  function walkTo(xPct) {
-    playerXPct = Math.max(6, Math.min(90, xPct));
-    player.style.left = playerXPct + '%';
-    player.classList.add('walking');
-    clearTimeout(player._stopWalk);
-    player._stopWalk = setTimeout(() => player.classList.remove('walking'), 1400);
-    setTimeout(checkNearRocket, 1450);
-  }
-  function checkNearRocket() {
-    const r = scene.getBoundingClientRect();
-    const rr = rocket.getBoundingClientRect();
-    const rocketPct = ((rr.left + rr.width / 2) - r.left) / r.width * 100;
-    if (Math.abs(playerXPct - rocketPct) < 10) {
-      btn.disabled = false;
-      prompt.textContent = 'READY · TAP BOARD SHIP';
-      prompt.classList.add('ready');
-    } else {
-      btn.disabled = true;
-      prompt.textContent = 'KEEP WALKING TOWARD THE ROCKET';
-      prompt.classList.remove('ready');
-    }
-  }
-  scene.addEventListener('pointerdown', e => {
-    const r = scene.getBoundingClientRect();
-    const pct = ((e.clientX - r.left) / r.width) * 100;
-    walkTo(pct);
-  });
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(e => e.classList.add('hidden'));
+  document.getElementById('scene-' + id).classList.remove('hidden');
+  currentScene = id;
+  const idx = SCENE_ORDER.indexOf(id);
+  document.getElementById('progressFill').style.width = ((idx + 1) / SCENE_ORDER.length * 100) + '%';
+  if (INITS[id]) INITS[id]();
 }
 
-function rollTheme() {
-  theme = THEMES[Math.floor(Math.random() * THEMES.length)];
-}
-
-function paintEarthSky() {
-  const wrap = document.getElementById('earthAnomalyWrap');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  const ns = 'http://www.w3.org/2000/svg';
-  const group = document.createElementNS(ns, 'g');
-  group.setAttribute('transform', 'scale(1.6)');
-  group.style.color = theme.color;
-  group.innerHTML = glyphSvgInner(theme.glyph);
-  wrap.appendChild(group);
-  const label = document.getElementById('earthThemeLabel');
-  if (label) { label.textContent = theme.label; label.style.color = theme.color; }
-}
-
-function showStart() {
-  document.getElementById('startScreen').style.display = '';
-  document.getElementById('hud').style.display = 'none';
-  document.getElementById('splitArea').style.display = 'none';
-  // reset walker
-  const player = document.getElementById('earthPlayer');
-  const prompt = document.getElementById('earthPrompt');
-  if (player) { player.style.left = '10%'; player.classList.remove('walking'); }
-  if (prompt) { prompt.textContent = 'TAP THE GROUND TO WALK TO THE ROCKET'; prompt.classList.remove('ready'); }
-  document.getElementById('beginBtn').disabled = true;
-  paintEarthSky();
-  stopLoop();
-}
-
-function start() {
-  // theme is already chosen in rollTheme() at load / after end-game
-  hull = MAX_HULL;
-  solved = 0;
-  anomalies = [];
-  firstWaveDone = false;
-  document.getElementById('startScreen').style.display = 'none';
-  document.getElementById('hud').style.display = '';
-  document.getElementById('splitArea').style.display = '';
-  document.getElementById('themeV').textContent = theme.label;
-  document.getElementById('themeV').style.color = theme.color;
-  document.querySelector('.hud-box.theme').style.borderColor = theme.color;
-  updateHud();
-  running = true;
-  requestAnimationFrame(tick);
-  showBanner('LAUNCHING · FLY TO THE WEIRDNESS');
-  setTimeout(() => startPilotWave(), 900);
-}
-
-function setActiveSide(side) {
-  const pilot = document.getElementById('pilot');
-  const science = document.querySelector('.science');
-  if (side === 'pilot') {
-    pilot.classList.add('active'); pilot.classList.remove('inactive');
-    science.classList.add('inactive'); science.classList.remove('active');
-  } else {
-    science.classList.add('active'); science.classList.remove('inactive');
-    pilot.classList.add('inactive'); pilot.classList.remove('active');
-  }
-}
-
-function startPilotWave() {
-  if (!running) return;
-  phase = 'pilot';
-  setActiveSide('pilot');
-  clearBattle();
-  spawnPlayerShip();
-  const count = 3;
-  for (let i = 0; i < count; i++) {
-    const xPct = 20 + (i / (count - 1)) * 60;
-    spawnAlien(xPct);
-  }
-  lastPlayerFire = performance.now();
-  showBanner(firstWaveDone ? 'ALIEN AMBUSH · DEFEND THE SHIP' : 'LAUNCH · FIGHT THROUGH TO THE WEIRDNESS');
-}
-
-function startScienceWave() {
-  if (!running) return;
-  phase = 'science';
-  setActiveSide('science');
-  if (!firstWaveDone) {
-    firstWaveDone = true;
-    showBanner('ARRIVED · STUDY THE WEIRDNESS');
-  } else {
-    showBanner(`SCIENCE · PUZZLE ${solved + 1} / ${PUZZLE_COUNT}`);
-  }
-  nextPuzzle();
-}
-
-// ship battle state
-let playerShipEl = null;
-let playerShipX = 50, playerShipTargetX = 50;
-let aliens = [];
-let playerBullets = [], alienBullets = [];
-let lastPlayerFire = 0;
-let waveResolving = false;
-
-function clearBattle() {
-  document.querySelectorAll('.player-ship, .alien-ship, .p-bullet, .a-bullet, .pop-burst').forEach(e => e.remove());
-  playerShipEl = null;
-  aliens = []; playerBullets = []; alienBullets = [];
-  waveResolving = false;
-}
-
-function spawnPlayerShip() {
-  const pilot = document.getElementById('pilot');
-  const el = document.createElement('div');
-  el.className = 'player-ship';
-  el.innerHTML = PLAYER_SHIP_SVG;
-  pilot.appendChild(el);
-  playerShipEl = el;
-  playerShipX = 50; playerShipTargetX = 50;
-  el.style.left = '50%';
-}
-
-function spawnAlien(xPct) {
-  const pilot = document.getElementById('pilot');
-  const el = document.createElement('div');
-  el.className = 'alien-ship ' + theme.id;
-  el.innerHTML = alienSvg(theme.glyph);
-  el.style.left = xPct + '%';
-  el.style.top = '16%';
-  pilot.appendChild(el);
-  aliens.push({
-    el, xPct, yPct: 16,
-    vx: (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 8),
-    t: Math.random() * Math.PI * 2,
-    lastFire: performance.now() + 900 + Math.random() * 1400,
-  });
-}
-
-function spawnPlayerBullet() {
-  if (!playerShipEl) return;
-  const pilot = document.getElementById('pilot');
-  const r = pilot.getBoundingClientRect();
-  const sr = playerShipEl.getBoundingClientRect();
-  const x = sr.left + sr.width / 2 - r.left;
-  const y = sr.top + 4 - r.top;
-  const el = document.createElement('div');
-  el.className = 'p-bullet';
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
-  pilot.appendChild(el);
-  playerBullets.push({ el, x, y, vy: -9 });
-}
-
-function spawnAlienBullet(alien) {
-  const pilot = document.getElementById('pilot');
-  const r = pilot.getBoundingClientRect();
-  const ar = alien.el.getBoundingClientRect();
-  const x = ar.left + ar.width / 2 - r.left;
-  const y = ar.top + ar.height - r.top;
-  const el = document.createElement('div');
-  el.className = 'a-bullet';
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
-  pilot.appendChild(el);
-  alienBullets.push({ el, x, y, vy: 5 });
-}
-
-const PLAYER_SHIP_SVG = `<svg viewBox="0 0 60 60">
-  <polygon points="30,6 44,44 30,38 16,44" fill="#80c0ff" stroke="#fff" stroke-width="1.4"/>
-  <polygon points="30,6 30,38 44,44" fill="#4a8ae0" opacity="0.75"/>
-  <circle cx="30" cy="26" r="5" fill="#ffd060"/>
-  <ellipse cx="30" cy="48" rx="4" ry="7" fill="#ffa030" opacity="0.9"/>
-  <ellipse cx="22" cy="46" rx="2" ry="5" fill="#ff8020" opacity="0.75"/>
-  <ellipse cx="38" cy="46" rx="2" ry="5" fill="#ff8020" opacity="0.75"/>
-</svg>`;
-
-function alienSvg(kind) {
-  // Themed saucer; kind modifies top cabin element to match theme
-  return `<svg viewBox="0 0 60 60">
-    <ellipse cx="30" cy="36" rx="24" ry="10" fill="currentColor"/>
-    <ellipse cx="30" cy="30" rx="14" ry="9" fill="currentColor" opacity="0.8"/>
-    <circle cx="30" cy="26" r="5" fill="#fff"/>
-    <circle cx="30" cy="26" r="2.6" fill="#ff4040"/>
-    <circle cx="14" cy="38" r="2" fill="#ffd060"/>
-    <circle cx="30" cy="42" r="2" fill="#ffd060"/>
-    <circle cx="46" cy="38" r="2" fill="#ffd060"/>
-  </svg>`;
-}
-
-function showBanner(text) {
-  const pilot = document.getElementById('pilot');
-  const old = pilot.querySelector('.banner');
+function banner(text, sub) {
+  const old = document.querySelector('.banner');
   if (old) old.remove();
   const el = document.createElement('div');
   el.className = 'banner';
-  el.textContent = text;
-  pilot.appendChild(el);
-  setTimeout(() => el.classList.add('fade'), 1400);
-  setTimeout(() => el.remove(), 2100);
+  el.innerHTML = sub ? `${text}<div style="font-size:11px;letter-spacing:3px;margin-top:4px;color:#c0a0ff">${sub}</div>` : text;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('fade'), 1500);
+  setTimeout(() => el.remove(), 2200);
 }
 
-function updateHud() {
-  document.getElementById('hullV').textContent = `${hull}/${MAX_HULL}`;
-  document.getElementById('puzzV').textContent = `${solved} / ${PUZZLE_COUNT}`;
-}
-
-function endGame(won, reason) {
-  running = false;
-  stopLoop();
-  document.getElementById('overTitle').textContent = won ? 'WEIRDNESS RESOLVED' : 'THE STRANGE WON';
-  document.getElementById('overBody').textContent = won
-    ? `Five puzzles cracked, ${theme.label.toLowerCase()} dispelled, hull ${hull}/${MAX_HULL}.`
-    : `The ship ${reason}. The universe stays weird.`;
+function endGame(won, title, body) {
+  document.getElementById('overTitle').textContent = title;
+  document.getElementById('overBody').textContent = body;
   document.getElementById('overlay').classList.add('on');
 }
 
-function stopLoop() {
-  document.querySelectorAll('.anomaly,.pop-burst,.player-ship,.alien-ship,.p-bullet,.a-bullet').forEach(e => e.remove());
-  anomalies = [];
-  playerShipEl = null;
-  aliens = []; playerBullets = []; alienBullets = [];
-}
+document.getElementById('overClose').addEventListener('click', () => {
+  document.getElementById('overlay').classList.remove('on');
+  showScene('room');
+});
 
-// Pilot panel pointer steers the player ship horizontally
-(function wirePilot() {
-  const pilot = document.getElementById('pilot');
-  if (!pilot) return;
-  let dragging = false;
-  function setTargetFromEvent(e) {
-    if (phase !== 'pilot' || !playerShipEl) return;
-    const r = pilot.getBoundingClientRect();
-    const pct = ((e.clientX - r.left) / r.width) * 100;
-    playerShipTargetX = Math.max(8, Math.min(92, pct));
-  }
-  pilot.addEventListener('pointerdown', e => {
-    dragging = true;
-    try { pilot.setPointerCapture(e.pointerId); } catch (_) {}
-    setTargetFromEvent(e);
+// ---------- Scene inits ----------
+const INITS = {};
+
+// ==== ROOM ====
+let roomState;
+INITS.room = function() {
+  const code = String(Math.floor(Math.random() * 900) + 100);
+  roomState = { code, found: { tv: false, window: false, shelf: false }, entered: '' };
+  const hotspots = ['tv','window','shelf','door'];
+  hotspots.forEach(h => {
+    const el = document.getElementById(h);
+    el.onclick = () => onRoomHotspot(h);
   });
-  pilot.addEventListener('pointermove', e => { if (dragging) setTargetFromEvent(e); });
-  pilot.addEventListener('pointerup', e => { dragging = false; try { pilot.releasePointerCapture(e.pointerId); } catch(_) {} });
-  window.addEventListener('keydown', e => {
-    if (phase !== 'pilot' || !playerShipEl) return;
-    if (e.key === 'ArrowLeft')  playerShipTargetX = Math.max(8,  playerShipTargetX - 5);
-    if (e.key === 'ArrowRight') playerShipTargetX = Math.min(92, playerShipTargetX + 5);
-  });
-})();
+  const prompt = document.getElementById('roomPrompt');
+  prompt.textContent = 'Something flashed on TV. Look around — click the TV, window, and bookshelf for clues, then open the door padlock.';
+  document.querySelectorAll('#scene-room .hotspot').forEach(e => e.classList.remove('found'));
+};
 
-// ---------- PILOT SIDE ----------
-function tick(now) {
-  if (!running) return;
-  if (phase === 'pilot' && playerShipEl) updateBattle(now);
-  requestAnimationFrame(tick);
-}
-
-function updateBattle(now) {
-  const pilot = document.getElementById('pilot');
-  const r = pilot.getBoundingClientRect();
-  const dt = 16 / 1000;
-
-  // Player ship ease
-  playerShipX += (playerShipTargetX - playerShipX) * 0.2;
-  playerShipEl.style.left = playerShipX + '%';
-
-  // Auto-fire
-  if (now - lastPlayerFire > 380) {
-    lastPlayerFire = now;
-    spawnPlayerBullet();
+function onRoomHotspot(which) {
+  if (which === 'door') { openPadlock(); return; }
+  const digit = roomState.code[which === 'tv' ? 0 : which === 'window' ? 1 : 2];
+  roomState.found[which] = true;
+  document.getElementById(which).classList.add('found');
+  let msg = '';
+  if (which === 'tv') {
+    msg = `The TV fizzes with static — a digit blinks through the snow: ${digit}`;
+    const screen = document.getElementById('tvScreen');
+    screen.classList.remove('static');
+    void screen.offsetWidth;
+    screen.classList.add('static');
+  } else if (which === 'window') {
+    msg = `Out the window a red star pulses. You count ${digit} pulses before it fades.`;
+  } else {
+    msg = `A scrap of paper behind a book: "…and the third digit was ${digit}…"`;
   }
-
-  // Aliens move
-  for (const a of aliens) {
-    a.xPct += a.vx * dt;
-    if (a.xPct < 10) { a.xPct = 10; a.vx *= -1; }
-    if (a.xPct > 90) { a.xPct = 90; a.vx *= -1; }
-    a.t += dt * 2;
-    a.yPct = 16 + Math.sin(a.t) * 6;
-    a.el.style.left = a.xPct + '%';
-    a.el.style.top  = a.yPct + '%';
-    if (now - a.lastFire > 1800 + Math.random() * 1800) {
-      a.lastFire = now;
-      spawnAlienBullet(a);
-    }
-  }
-
-  // Player bullets
-  for (let i = playerBullets.length - 1; i >= 0; i--) {
-    const b = playerBullets[i];
-    b.y += b.vy;
-    b.el.style.top = b.y + 'px';
-    if (b.y < -20) { b.el.remove(); playerBullets.splice(i, 1); continue; }
-    let hit = false;
-    for (let j = aliens.length - 1; j >= 0; j--) {
-      const a = aliens[j];
-      const ar = a.el.getBoundingClientRect();
-      const ax = ar.left - r.left, ay = ar.top - r.top;
-      if (b.x >= ax && b.x <= ax + ar.width && b.y >= ay && b.y <= ay + ar.height) {
-        burstAtCoord(b.x, b.y);
-        a.el.remove();
-        aliens.splice(j, 1);
-        hit = true;
-        break;
-      }
-    }
-    if (hit) { b.el.remove(); playerBullets.splice(i, 1); }
-  }
-
-  // Alien bullets
-  for (let i = alienBullets.length - 1; i >= 0; i--) {
-    const b = alienBullets[i];
-    b.y += b.vy;
-    b.el.style.top = b.y + 'px';
-    if (b.y > r.height + 20) { b.el.remove(); alienBullets.splice(i, 1); continue; }
-    const sr = playerShipEl.getBoundingClientRect();
-    const sx = sr.left - r.left, sy = sr.top - r.top;
-    if (b.x >= sx && b.x <= sx + sr.width && b.y >= sy && b.y <= sy + sr.height) {
-      b.el.remove();
-      alienBullets.splice(i, 1);
-      hull = Math.max(0, hull - 1);
-      updateHud();
-      flashPilotHit();
-      burstAtCoord(b.x, b.y);
-      if (hull <= 0) { running = false; return endGame(false, 'shot down in battle'); }
-    }
-  }
-
-  // Wave clear
-  if (!waveResolving && aliens.length === 0) {
-    waveResolving = true;
-    setTimeout(() => {
-      clearBattle();
-      startScienceWave();
-    }, 550);
-  }
+  document.getElementById('roomPrompt').textContent = msg + ' (digits found: ' +
+    [['tv',roomState.code[0]], ['window',roomState.code[1]], ['shelf',roomState.code[2]]]
+      .map(([k,d]) => roomState.found[k] ? d : '_').join(' ') + ')';
 }
 
-function burstAtCoord(x, y) {
-  const pilot = document.getElementById('pilot');
-  const burst = document.createElement('div');
-  burst.className = 'pop-burst';
-  burst.style.left = x + 'px';
-  burst.style.top  = y + 'px';
-  pilot.appendChild(burst);
-  setTimeout(() => burst.remove(), 450);
+function openPadlock() {
+  document.getElementById('padlockModal').classList.add('on');
+  roomState.entered = '';
+  updatePadlockDisp();
 }
 
-function flashPilotHit() {
-  const pilot = document.getElementById('pilot');
-  pilot.style.boxShadow = 'inset 0 0 40px rgba(255,80,80,0.65)';
-  setTimeout(() => pilot.style.boxShadow = '', 250);
+function updatePadlockDisp() {
+  const s = roomState.entered.padEnd(3, '_');
+  document.getElementById('padlockDisp').textContent = s.split('').join(' ');
 }
 
-
-function glyphSvgInner(kind) {
-  if (kind === 'drop') return `<path d="M30 8 C20 22 14 32 14 40 A16 16 0 0 0 46 40 C46 32 40 22 30 8 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/>`;
-  if (kind === 'blob') return `<path d="M30 10 Q46 14 48 30 Q52 46 34 50 Q14 52 12 36 Q10 16 30 10 Z" fill="currentColor" stroke="#fff" stroke-width="1.5" opacity="0.92"/><circle cx="22" cy="28" r="3" fill="#fff" opacity="0.8"/><circle cx="36" cy="34" r="2" fill="#fff" opacity="0.6"/>`;
-  if (kind === 'ring') return `<circle cx="30" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="30" cy="30" r="14" fill="none" stroke="currentColor" stroke-width="3" opacity="0.7"/><circle cx="30" cy="30" r="6"  fill="currentColor"/>`;
-  if (kind === 'spike') return `<polygon points="30,4 36,22 56,22 40,34 46,54 30,42 14,54 20,34 4,22 24,22" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/>`;
-  if (kind === 'star') return `<polygon points="30,6 35,24 54,24 39,34 44,54 30,42 16,54 21,34 6,24 25,24" fill="currentColor" stroke="#fff" stroke-width="1.2" opacity="0.92"/>`;
-  return `<circle cx="30" cy="30" r="18" fill="currentColor"/>`;
+function buildPadlock() {
+  const keys = document.getElementById('padlockKeys');
+  keys.innerHTML = '';
+  for (let n = 1; n <= 9; n++) keys.appendChild(mkKey(n));
+  keys.appendChild(mkKey('⌫'));
+  keys.appendChild(mkKey(0));
+  keys.appendChild(mkKey('✓'));
 }
-function glyphSvg(kind) {
-  return `<svg viewBox="0 0 60 60">${glyphSvgInner(kind)}</svg>`;
-}
-
-// ---------- SCIENCE SIDE ----------
-const PUZZLE_TYPES = ['sequence', 'slider', 'code', 'wire'];
-
-function nextPuzzle() {
-  if (solved >= PUZZLE_COUNT) return endGame(true);
-  const type = PUZZLE_TYPES[Math.floor(Math.random() * PUZZLE_TYPES.length)];
-  const area = document.getElementById('puzzArea');
-  area.innerHTML = '';
-  if (type === 'sequence') buildSequence(area);
-  else if (type === 'slider') buildSlider(area);
-  else if (type === 'code') buildCode(area);
-  else if (type === 'wire') buildWire(area);
-}
-
-function puzzleSolved() {
-  solved++;
-  updateHud();
-  if (solved >= PUZZLE_COUNT) {
-    return endGame(true);
-  }
-  showBanner(`PUZZLE ${solved}/${PUZZLE_COUNT} SOLVED`);
-  setTimeout(startPilotWave, 900);
-}
-
-function setPuzzleHeader(title, instr) {
-  document.getElementById('puzzTitle').textContent = title;
-  document.getElementById('puzzInstr').textContent = instr;
-}
-
-// -- Sequence puzzle --
-function buildSequence(area) {
-  const len = 3 + Math.min(2, solved); // ramp up
-  const pattern = [];
-  for (let i = 0; i < len; i++) pattern.push(Math.floor(Math.random() * 4));
-  puzzleState = { pattern, userIdx: 0 };
-  setPuzzleHeader('SIGNAL SEQUENCE', `Watch the order, then tap the ${len} pads back in the same order.`);
-  const pad = document.createElement('div');
-  pad.className = 'seq-pad';
-  const glyphs = ['▲', '●', '■', '◆'];
-  for (let i = 0; i < 4; i++) {
-    const b = document.createElement('div');
-    b.className = 'seq-btn c' + i;
-    b.textContent = glyphs[i];
-    b.addEventListener('click', () => {
-      if (!puzzleState || puzzleState.playing) return;
-      flashSeq(b);
-      if (i === pattern[puzzleState.userIdx]) {
-        puzzleState.userIdx++;
-        if (puzzleState.userIdx >= pattern.length) {
-          puzzleSolved();
-        }
-      } else {
-        puzzleState.userIdx = 0;
-        setPuzzleHeader('SIGNAL SEQUENCE', 'Wrong order. Watch again…');
-        setTimeout(() => playbackSeq(pattern), 600);
-      }
-    });
-    pad.appendChild(b);
-  }
-  area.appendChild(pad);
-  playbackSeq(pattern);
-}
-
-function flashSeq(btn) {
-  btn.classList.add('flash');
-  setTimeout(() => btn.classList.remove('flash'), 180);
-}
-
-function playbackSeq(pattern) {
-  if (!puzzleState) return;
-  puzzleState.playing = true;
-  puzzleState.userIdx = 0;
-  const btns = document.querySelectorAll('.seq-btn');
-  pattern.forEach((idx, i) => {
-    setTimeout(() => {
-      if (!puzzleState) return;
-      flashSeq(btns[idx]);
-      if (i === pattern.length - 1) {
-        setTimeout(() => {
-          puzzleState.playing = false;
-          setPuzzleHeader('SIGNAL SEQUENCE', `Your turn — tap the ${pattern.length} pads in order.`);
-        }, 350);
-      }
-    }, i * 550 + 400);
-  });
-}
-
-// -- Slider puzzle --
-function buildSlider(area) {
-  const targets = [Math.random(), Math.random(), Math.random()].map(v => Math.round(v * 10) / 10);
-  puzzleState = { targets, values: [0.5, 0.5, 0.5] };
-  setPuzzleHeader('CALIBRATE INSTRUMENTS', 'Drag each slider to match the gold mark.');
-  const wrap = document.createElement('div');
-  wrap.className = 'sliders';
-  const labels = ['ALPHA', 'BETA', 'GAMMA'];
-  targets.forEach((t, i) => {
-    const row = document.createElement('div');
-    row.className = 'slider-row';
-    row.innerHTML = `
-      <div class="slabel">${labels[i]}</div>
-      <div class="bar" data-i="${i}">
-        <div class="mark" style="left:${t * 100}%"></div>
-        <div class="val" style="left:${0.5 * 100}%"></div>
-      </div>
-      <div class="num">${(0.5 * 10).toFixed(1)}</div>
-    `;
-    wrap.appendChild(row);
-    const bar = row.querySelector('.bar');
-    const val = row.querySelector('.val');
-    const num = row.querySelector('.num');
-    let dragging = false;
-    function setFromEvent(e) {
-      const r = bar.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      const v = Math.max(0, Math.min(1, x));
-      puzzleState.values[i] = Math.round(v * 10) / 10;
-      val.style.left = (puzzleState.values[i] * 100) + '%';
-      num.textContent = (puzzleState.values[i] * 10).toFixed(1);
-      checkSlider();
-    }
-    bar.addEventListener('pointerdown', e => { dragging = true; bar.setPointerCapture(e.pointerId); setFromEvent(e); });
-    bar.addEventListener('pointermove', e => { if (dragging) setFromEvent(e); });
-    bar.addEventListener('pointerup', e => { dragging = false; try { bar.releasePointerCapture(e.pointerId); } catch(_) {} });
-  });
-  area.appendChild(wrap);
-}
-
-function checkSlider() {
-  if (!puzzleState || !puzzleState.targets) return;
-  const ok = puzzleState.targets.every((t, i) => Math.abs(puzzleState.values[i] - t) < 0.05);
-  if (ok) puzzleSolved();
-}
-
-// -- Code puzzle --
-function buildCode(area) {
-  const ops = [['+2', x => x + 2], ['-1', x => x - 1], ['x2', x => x * 2], ['next square', null]];
-  // Build a simple arithmetic riddle: 4 numbers, guess the 5th
-  const start = 1 + Math.floor(Math.random() * 5);
-  const op = ops[Math.floor(Math.random() * 3)];
-  const seq = [start];
-  for (let i = 1; i < 5; i++) seq.push(op[1](seq[i - 1]));
-  const answer = seq[4];
-  puzzleState = { answer, input: '' };
-  setPuzzleHeader('DECODE THE SIGNAL', `Sequence: ${seq.slice(0, 4).join(', ')} , ?`);
-  const disp = document.createElement('div');
-  disp.className = 'code-disp';
-  disp.textContent = '_ _';
-  area.appendChild(disp);
-  const pad = document.createElement('div');
-  pad.className = 'keypad';
-  for (let n = 1; n <= 9; n++) pad.appendChild(makeKey(n, disp));
-  const clear = document.createElement('button');
-  clear.textContent = '⌫';
-  clear.addEventListener('click', () => { puzzleState.input = puzzleState.input.slice(0, -1); updateCodeDisp(disp); });
-  pad.appendChild(clear);
-  pad.appendChild(makeKey(0, disp));
-  const enter = document.createElement('button');
-  enter.textContent = 'ENTER';
-  enter.style.fontSize = '9px';
-  enter.addEventListener('click', () => {
-    if (parseInt(puzzleState.input) === puzzleState.answer) puzzleSolved();
-    else { puzzleState.input = ''; updateCodeDisp(disp); disp.style.color = '#ff6080'; setTimeout(() => disp.style.color = '#80ffa0', 300); }
-  });
-  pad.appendChild(enter);
-  area.appendChild(pad);
-}
-function makeKey(n, disp) {
+function mkKey(v) {
   const b = document.createElement('button');
-  b.textContent = String(n);
+  b.textContent = String(v);
   b.addEventListener('click', () => {
-    if (puzzleState.input.length < 3) puzzleState.input += n;
-    updateCodeDisp(disp);
+    if (v === '⌫') roomState.entered = roomState.entered.slice(0, -1);
+    else if (v === '✓') return tryPadlock();
+    else if (roomState.entered.length < 3) roomState.entered += v;
+    updatePadlockDisp();
   });
   return b;
 }
-function updateCodeDisp(disp) {
-  disp.textContent = puzzleState.input.padEnd(2, '_').split('').join(' ');
+document.getElementById('padlockClear').addEventListener('click', () => { roomState.entered = ''; updatePadlockDisp(); });
+document.getElementById('padlockTry').addEventListener('click', tryPadlock);
+function tryPadlock() {
+  const disp = document.getElementById('padlockDisp');
+  if (roomState.entered === roomState.code) {
+    disp.style.color = '#80ffa0';
+    banner('DOOR UNLOCKS', 'Keys grabbed — to the car');
+    setTimeout(() => {
+      document.getElementById('padlockModal').classList.remove('on');
+      showScene('car');
+    }, 1200);
+  } else {
+    disp.style.color = '#ff6080';
+    setTimeout(() => { disp.style.color = '#80ffa0'; roomState.entered = ''; updatePadlockDisp(); }, 600);
+  }
+}
+buildPadlock();
+
+// ==== CAR ====
+const CAR_STEPS = [
+  { id: 'key',      ico: '🔑', label: 'KEY'      },
+  { id: 'choke',    ico: '⚙',  label: 'CHOKE'    },
+  { id: 'throttle', ico: '🔥', label: 'THROTTLE' },
+];
+let carProgress = 0;
+INITS.car = function() {
+  carProgress = 0;
+  const container = document.getElementById('ignitionSteps');
+  container.innerHTML = '';
+  CAR_STEPS.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'ign-step' + (i === 0 ? '' : ' locked');
+    el.dataset.idx = i;
+    el.innerHTML = `<div class="ico">${s.ico}</div><div class="lbl">${s.label}</div>`;
+    el.addEventListener('click', () => {
+      if (i !== carProgress) return;
+      el.classList.add('done');
+      el.classList.remove('locked');
+      carProgress++;
+      if (carProgress < CAR_STEPS.length) {
+        container.children[carProgress].classList.remove('locked');
+      } else {
+        banner('ENGINE ROARS');
+        setTimeout(() => showScene('drive'), 1200);
+      }
+    });
+    container.appendChild(el);
+  });
+};
+
+// ==== DRIVE ====
+let driveState;
+INITS.drive = function() {
+  driveState = {
+    stage: document.getElementById('driveStage'),
+    car: document.getElementById('driveCar'),
+    targetX: 50,
+    currentX: 50,
+    obstacles: [],
+    spawnTimer: 0,
+    duration: 9000,
+    start: performance.now(),
+    running: true,
+  };
+  driveState.car.style.left = '50%';
+  // Clear old obstacles
+  driveState.stage.querySelectorAll('.road-obstacle').forEach(e => e.remove());
+  requestAnimationFrame(driveTick);
+};
+function driveTick(now) {
+  if (!driveState || !driveState.running) return;
+  const elapsed = now - driveState.start;
+  if (elapsed > driveState.duration) {
+    driveState.running = false;
+    banner('ARRIVED AT THE ROCKET');
+    setTimeout(() => showScene('suit'), 1200);
+    return;
+  }
+  const dt = 16;
+  driveState.currentX += (driveState.targetX - driveState.currentX) * 0.2;
+  driveState.car.style.left = driveState.currentX + '%';
+  // spawn
+  driveState.spawnTimer += dt;
+  if (driveState.spawnTimer > 900) {
+    driveState.spawnTimer = 0;
+    spawnObstacle();
+  }
+  // move
+  const stageRect = driveState.stage.getBoundingClientRect();
+  const carRect = driveState.car.getBoundingClientRect();
+  for (let i = driveState.obstacles.length - 1; i >= 0; i--) {
+    const o = driveState.obstacles[i];
+    o.y += 4;
+    o.el.style.top = o.y + 'px';
+    if (o.y > stageRect.height + 40) {
+      o.el.remove();
+      driveState.obstacles.splice(i, 1);
+      continue;
+    }
+    // collision with car
+    const or = o.el.getBoundingClientRect();
+    if (Math.abs((or.left + or.width/2) - (carRect.left + carRect.width/2)) < 30 &&
+        Math.abs((or.top + or.height/2) - (carRect.top + carRect.height/2)) < 30) {
+      // collision: flash and remove
+      o.el.remove();
+      driveState.obstacles.splice(i, 1);
+      driveState.car.style.filter = 'drop-shadow(0 2px 6px #ff4060) brightness(1.5)';
+      setTimeout(() => driveState.car.style.filter = 'drop-shadow(0 2px 6px #000)', 200);
+    }
+  }
+  requestAnimationFrame(driveTick);
+}
+function spawnObstacle() {
+  const el = document.createElement('div');
+  el.className = 'road-obstacle';
+  const kinds = ['🚙', '🚚', '🔺', '🟠'];
+  el.textContent = kinds[Math.floor(Math.random() * kinds.length)];
+  const lanes = [28, 50, 72];
+  el.style.left = lanes[Math.floor(Math.random() * lanes.length)] + '%';
+  el.style.top = '-40px';
+  driveState.stage.appendChild(el);
+  driveState.obstacles.push({ el, y: -40 });
+}
+// Drive pointer/keyboard
+(function wireDrive() {
+  let dragging = false;
+  document.getElementById('driveStage').addEventListener('pointerdown', e => {
+    if (currentScene !== 'drive') return;
+    dragging = true;
+    const r = driveState.stage.getBoundingClientRect();
+    driveState.targetX = Math.max(10, Math.min(90, (e.clientX - r.left) / r.width * 100));
+  });
+  document.addEventListener('pointermove', e => {
+    if (!dragging || currentScene !== 'drive') return;
+    const r = driveState.stage.getBoundingClientRect();
+    driveState.targetX = Math.max(10, Math.min(90, (e.clientX - r.left) / r.width * 100));
+  });
+  document.addEventListener('pointerup', () => { dragging = false; });
+  window.addEventListener('keydown', e => {
+    if (currentScene !== 'drive' || !driveState) return;
+    if (e.key === 'ArrowLeft')  driveState.targetX = Math.max(10, driveState.targetX - 6);
+    if (e.key === 'ArrowRight') driveState.targetX = Math.min(90, driveState.targetX + 6);
+  });
+})();
+
+// ==== SUIT & LADDER ====
+const SUIT_PIECES = [
+  { ico: '🪖', lbl: 'HELMET' },
+  { ico: '🧤', lbl: 'GLOVES' },
+  { ico: '👢', lbl: 'BOOTS'  },
+  { ico: '🎒', lbl: 'O₂ PACK'},
+];
+let suitState;
+INITS.suit = function() {
+  suitState = { idx: 0, climbing: false, rung: 0 };
+  const grid = document.getElementById('suitGrid');
+  grid.innerHTML = '';
+  SUIT_PIECES.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'suit-piece' + (i === 0 ? '' : ' locked');
+    el.dataset.idx = i;
+    el.innerHTML = `<div class="ico">${p.ico}</div><div class="lbl">${p.lbl}</div>`;
+    el.addEventListener('click', () => {
+      if (i !== suitState.idx) return;
+      el.classList.add('done');
+      el.classList.remove('locked');
+      suitState.idx++;
+      if (suitState.idx < SUIT_PIECES.length) {
+        grid.children[suitState.idx].classList.remove('locked');
+      } else {
+        showLadder();
+      }
+    });
+    grid.appendChild(el);
+  });
+  document.getElementById('ladderBox').style.display = 'none';
+  document.getElementById('suitPrompt').textContent = 'Put your suit on in order — click each piece.';
+};
+function showLadder() {
+  document.getElementById('suitGrid').style.display = 'none';
+  document.getElementById('ladderBox').style.display = '';
+  document.getElementById('suitPrompt').textContent = 'Climb the ladder — tap each rung bottom-to-top.';
+  const ladder = document.getElementById('ladder');
+  ladder.innerHTML = '';
+  const rungCount = 5;
+  for (let r = 0; r < rungCount; r++) {
+    const el = document.createElement('div');
+    el.className = 'rung' + (r === 0 ? ' active' : '');
+    el.textContent = `RUNG ${rungCount - r}`;
+    el.dataset.idx = r;
+    el.addEventListener('click', () => {
+      if (r !== suitState.rung) return;
+      el.classList.remove('active');
+      el.classList.add('done');
+      suitState.rung++;
+      if (suitState.rung >= rungCount) {
+        banner('AT THE COCKPIT');
+        setTimeout(() => {
+          // reset for next visit
+          document.getElementById('suitGrid').style.display = '';
+          showScene('cockpit');
+        }, 1100);
+      } else {
+        ladder.children[rungCount - 1 - suitState.rung].classList.add('active');
+      }
+    });
+    ladder.appendChild(el);
+  }
 }
 
-// -- Wire puzzle --
-function buildWire(area) {
-  const n = 4;
-  const left = [];
-  const right = [];
-  const pairs = [];
-  const colorsL = ['#ff6080', '#80ff90', '#60b0ff', '#ffd060'];
-  const order = [0,1,2,3].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < n; i++) {
-    left.push({ i, y: 20 + i * 60, color: colorsL[i] });
-    right.push({ i: order[i], y: 20 + i * 60, color: colorsL[order[i]] });
+// ==== COCKPIT ====
+let cockpitState;
+INITS.cockpit = function() {
+  const len = 4;
+  const pattern = [];
+  for (let i = 0; i < len; i++) pattern.push(Math.floor(Math.random() * 4));
+  cockpitState = { pattern, userIdx: 0, playing: false };
+  const panel = document.getElementById('cockpitPanel');
+  panel.innerHTML = '';
+  const glyphs = ['▲', '●', '■', '◆'];
+  for (let i = 0; i < 4; i++) {
+    const b = document.createElement('div');
+    b.className = 'switch c' + i;
+    b.textContent = glyphs[i];
+    b.addEventListener('click', () => {
+      if (cockpitState.playing) return;
+      flashSwitch(b);
+      if (i === cockpitState.pattern[cockpitState.userIdx]) {
+        cockpitState.userIdx++;
+        if (cockpitState.userIdx >= pattern.length) {
+          banner('ENGINE ONLINE');
+          setTimeout(() => showScene('takeoff'), 1100);
+        }
+      } else {
+        document.getElementById('cockpitPrompt').textContent = 'Wrong. Watch again…';
+        cockpitState.userIdx = 0;
+        setTimeout(() => playbackCockpit(), 600);
+      }
+    });
+    panel.appendChild(b);
   }
-  puzzleState = { connections: {}, selected: null, total: n };
-  setPuzzleHeader('REWIRE THE CORE', 'Connect each left dot to the matching color on the right.');
-  const wa = document.createElement('div');
-  wa.className = 'wire-area';
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 320 260');
-  for (let i = 0; i < n; i++) {
-    const lc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    lc.setAttribute('cx', 30); lc.setAttribute('cy', left[i].y); lc.setAttribute('r', 14);
-    lc.setAttribute('class', 'wire-node left');
-    lc.style.color = left[i].color;
-    lc.dataset.side = 'L'; lc.dataset.idx = i; lc.dataset.color = left[i].color;
-    lc.addEventListener('click', () => nodeClick(lc, svg));
-    svg.appendChild(lc);
-    const rc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    rc.setAttribute('cx', 290); rc.setAttribute('cy', right[i].y); rc.setAttribute('r', 14);
-    rc.setAttribute('class', 'wire-node right');
-    rc.style.color = right[i].color;
-    rc.dataset.side = 'R'; rc.dataset.idx = i; rc.dataset.color = right[i].color;
-    rc.addEventListener('click', () => nodeClick(rc, svg));
-    svg.appendChild(rc);
-  }
-  wa.appendChild(svg);
-  area.appendChild(wa);
+  playbackCockpit();
+};
+function flashSwitch(el) {
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 180);
+}
+function playbackCockpit() {
+  cockpitState.playing = true;
+  cockpitState.userIdx = 0;
+  const panel = document.getElementById('cockpitPanel').children;
+  document.getElementById('cockpitPrompt').textContent = 'Watch the launch sequence…';
+  cockpitState.pattern.forEach((idx, i) => {
+    setTimeout(() => {
+      flashSwitch(panel[idx]);
+      if (i === cockpitState.pattern.length - 1) {
+        setTimeout(() => {
+          cockpitState.playing = false;
+          document.getElementById('cockpitPrompt').textContent = 'Now repeat the sequence.';
+        }, 340);
+      }
+    }, i * 520 + 400);
+  });
 }
 
-function nodeClick(node, svg) {
-  if (!puzzleState) return;
-  if (!puzzleState.selected) {
-    puzzleState.selected = node;
-    node.classList.add('selected');
-    return;
+// ==== TAKEOFF ====
+INITS.takeoff = function() {
+  const stage = document.getElementById('takeoffStage');
+  stage.querySelectorAll('.streak, .flame').forEach(e => e.remove());
+  // streaks
+  for (let i = 0; i < 20; i++) {
+    setTimeout(() => {
+      if (currentScene !== 'takeoff') return;
+      const s = document.createElement('div');
+      s.className = 'streak';
+      s.style.top = '-20px';
+      s.style.animationDelay = '0s';
+      stage.appendChild(s);
+      setTimeout(() => s.remove(), 500);
+    }, i * 120);
   }
-  if (puzzleState.selected === node) {
-    node.classList.remove('selected');
-    puzzleState.selected = null;
-    return;
-  }
-  const a = puzzleState.selected;
-  const b = node;
-  if (a.dataset.side === b.dataset.side) {
-    a.classList.remove('selected');
-    a.classList.remove('selected');
-    puzzleState.selected = b;
-    b.classList.add('selected');
-    return;
-  }
-  // check color match
-  if (a.dataset.color !== b.dataset.color) {
-    // flash fail
-    a.classList.remove('selected');
-    puzzleState.selected = null;
-    a.style.filter = b.style.filter = 'brightness(2) hue-rotate(90deg)';
-    setTimeout(() => { a.style.filter = b.style.filter = ''; }, 300);
-    return;
-  }
-  // draw line
-  const left = a.dataset.side === 'L' ? a : b;
-  const right = a.dataset.side === 'R' ? a : b;
-  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  line.setAttribute('x1', left.getAttribute('cx'));
-  line.setAttribute('y1', left.getAttribute('cy'));
-  line.setAttribute('x2', right.getAttribute('cx'));
-  line.setAttribute('y2', right.getAttribute('cy'));
-  line.setAttribute('stroke', a.dataset.color);
-  line.setAttribute('stroke-width', 4);
-  line.setAttribute('opacity', 0.85);
-  svg.insertBefore(line, svg.firstChild);
-  a.classList.remove('selected');
-  puzzleState.selected = null;
-  puzzleState.connections[a.dataset.color] = true;
-  if (Object.keys(puzzleState.connections).length >= puzzleState.total) puzzleSolved();
+  // flame under rocket
+  const flame = document.createElement('div');
+  flame.className = 'flame';
+  flame.textContent = '🔥';
+  flame.style.bottom = '7%';
+  stage.appendChild(flame);
+  setTimeout(() => flame.remove(), 2200);
+  setTimeout(() => showScene('battle'), 2900);
+};
+
+// ==== BATTLE ====
+let battleState;
+INITS.battle = function() {
+  const stage = document.getElementById('battleStage');
+  stage.querySelectorAll('.b-player, .b-foe, .bullet, .pop-burst').forEach(e => e.remove());
+  battleState = {
+    stage,
+    you: { hp: 50, max: 50, x: 50, tx: 50, last: 0 },
+    foe: { hp: 50, max: 50, x: 50, vx: 0.4, last: 0 },
+    bulletsY: [], bulletsF: [],
+    running: true,
+  };
+  // Ship sprites
+  const you = document.createElement('div');
+  you.className = 'b-player';
+  you.innerHTML = `<svg viewBox="0 0 60 60">
+    <polygon points="30,6 44,44 30,38 16,44" fill="#80c0ff" stroke="#fff" stroke-width="1.4"/>
+    <polygon points="30,6 30,38 44,44" fill="#4a8ae0" opacity="0.75"/>
+    <circle cx="30" cy="26" r="5" fill="#ffd060"/>
+    <ellipse cx="30" cy="48" rx="4" ry="7" fill="#ffa030" opacity="0.9"/>
+  </svg>`;
+  stage.appendChild(you);
+  battleState.youEl = you;
+  const foe = document.createElement('div');
+  foe.className = 'b-foe';
+  foe.innerHTML = `<svg viewBox="0 0 60 60">
+    <ellipse cx="30" cy="26" rx="24" ry="10" fill="#ff4060"/>
+    <ellipse cx="30" cy="32" rx="14" ry="9" fill="#ff90a0" opacity="0.8"/>
+    <circle cx="30" cy="36" r="5" fill="#fff"/>
+    <circle cx="30" cy="36" r="2.6" fill="#2a0008"/>
+  </svg>`;
+  stage.appendChild(foe);
+  battleState.foeEl = foe;
+  updateBattleHp();
+  requestAnimationFrame(battleTick);
+};
+function updateBattleHp() {
+  document.getElementById('youHp').style.width = (battleState.you.hp / battleState.you.max * 100) + '%';
+  document.getElementById('foeHp').style.width = (battleState.foe.hp / battleState.foe.max * 100) + '%';
 }
+function battleTick(now) {
+  if (!battleState || !battleState.running) return;
+  const stage = battleState.stage;
+  const r = stage.getBoundingClientRect();
+  // Move player
+  battleState.you.x += (battleState.you.tx - battleState.you.x) * 0.2;
+  battleState.youEl.style.left = battleState.you.x + '%';
+  // Move foe zigzag
+  battleState.foe.x += battleState.foe.vx;
+  if (battleState.foe.x < 15 || battleState.foe.x > 85) battleState.foe.vx *= -1;
+  battleState.foeEl.style.left = battleState.foe.x + '%';
+  // Player auto-fire
+  if (now - battleState.you.last > 240) {
+    battleState.you.last = now;
+    spawnBullet(battleState.youEl, 'you', -10);
+  }
+  // Foe auto-fire
+  if (now - battleState.foe.last > 320) {
+    battleState.foe.last = now;
+    spawnBullet(battleState.foeEl, 'foe', 8);
+  }
+  // Update bullets and check collisions
+  moveBullets(battleState.bulletsY, -10, (b) => {
+    const foeR = battleState.foeEl.getBoundingClientRect();
+    const stageR = stage.getBoundingClientRect();
+    const fx = foeR.left - stageR.left, fy = foeR.top - stageR.top;
+    if (b.x >= fx && b.x <= fx + foeR.width && b.y >= fy && b.y <= fy + foeR.height) {
+      battleState.foe.hp = Math.max(0, battleState.foe.hp - 1);
+      updateBattleHp();
+      if (battleState.foe.hp <= 0) endBattle(true);
+      return true;
+    }
+    return false;
+  });
+  moveBullets(battleState.bulletsF, 8, (b) => {
+    const youR = battleState.youEl.getBoundingClientRect();
+    const stageR = stage.getBoundingClientRect();
+    const yx = youR.left - stageR.left, yy = youR.top - stageR.top;
+    if (b.x >= yx && b.x <= yx + youR.width && b.y >= yy && b.y <= yy + youR.height) {
+      battleState.you.hp = Math.max(0, battleState.you.hp - 1);
+      updateBattleHp();
+      if (battleState.you.hp <= 0) endBattle(false);
+      return true;
+    }
+    return false;
+  });
+  if (battleState.running) requestAnimationFrame(battleTick);
+}
+function spawnBullet(fromEl, side, vy) {
+  const r = battleState.stage.getBoundingClientRect();
+  const er = fromEl.getBoundingClientRect();
+  const x = er.left - r.left + er.width / 2;
+  const y = er.top - r.top + (vy < 0 ? 0 : er.height);
+  const el = document.createElement('div');
+  el.className = 'bullet ' + side;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  battleState.stage.appendChild(el);
+  (side === 'you' ? battleState.bulletsY : battleState.bulletsF).push({ el, x, y, vy });
+}
+function moveBullets(arr, vy, onHit) {
+  const stageR = battleState.stage.getBoundingClientRect();
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const b = arr[i];
+    b.y += vy;
+    b.el.style.top = b.y + 'px';
+    if (b.y < -20 || b.y > stageR.height + 20 || onHit(b)) {
+      b.el.remove();
+      arr.splice(i, 1);
+    }
+  }
+}
+function endBattle(won) {
+  battleState.running = false;
+  if (won) {
+    banner('ENEMY DOWN');
+    setTimeout(() => showScene('explore'), 1200);
+  } else {
+    endGame(false, 'YOU WERE SHOT DOWN', 'The enemy ship outlasted you. Try again.');
+  }
+}
+// Battle controls
+(function wireBattle() {
+  let dragging = false;
+  const stage = document.getElementById('battleStage');
+  stage.addEventListener('pointerdown', e => {
+    if (currentScene !== 'battle') return;
+    dragging = true;
+    const r = stage.getBoundingClientRect();
+    battleState.you.tx = Math.max(10, Math.min(90, (e.clientX - r.left) / r.width * 100));
+  });
+  document.addEventListener('pointermove', e => {
+    if (!dragging || currentScene !== 'battle') return;
+    const r = stage.getBoundingClientRect();
+    battleState.you.tx = Math.max(10, Math.min(90, (e.clientX - r.left) / r.width * 100));
+  });
+  document.addEventListener('pointerup', () => { dragging = false; });
+  window.addEventListener('keydown', e => {
+    if (currentScene !== 'battle' || !battleState) return;
+    if (e.key === 'ArrowLeft')  battleState.you.tx = Math.max(10, battleState.you.tx - 6);
+    if (e.key === 'ArrowRight') battleState.you.tx = Math.min(90, battleState.you.tx + 6);
+  });
+})();
 
-// ---------- Space music (procedural, drifting ambient) ----------
-let wdCtx = null, wdMaster = null, wdTimers = [];
+// ==== EXPLORE ====
+let exploreState;
+INITS.explore = function() {
+  const stage = document.getElementById('exploreStage');
+  stage.querySelectorAll('.explore-ship, .red-star-target').forEach(e => e.remove());
+  exploreState = { chases: 0, running: true };
+  const ship = document.createElement('div');
+  ship.className = 'explore-ship';
+  ship.innerHTML = `<svg viewBox="0 0 60 60">
+    <polygon points="30,6 44,44 30,38 16,44" fill="#80c0ff" stroke="#fff" stroke-width="1.4"/>
+    <polygon points="30,6 30,38 44,44" fill="#4a8ae0" opacity="0.75"/>
+    <circle cx="30" cy="26" r="5" fill="#ffd060"/>
+  </svg>`;
+  ship.style.left = '20%';
+  ship.style.top = '60%';
+  stage.appendChild(ship);
+  exploreState.ship = ship;
+  const star = document.createElement('div');
+  star.className = 'red-star-target';
+  star.textContent = '★';
+  star.style.color = '#ff3040';
+  star.style.left = '70%';
+  star.style.top = '30%';
+  star.addEventListener('click', onStarReach);
+  stage.appendChild(star);
+  exploreState.star = star;
+  document.getElementById('explorePrompt').textContent = 'Drag to fly. Get to the red star.';
+};
+function onStarReach() {
+  if (!exploreState || !exploreState.running) return;
+  exploreState.chases++;
+  if (exploreState.chases >= 3) {
+    exploreState.running = false;
+    banner('THE STAR SLIPS AWAY', 'something is very wrong');
+    setTimeout(() => showScene('reveal'), 1400);
+    return;
+  }
+  // Star drifts to random new position
+  const newLeft = 15 + Math.random() * 70;
+  const newTop  = 15 + Math.random() * 60;
+  exploreState.star.style.left = newLeft + '%';
+  exploreState.star.style.top  = newTop + '%';
+  document.getElementById('explorePrompt').textContent = 'The star drifted away — it\'s sneaking. Chase it again.';
+}
+(function wireExplore() {
+  const stage = document.getElementById('exploreStage');
+  let dragging = false;
+  function moveShip(e) {
+    if (currentScene !== 'explore' || !exploreState) return;
+    const r = stage.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width * 100;
+    const y = (e.clientY - r.top) / r.height * 100;
+    exploreState.ship.style.left = Math.max(8, Math.min(92, x)) + '%';
+    exploreState.ship.style.top  = Math.max(8, Math.min(88, y)) + '%';
+  }
+  stage.addEventListener('pointerdown', e => { dragging = true; moveShip(e); });
+  document.addEventListener('pointermove', e => { if (dragging) moveShip(e); });
+  document.addEventListener('pointerup', () => { dragging = false; });
+})();
 
+// ==== REVEAL ====
+const DIALOGUE = [
+  { s: 'YOU', t: 'Wait… the stars are wrong.' },
+  { s: 'YOU', t: 'Am I in another solar system?' },
+  { s: 'YOU', t: 'OK. That\'s what the red light was coming from.' },
+  { s: 'YOU', t: 'I\'ll look back at Earth…' },
+  { s: 'YOU', t: '…wait. That\'s not Earth.', effect: 'alien' },
+  { s: 'LOG', t: 'The aliens were rising again.' },
+];
+let revealIdx = 0;
+INITS.reveal = function() {
+  revealIdx = 0;
+  document.getElementById('revealPlanet').classList.remove('alien');
+  showDialogue();
+};
+function showDialogue() {
+  const d = DIALOGUE[revealIdx];
+  document.querySelector('#dialogueBox .speaker').textContent = d.s;
+  document.getElementById('dialogueText').textContent = d.t;
+  if (d.effect === 'alien') {
+    document.getElementById('revealPlanet').classList.add('alien');
+  }
+}
+document.getElementById('dialogueBox').addEventListener('click', () => {
+  revealIdx++;
+  if (revealIdx >= DIALOGUE.length) {
+    endGame(true, 'WEIRDNESS REVEALED', 'Another solar system. Another planet. And the aliens are rising again.');
+  } else {
+    showDialogue();
+  }
+});
+
+// ---------- Music (space ambient) ----------
+let wdCtx = null, wdMaster = null;
 function wdStart() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return false;
@@ -1438,127 +1508,63 @@ function wdStart() {
   wdMaster = wdCtx.createGain();
   wdMaster.gain.value = 0;
   wdMaster.connect(wdCtx.destination);
-  wdMaster.gain.linearRampToValueAtTime(0.18, wdCtx.currentTime + 3);
+  wdMaster.gain.linearRampToValueAtTime(0.16, wdCtx.currentTime + 2.5);
 
-  // Deep drone — A1 sine + detuned fifth
   const drone = wdCtx.createOscillator();
-  drone.type = 'sine';
-  drone.frequency.value = 55;
-  const droneG = wdCtx.createGain();
-  droneG.gain.value = 0.4;
+  drone.type = 'sine'; drone.frequency.value = 55;
+  const droneG = wdCtx.createGain(); droneG.gain.value = 0.35;
   drone.connect(droneG); droneG.connect(wdMaster);
-  drone.start();
-
   const fifth = wdCtx.createOscillator();
-  fifth.type = 'sine';
-  fifth.frequency.value = 82.41; // E2 (fifth above)
-  const fifthG = wdCtx.createGain();
-  fifthG.gain.value = 0.22;
+  fifth.type = 'sine'; fifth.frequency.value = 82.4;
+  const fifthG = wdCtx.createGain(); fifthG.gain.value = 0.2;
   fifth.connect(fifthG); fifthG.connect(wdMaster);
-  fifth.start();
+  const lfo = wdCtx.createOscillator(); lfo.frequency.value = 0.035;
+  const lfoG = wdCtx.createGain(); lfoG.gain.value = 0.8;
+  lfo.connect(lfoG); lfoG.connect(drone.frequency); lfoG.connect(fifth.frequency);
+  drone.start(); fifth.start(); lfo.start();
 
-  // Slow drift LFO on both drones
-  const driftLFO = wdCtx.createOscillator();
-  driftLFO.frequency.value = 0.035;
-  const driftG = wdCtx.createGain();
-  driftG.gain.value = 0.8;
-  driftLFO.connect(driftG);
-  driftG.connect(drone.frequency);
-  driftG.connect(fifth.frequency);
-  driftLFO.start();
-
-  // Triangle pad — A minor (A3, C4, E4) with slow amplitude breathing
-  const padFreqs = [220.00, 261.63, 329.63];
+  const padFreqs = [220, 261.63, 329.63];
   padFreqs.forEach((f, i) => {
-    const osc = wdCtx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.value = f;
-    const filt = wdCtx.createBiquadFilter();
-    filt.type = 'lowpass';
-    filt.frequency.value = 1200;
-    const g = wdCtx.createGain();
-    g.gain.value = 0.02;
-    const lfo = wdCtx.createOscillator();
-    lfo.frequency.value = 0.04 + i * 0.013;
-    const lfoG = wdCtx.createGain();
-    lfoG.gain.value = 0.015;
-    lfo.connect(lfoG); lfoG.connect(g.gain);
-    osc.connect(filt); filt.connect(g); g.connect(wdMaster);
-    osc.start(); lfo.start();
+    const o = wdCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+    const filt = wdCtx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 1000;
+    const g = wdCtx.createGain(); g.gain.value = 0.022;
+    const lf = wdCtx.createOscillator(); lf.frequency.value = 0.045 + i * 0.018;
+    const lfG = wdCtx.createGain(); lfG.gain.value = 0.016;
+    lf.connect(lfG); lfG.connect(g.gain);
+    o.connect(filt); filt.connect(g); g.connect(wdMaster);
+    o.start(); lf.start();
   });
-
-  wdScheduleSparkle();
-  wdSchedulePulse();
+  scheduleSparkle();
   return true;
 }
-
-function wdScheduleSparkle() {
-  const t = setTimeout(() => {
-    if (wdCtx && wdCtx.state === 'running') wdPlaySparkle();
-    wdScheduleSparkle();
-  }, 2600 + Math.random() * 4800);
-  wdTimers.push(t);
+function scheduleSparkle() {
+  setTimeout(() => {
+    if (wdCtx && wdCtx.state === 'running') playSparkle();
+    scheduleSparkle();
+  }, 2800 + Math.random() * 4200);
 }
-
-function wdPlaySparkle() {
-  // A scale sparkle: high square bell
-  const scale = [523.25, 659.25, 784.00, 880.00, 987.77, 1174.66]; // C5 E5 G5 A5 B5 D6
+function playSparkle() {
+  const scale = [523.25, 659.25, 783.99, 880.00, 987.77];
   const note = scale[Math.floor(Math.random() * scale.length)];
   const now = wdCtx.currentTime;
-  const osc = wdCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(note, now);
-  const o2 = wdCtx.createOscillator();
-  o2.type = 'triangle';
-  o2.frequency.setValueAtTime(note * 2.003, now);
+  const o = wdCtx.createOscillator(); o.type = 'sine'; o.frequency.value = note;
   const g = wdCtx.createGain();
   g.gain.setValueAtTime(0, now);
-  g.gain.linearRampToValueAtTime(0.07, now + 0.05);
-  g.gain.exponentialRampToValueAtTime(0.0008, now + 1.8);
-  osc.connect(g); o2.connect(g); g.connect(wdMaster);
-  osc.start(now); osc.stop(now + 1.9);
-  o2.start(now);  o2.stop(now + 1.9);
+  g.gain.linearRampToValueAtTime(0.06, now + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0008, now + 1.6);
+  o.connect(g); g.connect(wdMaster);
+  o.start(now); o.stop(now + 1.8);
 }
-
-function wdSchedulePulse() {
-  const t = setTimeout(() => {
-    if (wdCtx && wdCtx.state === 'running') wdPlayPulse();
-    wdSchedulePulse();
-  }, 9000 + Math.random() * 8000);
-  wdTimers.push(t);
-}
-
-function wdPlayPulse() {
-  // Radar ping: sine burst with echo
-  const now = wdCtx.currentTime;
-  const osc = wdCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(440, now);
-  osc.frequency.exponentialRampToValueAtTime(220, now + 0.5);
-  const g = wdCtx.createGain();
-  g.gain.setValueAtTime(0, now);
-  g.gain.linearRampToValueAtTime(0.09, now + 0.03);
-  g.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
-  const delay = wdCtx.createDelay();
-  delay.delayTime.value = 0.35;
-  const feedback = wdCtx.createGain();
-  feedback.gain.value = 0.45;
-  osc.connect(g); g.connect(wdMaster);
-  g.connect(delay); delay.connect(feedback); feedback.connect(delay); delay.connect(wdMaster);
-  osc.start(now); osc.stop(now + 0.6);
-}
-
 function wdToggle() {
   const btn = document.getElementById('music');
-  if (!wdCtx) {
-    if (!wdStart()) return;
-    btn.textContent = '🔊 Music'; btn.classList.add('on');
-    return;
-  }
+  if (!wdCtx) { if (!wdStart()) return; btn.textContent = '🔊 Music'; btn.classList.add('on'); return; }
   if (wdCtx.state === 'running') { wdCtx.suspend(); btn.textContent = '🔇 Music'; btn.classList.remove('on'); }
   else                           { wdCtx.resume();  btn.textContent = '🔊 Music'; btn.classList.add('on'); }
 }
 document.getElementById('music').addEventListener('click', wdToggle);
+
+// ---------- Start ----------
+showScene('room');
 </script>
 </body>
 </html>
