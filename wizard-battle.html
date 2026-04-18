@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wizard Battle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; }
+  body {
+    font-family: 'Cinzel', Georgia, serif;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(120,70,220,0.3), transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(40,90,200,0.25), transparent 55%),
+      radial-gradient(circle at 50% 40%, #1a0f40 0%, #0a0620 55%, #03020c 100%);
+    color: #e9d9f5;
+    margin: 0;
+    padding: 8px 14px 12px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 520px;
+    width: 100%;
+    max-height: 92px;
+    filter: drop-shadow(0 4px 10px rgba(80,40,160,0.5));
+  }
+  .status {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: #d8c8f5;
+    min-height: 18px;
+  }
+  .status .accent { color: #ffd680; font-weight: 600; }
+  .status .event { color: #a098c8; font-size: 12px; margin-left: 10px; }
+
+  .arena {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 14px;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+  }
+  .wizard-panel {
+    background: linear-gradient(180deg, rgba(40,20,80,0.7), rgba(15,8,35,0.85));
+    border: 1px solid #6a4fb0;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .wizard-panel.active {
+    border-color: #c9a4ff;
+    box-shadow: 0 0 18px rgba(180,120,255,0.35);
+  }
+  .wizard-panel h2 {
+    margin: 0 0 6px;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 15px;
+    text-align: center;
+    color: #e8d4ff;
+    letter-spacing: 3px;
+  }
+  .hp-bar {
+    height: 18px;
+    background: #180a30;
+    border: 1px solid #5a3a9c;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c04060, #ff4080 60%, #ff90b0);
+    transition: width 0.4s;
+  }
+  .hp-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    text-shadow: 0 0 4px #000; letter-spacing: 1px;
+  }
+  .wands-row {
+    font-size: 13px;
+    color: #d4b8ff;
+    text-align: center;
+    margin-bottom: 4px;
+    min-height: 18px;
+    letter-spacing: 2px;
+  }
+  .seal-row {
+    font-size: 10px;
+    text-align: center;
+    letter-spacing: 2px;
+    color: #ff98b0;
+    margin-bottom: 4px;
+    min-height: 14px;
+  }
+  .seal-row.open { color: #90ffb0; }
+  .inventory {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    align-content: flex-start;
+    overflow-y: auto;
+    flex: 1;
+    padding: 2px;
+  }
+  .pot {
+    background: linear-gradient(180deg, #2a1a5a, #120838);
+    border: 1px solid #7a5ac8;
+    border-radius: 3px;
+    padding: 3px 6px;
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+    min-width: 54px;
+    text-align: center;
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .pot.selected {
+    border-color: #ffd666;
+    box-shadow: 0 0 10px rgba(255,210,80,0.6);
+  }
+  .pot.locked { opacity: 0.5; cursor: default; pointer-events: none; }
+  .pot .ic { display: block; font-size: 14px; line-height: 1; }
+  .pot .nm { display: block; font-size: 10px; letter-spacing: 0.3px; }
+  .pot.type-heal { padding: 4px 8px; background: linear-gradient(180deg, #1a4030, #08180e); border-color: #80e0a0; }
+  .pot.type-heal .ic { font-size: 17px; color: #b8ffcc; }
+  .pot.type-backfire { background: linear-gradient(180deg, #3a1020, #1a0612); border-color: #ff6a8a; }
+  .pot.type-backfire .ic { color: #ffaec0; }
+  .pot.type-spell { background: linear-gradient(180deg, #3a2010, #1a0e06); border-color: #ffaa40; }
+  .pot.type-spell .ic { color: #ffd080; }
+  .pot.type-ingredient { background: linear-gradient(180deg, #1a2240, #08101a); border-color: #8098d0; }
+  .pot.type-ingredient .ic { color: #c8d8ff; }
+  .pot.locked-card { position: relative; }
+  .pot.locked-card::after {
+    content: "✕";
+    position: absolute;
+    top: -3px; right: -3px;
+    font-size: 12px;
+    color: #ff5a7a;
+    text-shadow: 0 0 6px #ff3060, 0 0 2px #000;
+    font-weight: bold;
+  }
+  .pot.locked-card.sealed { opacity: 0.5; filter: grayscale(0.5); }
+  .pot.locked-card.sealed.selected { opacity: 1; } /* won't happen, but safety */
+
+  .board { display: flex; align-items: center; justify-content: center; min-height: 0; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+    width: 100%;
+    max-width: 720px;
+  }
+  .card {
+    aspect-ratio: 2 / 3;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    border: 1.5px solid #7a5ac8;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(200,160,255,0.18), transparent 60%),
+      linear-gradient(135deg, #2a1560 0%, #1a0a40 50%, #0a0425 100%);
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel Decorative', serif;
+    color: #b898ff;
+    font-size: 18px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    user-select: none;
+  }
+  .card::before { content: "✦"; opacity: 0.7; }
+  .card:hover:not(.revealed):not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 0 10px rgba(180,120,255,0.6);
+  }
+  .card.revealed {
+    cursor: default;
+    padding: 2px;
+    background: #1a0f30;
+    border-color: #c9a4ff;
+  }
+  .card.revealed::before { content: none; }
+  .card.revealed .r-icon { font-size: 20px; line-height: 1; }
+  .card.revealed .r-name {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    text-align: center;
+    letter-spacing: 0.2px;
+    line-height: 1.05;
+    margin-top: 2px;
+    color: #e9d9f5;
+  }
+  .card.revealed.t-backfire   { background: linear-gradient(180deg, #3a1020, #1a0612); border-color: #ff6a8a; color: #ffaec0; }
+  .card.revealed.t-heal       { background: linear-gradient(180deg, #1a4030, #08180e); border-color: #80e0a0; color: #b8ffcc; transform: scale(1.14); z-index: 2; box-shadow: 0 0 14px rgba(120,255,160,0.35); }
+  .card.revealed.t-spell      { background: linear-gradient(180deg, #3a2010, #1a0e06); border-color: #ffaa40; color: #ffd080; }
+  .card.revealed.t-wand       { background: linear-gradient(180deg, #2a2050, #10082a); border-color: #e8c8ff; color: #f5e0ff; }
+  .card.revealed.t-ingredient { background: linear-gradient(180deg, #1a2240, #08101a); border-color: #8098d0; color: #c8d8ff; }
+  .card.revealed.locked-card { position: relative; }
+  .card.revealed.locked-card::after {
+    content: "✕";
+    position: absolute;
+    top: 2px; right: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #ff5a7a;
+    text-shadow: 0 0 8px #ff3060;
+  }
+  .card.disabled { cursor: not-allowed; }
+
+  .actions {
+    text-align: center;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-radius: 3px;
+    border: 1px solid #9070d8;
+    background: linear-gradient(180deg, #4a2a8a, #2a1458);
+    color: #f0e0ff;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:hover:not(:disabled) {
+    background: linear-gradient(180deg, #6040b0, #3a1c78);
+    box-shadow: 0 0 10px rgba(180,120,255,0.5);
+  }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.primary { border-color: #ffd666; background: linear-gradient(180deg, #a06020, #6a3c10); }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #c88030, #8a5018); }
+
+  /* Sparkles */
+  @keyframes float-up {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(0deg); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--dx,0px), var(--dy,-80px)) scale(1.4) rotate(180deg); }
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(0.6); }
+    50%      { opacity: 1; transform: scale(1.2); }
+  }
+  .sparkle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 14px;
+    color: #f0d8ff;
+    text-shadow: 0 0 6px #c9a4ff, 0 0 14px #9060e0;
+    animation: float-up 1.6s ease-out forwards;
+    z-index: 500;
+  }
+  .ambient {
+    position: fixed;
+    pointer-events: none;
+    color: rgba(220,200,255,0.75);
+    text-shadow: 0 0 6px rgba(160,120,230,0.7);
+    animation: twinkle 2.6s ease-in-out forwards;
+    z-index: 0;
+  }
+
+  /* Overlay */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(5,2,15,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #2a1458, #10062a);
+    border: 2px solid #c9a4ff;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 380px;
+    box-shadow: 0 0 40px rgba(180,120,255,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Cinzel Decorative', serif;
+    margin: 0 0 12px;
+    color: #ffd080;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 16px; color: #e9d9f5; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Wizard Battle">
+  <defs>
+    <linearGradient id="magicGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f5e1ff"/>
+      <stop offset="30%" stop-color="#c9a4ff"/>
+      <stop offset="55%" stop-color="#7040d8"/>
+      <stop offset="100%" stop-color="#a078e8"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8f4ff"/>
+      <stop offset="100%" stop-color="#6a5aa0"/>
+    </linearGradient>
+    <radialGradient id="orbL" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="60%" stop-color="#c9a4ff"/>
+      <stop offset="100%" stop-color="#6a30c0" stop-opacity="0.7"/>
+    </radialGradient>
+    <radialGradient id="orbR" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="60%" stop-color="#80e0ff"/>
+      <stop offset="100%" stop-color="#2060c0" stop-opacity="0.7"/>
+    </radialGradient>
+    <filter id="glowM" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <ellipse cx="400" cy="85" rx="280" ry="36" fill="#6a30c0" opacity="0.28"/>
+
+  <g transform="translate(400, 88) rotate(-20)">
+    <line x1="-220" y1="0" x2="220" y2="0" stroke="url(#silver)" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="200" cy="0" r="5" fill="#3a2610"/>
+    <circle cx="-200" cy="0" r="10" fill="url(#orbL)" filter="url(#glowM)"/>
+    <circle cx="-200" cy="0" r="3" fill="#fff"/>
+  </g>
+  <g transform="translate(400, 88) rotate(20)">
+    <line x1="-220" y1="0" x2="220" y2="0" stroke="#4a3420" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="-200" cy="0" r="5" fill="#3a2610"/>
+    <circle cx="200" cy="0" r="10" fill="url(#orbR)" filter="url(#glowM)"/>
+    <circle cx="200" cy="0" r="3" fill="#fff"/>
+  </g>
+
+  <g transform="translate(400, 22)">
+    <circle r="14" fill="url(#silver)"/>
+    <circle cx="5" cy="-2" r="12" fill="#0a0620"/>
+  </g>
+
+  <g fill="#f8f4ff">
+    <path d="M 130 30 l 1.8 -5 l 1.8 5 l 5 1.8 l -5 1.8 l -1.8 5 l -1.8 -5 l -5 -1.8 Z"/>
+    <path d="M 670 40 l 1.8 -5 l 1.8 5 l 5 1.8 l -5 1.8 l -1.8 5 l -1.8 -5 l -5 -1.8 Z"/>
+    <circle cx="210" cy="20" r="1.4"/>
+    <circle cx="600" cy="25" r="1.4"/>
+    <circle cx="80" cy="60" r="1.2"/>
+    <circle cx="720" cy="70" r="1.2"/>
+  </g>
+
+  <text x="400" y="100" text-anchor="middle"
+        font-family="'Cinzel Decorative', serif"
+        font-weight="900" font-size="46"
+        fill="url(#magicGrad)"
+        letter-spacing="6"
+        style="paint-order: stroke; stroke: #0a0620; stroke-width: 2.5;">WIZARD BATTLE</text>
+</svg>
+
+<div class="status">
+  <span class="accent" id="whose">Wizard One</span>
+  <span id="draws">· 4 draws</span>
+  <span class="event" id="event"></span>
+</div>
+
+<div class="arena">
+  <div class="wizard-panel" id="panel1">
+    <h2>Wizard One</h2>
+    <div class="hp-bar"><div class="hp-fill" id="hp1fill"></div><div class="hp-text" id="hp1text"></div></div>
+    <div class="wands-row" id="wands1">—</div>
+    <div class="seal-row" id="seal1">✕ sealed</div>
+    <div class="inventory" id="inv1"></div>
+  </div>
+  <div class="board"><div class="grid" id="grid"></div></div>
+  <div class="wizard-panel" id="panel2">
+    <h2>Wizard Two</h2>
+    <div class="hp-bar"><div class="hp-fill" id="hp2fill"></div><div class="hp-text" id="hp2text"></div></div>
+    <div class="wands-row" id="wands2">—</div>
+    <div class="seal-row" id="seal2">✕ sealed</div>
+    <div class="inventory" id="inv2"></div>
+  </div>
+</div>
+
+<div class="actions">
+  <button id="cast" disabled>Cast</button>
+  <button id="brew" disabled>Brew</button>
+  <button id="endturn" class="primary" disabled>End Turn</button>
+  <button id="reset">New Game</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">VICTORY</h2>
+    <p id="overBody"></p>
+    <button id="overClose">Play Again</button>
+  </div>
+</div>
+
+<script>
+const MAX_HP = 25;
+const DRAWS_PER_TURN = 4;
+const BLOW_UP_CHANCE = 0.22;
+
+// Card pool — amounts are hidden from UI.
+const TEMPLATES = [
+  // Wands (6)
+  ...Array(4).fill({ name: 'Oaken Wand',    type: 'wand', icon: '✦' }),
+  ...Array(2).fill({ name: 'Crystal Wand',  type: 'wand', icon: '❋' }),
+
+  // Backfire potions ☠ (10) — no effect on draw unless rare blow-up
+  { name: 'Stinkweed',   type: 'backfire', icon: '☠', amount: 2 },
+  { name: 'Bog Sludge',  type: 'backfire', icon: '☠', amount: 1 },
+  { name: 'Dead Eye',    type: 'backfire', icon: '☠', amount: 2 },
+  { name: 'Sneeze',      type: 'backfire', icon: '☠', amount: 1 },
+  { name: 'Curse Ichor', type: 'backfire', icon: '☠', amount: 3 },
+  { name: 'Spitback',    type: 'backfire', icon: '☠', amount: 1 },
+  { name: 'Vile Tar',    type: 'backfire', icon: '☠', amount: 2 },
+  { name: 'Rot Bloom',   type: 'backfire', icon: '☠', amount: 2 },
+  { name: 'Blight',      type: 'backfire', icon: '☠', amount: 3 },
+  { name: 'Wormrot',     type: 'backfire', icon: '☠', amount: 1 },
+
+  // Heal potions ✚ (10)
+  { name: 'Draught',     type: 'heal', icon: '✚', amount: 3 },
+  { name: 'Phoenix Ash', type: 'heal', icon: '✚', amount: 5 },
+  { name: 'Mana Tonic',  type: 'heal', icon: '✚', amount: 2 },
+  { name: 'Moonwell',    type: 'heal', icon: '✚', amount: 3 },
+  { name: 'Elixir',      type: 'heal', icon: '✚', amount: 4 },
+  { name: 'Nectar',      type: 'heal', icon: '✚', amount: 2 },
+  { name: 'Balm',        type: 'heal', icon: '✚', amount: 3 },
+  { name: 'Starmilk',    type: 'heal', icon: '✚', amount: 4 },
+  { name: 'Dew',         type: 'heal', icon: '✚', amount: 2 },
+  { name: 'Bloomstone',  type: 'heal', icon: '✚', amount: 3 },
+
+  // Attack spells (need wand to cast; also deal damage when brewed) (10)
+  { name: 'Firebolt',    type: 'spell', icon: '🜂', amount: 4 },
+  { name: 'Lightning',   type: 'spell', icon: '⚡', amount: 5 },
+  { name: 'Icicle',      type: 'spell', icon: '❄', amount: 3 },
+  { name: 'Shadow',      type: 'spell', icon: '☽', amount: 3 },
+  { name: 'Storm',       type: 'spell', icon: '⚡', amount: 6, locked: true },
+  { name: 'Necrosis',    type: 'spell', icon: '☠', amount: 4 },
+  { name: 'Arcane',      type: 'spell', icon: '✦', amount: 3 },
+  { name: 'Inferno',     type: 'spell', icon: '🜂', amount: 5, locked: true },
+  { name: 'Frostbite',   type: 'spell', icon: '❄', amount: 4, locked: true },
+  { name: 'Hex',         type: 'spell', icon: '☽', amount: 2 },
+
+  // Ingredients (4) — boost whatever the brew is doing
+  { name: 'Moondust',    type: 'ingredient', icon: '⚘' },
+  { name: 'Bat Wing',    type: 'ingredient', icon: '⚘' },
+  { name: 'Nightshade',  type: 'ingredient', icon: '⚘' },
+  { name: 'Pixie Dust',  type: 'ingredient', icon: '⚘' },
+];
+
+let deck, current, drawsLeft, gameOver, wizards, selected;
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+}
+
+function newGame() {
+  deck = TEMPLATES.map((c, i) => ({ ...c, id: i, revealed: false }));
+  shuffle(deck);
+  current = 1;
+  drawsLeft = DRAWS_PER_TURN;
+  gameOver = false;
+  wizards = {
+    1: { hp: MAX_HP, wands: 0, pouch: [], turnsDone: 0 },
+    2: { hp: MAX_HP, wands: 0, pouch: [], turnsDone: 0 },
+  };
+  selected = new Set();
+  setEvent('A grimoire of 40 cards awaits.');
+  document.getElementById('overlay').classList.remove('on');
+  render();
+}
+
+function setEvent(msg) {
+  document.getElementById('event').textContent = msg;
+}
+
+function other(p) { return p === 1 ? 2 : 1; }
+function wname(p) { return p === 1 ? 'Wizard One' : 'Wizard Two'; }
+function healsHeld(p) { return wizards[p].pouch.filter(c => c.type === 'heal').length; }
+function locksOpen(p) { return wizards[p].turnsDone >= 4 && healsHeld(p) >= 2; }
+function isUsable(p, card) { return !card.locked || locksOpen(p); }
+
+function damage(p, n) { wizards[p].hp = Math.max(0, wizards[p].hp - n); }
+function heal(p, n)   { wizards[p].hp = Math.min(MAX_HP, wizards[p].hp + n); }
+
+function allDrawn() { return deck.every(c => c.revealed); }
+
+function endCheck() {
+  const h1 = wizards[1].hp, h2 = wizards[2].hp;
+  let finished = false, title = '', body = '';
+  if (h1 <= 0 && h2 <= 0)      { finished = true; title = 'MUTUAL RUIN'; body = 'Both wizards fall in the same breath.'; }
+  else if (h1 <= 0)            { finished = true; title = 'WIZARD TWO PREVAILS'; body = 'Wizard One crumbles to dust.'; }
+  else if (h2 <= 0)            { finished = true; title = 'WIZARD ONE PREVAILS'; body = 'Wizard Two crumbles to dust.'; }
+  else if (allDrawn())         {
+    finished = true;
+    if (h1 > h2)      { title = 'WIZARD ONE PREVAILS'; body = `The grimoire is spent. ${h1} vs ${h2} HP.`; }
+    else if (h2 > h1) { title = 'WIZARD TWO PREVAILS'; body = `The grimoire is spent. ${h2} vs ${h1} HP.`; }
+    else              { title = 'STALEMATE';          body = `The grimoire is spent. Both at ${h1} HP.`; }
+  }
+  if (finished) {
+    gameOver = true;
+    document.getElementById('overTitle').textContent = title;
+    document.getElementById('overBody').textContent = body;
+    document.getElementById('overlay').classList.add('on');
+    burstAt(window.innerWidth / 2, window.innerHeight / 2, 24);
+  }
+  return finished;
+}
+
+function pickCard(i) {
+  if (gameOver) return;
+  const c = deck[i];
+  if (!c || c.revealed || drawsLeft <= 0) return;
+  c.revealed = true;
+  drawsLeft--;
+  const me = current;
+
+  if (c.type === 'wand') {
+    wizards[me].wands++;
+    setEvent(`${wname(me)} claims a ${c.name}.`);
+  } else if (c.type === 'backfire' && Math.random() < BLOW_UP_CHANCE) {
+    damage(me, c.amount);
+    setEvent(`${c.name} blew up in ${wname(me)}'s face! (−${c.amount} HP)`);
+    // discarded — not added to pouch
+  } else {
+    wizards[me].pouch.push(c);
+    setEvent(`${wname(me)} pockets ${c.name}.`);
+  }
+
+  // sparkle at clicked card
+  const el = document.querySelector(`[data-idx="${i}"]`);
+  if (el) {
+    const r = el.getBoundingClientRect();
+    burstAt(r.left + r.width/2, r.top + r.height/2, c.type === 'heal' ? 10 : 5);
+  }
+
+  render();
+  endCheck();
+}
+
+function togglePot(p, idx) {
+  if (gameOver || p !== current) return;
+  const c = wizards[p].pouch[idx];
+  if (!isUsable(p, c)) return;
+  if (selected.has(idx)) selected.delete(idx); else selected.add(idx);
+  render();
+}
+
+function canCast() {
+  if (selected.size !== 1) return false;
+  const c = wizards[current].pouch[[...selected][0]];
+  return c && c.type === 'spell' && wizards[current].wands > 0 && isUsable(current, c);
+}
+function canBrew() {
+  if (selected.size < 2) return false;
+  return [...selected].every(i => isUsable(current, wizards[current].pouch[i]));
+}
+
+function castSpell() {
+  if (!canCast()) return;
+  const idx = [...selected][0];
+  const c = wizards[current].pouch[idx];
+  const me = current, foe = other(me);
+  wizards[me].pouch.splice(idx, 1);
+  wizards[me].wands--;
+  selected.clear();
+  damage(foe, c.amount);
+  setEvent(`${wname(me)} casts ${c.name} — ${wname(foe)} takes ${c.amount}.`);
+  const fp = document.getElementById('panel' + foe).getBoundingClientRect();
+  burstAt(fp.left + fp.width/2, fp.top + fp.height/2, 18);
+  render();
+  endCheck();
+}
+
+function brewMix() {
+  if (!canBrew()) return;
+  const me = current, foe = other(me);
+  const idxs = [...selected].sort((a,b) => b - a);
+  const used = idxs.map(i => wizards[me].pouch[i]);
+  idxs.forEach(i => wizards[me].pouch.splice(i, 1));
+  selected.clear();
+
+  let heals = 0, back = 0, atk = 0, ing = 0;
+  for (const c of used) {
+    if (c.type === 'heal')       heals += c.amount;
+    else if (c.type === 'backfire') back  += c.amount;
+    else if (c.type === 'spell')    atk   += c.amount;
+    else if (c.type === 'ingredient') ing++;
+  }
+  // Ingredients amplify the largest effect by +1 each
+  const biggest = Math.max(heals, back, atk);
+  if (biggest > 0 && ing > 0) {
+    if (atk === biggest) atk += ing;
+    else if (heals === biggest) heals += ing;
+    else back += ing;
+  } else if (ing > 0 && biggest === 0) {
+    // Pure ingredient brews: small random heal
+    heals += 1 + Math.floor(Math.random() * ing);
+  }
+
+  const netSelf = heals - back;
+  let parts = [];
+  if (atk > 0)         { damage(foe, atk);    parts.push(`${wname(foe)} −${atk}`); }
+  if (netSelf > 0)     { heal(me, netSelf);   parts.push(`+${netSelf} HP`); }
+  else if (netSelf < 0){ damage(me, -netSelf); parts.push(`−${-netSelf} HP to self`); }
+  if (parts.length === 0) parts.push('fizzles');
+
+  setEvent(`${wname(me)} brews ${used.length} → ${parts.join(', ')}.`);
+
+  const mp = document.getElementById('panel' + me).getBoundingClientRect();
+  burstAt(mp.left + mp.width/2, mp.top + mp.height/2, 14);
+  if (atk > 0) {
+    const fp = document.getElementById('panel' + foe).getBoundingClientRect();
+    burstAt(fp.left + fp.width/2, fp.top + fp.height/2, 14);
+  }
+  render();
+  endCheck();
+}
+
+function endTurn() {
+  if (gameOver) return;
+  wizards[current].turnsDone++;
+  const justOpened = wizards[current].turnsDone >= 4 && healsHeld(current) >= 2;
+  const prevOpen = wizards[current].turnsDone - 1 >= 4 && healsHeld(current) >= 2;
+  selected.clear();
+  current = other(current);
+  drawsLeft = DRAWS_PER_TURN;
+  setEvent(justOpened && !prevOpen ? `✕ seals broken! ${wname(other(current))}'s locked cards are live.` : `${wname(current)}'s turn.`);
+  render();
+}
+
+function render() {
+  // HP & wands & panel state
+  for (const p of [1, 2]) {
+    const pct = wizards[p].hp / MAX_HP * 100;
+    document.getElementById(`hp${p}fill`).style.width = pct + '%';
+    document.getElementById(`hp${p}text`).textContent = `${wizards[p].hp} / ${MAX_HP}`;
+    document.getElementById(`wands${p}`).textContent = wizards[p].wands > 0
+      ? '✦'.repeat(wizards[p].wands)
+      : '—';
+    document.getElementById('panel' + p).classList.toggle('active', !gameOver && current === p);
+
+    const inv = document.getElementById('inv' + p);
+    inv.innerHTML = '';
+    wizards[p].pouch.forEach((card, idx) => {
+      const el = document.createElement('div');
+      el.className = 'pot type-' + card.type;
+      if (card.locked) el.classList.add('locked-card');
+      if (card.locked && !locksOpen(p)) el.classList.add('sealed');
+      if (p === current && selected.has(idx)) el.classList.add('selected');
+      if (p !== current || gameOver) el.classList.add('locked');
+      el.innerHTML = `<span class="ic">${card.icon}</span><span class="nm">${card.name}</span>`;
+      el.addEventListener('click', () => togglePot(p, idx));
+      inv.appendChild(el);
+    });
+
+    // Seal row
+    const seal = document.getElementById('seal' + p);
+    const open = locksOpen(p);
+    const t = wizards[p].turnsDone, h = healsHeld(p);
+    seal.classList.toggle('open', open);
+    seal.textContent = open
+      ? '✕ seals broken'
+      : `✕ sealed · ${Math.min(t,4)}/4 turns · ${Math.min(h,2)}/2 heals`;
+  }
+
+  // Grid
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  deck.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.dataset.idx = i;
+    if (card.revealed) {
+      el.classList.add('revealed', 't-' + card.type);
+      if (card.locked) el.classList.add('locked-card');
+      el.innerHTML = `<div style="text-align:center"><div class="r-icon">${card.icon}</div><div class="r-name">${card.name}</div></div>`;
+    }
+    if (gameOver || (drawsLeft <= 0 && !card.revealed)) el.classList.add('disabled');
+    el.addEventListener('click', () => pickCard(i));
+    grid.appendChild(el);
+  });
+
+  // Status
+  document.getElementById('whose').textContent = gameOver ? 'Battle over' : wname(current);
+  document.getElementById('draws').textContent = gameOver ? '' : ` · ${drawsLeft} draw${drawsLeft === 1 ? '' : 's'}`;
+
+  // Buttons
+  document.getElementById('cast').disabled    = gameOver || !canCast();
+  document.getElementById('brew').disabled    = gameOver || !canBrew();
+  document.getElementById('endturn').disabled = gameOver;
+}
+
+// ----- Sparkles -----
+const SPARKLE_GLYPHS = ['✦', '✧', '⋆', '✨'];
+function spawnSparkle(x, y, dx, dy) {
+  const el = document.createElement('div');
+  el.className = 'sparkle';
+  el.textContent = SPARKLE_GLYPHS[Math.floor(Math.random() * SPARKLE_GLYPHS.length)];
+  el.style.left = (x + (Math.random() - 0.5) * 14) + 'px';
+  el.style.top  = (y + (Math.random() - 0.5) * 14) + 'px';
+  el.style.setProperty('--dx', (dx ?? ((Math.random() - 0.5) * 60)) + 'px');
+  el.style.setProperty('--dy', (dy ?? (-40 - Math.random() * 60)) + 'px');
+  el.style.fontSize = (10 + Math.random() * 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1700);
+}
+function burstAt(x, y, count) {
+  for (let i = 0; i < count; i++) setTimeout(() => spawnSparkle(x, y), i * 32);
+}
+function ambient() {
+  if (document.hidden) return;
+  const el = document.createElement('div');
+  el.className = 'ambient';
+  el.textContent = SPARKLE_GLYPHS[Math.floor(Math.random() * SPARKLE_GLYPHS.length)];
+  el.style.left = Math.random() * window.innerWidth + 'px';
+  el.style.top  = Math.random() * window.innerHeight + 'px';
+  el.style.fontSize = (8 + Math.random() * 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+setInterval(ambient, 700);
+
+document.getElementById('cast').addEventListener('click', castSpell);
+document.getElementById('brew').addEventListener('click', brewMix);
+document.getElementById('endturn').addEventListener('click', endTurn);
+document.getElementById('reset').addEventListener('click', newGame);
+document.getElementById('overClose').addEventListener('click', newGame);
+
+newGame();
+</script>
+</body>
+</html>

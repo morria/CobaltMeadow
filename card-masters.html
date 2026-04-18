@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Card Masters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Cinzel', Georgia, serif;
+    background:
+      radial-gradient(ellipse at top, #2a1e14 0%, #14100b 55%, #06050a 100%),
+      #06050a;
+    color: #e9d9b5;
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto 8px;
+    max-width: 720px;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+  }
+  .scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin: 16px 0;
+    font-size: 20px;
+  }
+  .player {
+    padding: 12px 20px;
+    border-radius: 4px;
+    background: rgba(20,12,6,0.7);
+    border: 1px solid #6b5022;
+    min-width: 160px;
+    text-align: center;
+    color: #e9d9b5;
+    letter-spacing: 2px;
+  }
+  .player.active {
+    background: rgba(80,50,16,0.75);
+    border-color: #d4a84b;
+    box-shadow: 0 0 16px rgba(212,168,75,0.4);
+  }
+  .status {
+    text-align: center;
+    font-size: 18px;
+    min-height: 28px;
+    margin: 8px 0 16px;
+  }
+  .deck {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 8px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card {
+    aspect-ratio: 2 / 3;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #2a1a08;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(212,168,75,0.15) 0 6px, transparent 6px 12px),
+      radial-gradient(circle at center, #3a2510 0%, #1a0f06 100%);
+    border: 1.5px solid #8b6a24;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: transform 0.15s;
+    user-select: none;
+  }
+  .card:hover:not(.flipped):not(.disabled) { transform: translateY(-4px); }
+  .card.flipped {
+    background: #fff;
+    background-image: none;
+    color: #000;
+    cursor: default;
+    flex-direction: column;
+    font-size: 14px;
+    line-height: 1.1;
+  }
+  .card.flipped.red { color: #c00; }
+  .card.disabled { cursor: not-allowed; opacity: 0.85; }
+  .card .rank { font-size: 18px; }
+  .card .suit { font-size: 22px; }
+  .controls { text-align: center; margin-top: 20px; }
+  button {
+    font-size: 16px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    background: gold;
+    color: #000;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  button:hover { background: #ffde4d; }
+  .legend {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 14px;
+    opacity: 0.85;
+  }
+</style>
+</head>
+<body>
+  <svg class="logo" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" aria-label="Card Masters">
+    <defs>
+      <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f5deb3"/>
+        <stop offset="30%" stop-color="#d4a84b"/>
+        <stop offset="55%" stop-color="#8b6a24"/>
+        <stop offset="100%" stop-color="#c9a04b"/>
+      </linearGradient>
+      <linearGradient id="goldSoft" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d4a84b"/>
+        <stop offset="100%" stop-color="#6b5022"/>
+      </linearGradient>
+    </defs>
+
+    <g transform="translate(400, 40)" fill="url(#gold)" stroke="#2b1a05" stroke-width="0.8">
+      <path d="M -42 12 L -42 -6 L -28 8 L -18 -18 L -8 6 L 0 -28 L 8 6 L 18 -18 L 28 8 L 42 -6 L 42 12 Z"/>
+      <rect x="-42" y="12" width="84" height="5" rx="1"/>
+      <circle cx="-28" cy="-10" r="2.6" fill="#a8281e"/>
+      <circle cx="0" cy="-32" r="3.4" fill="#a8281e"/>
+      <circle cx="28" cy="-10" r="2.6" fill="#a8281e"/>
+    </g>
+
+    <path d="M 120 72 Q 400 52 680 72" stroke="url(#goldSoft)" stroke-width="1" fill="none" opacity="0.8"/>
+
+    <g transform="translate(95, 120)">
+      <g transform="rotate(-18)">
+        <rect x="-17" y="-28" width="34" height="52" rx="3" fill="#120a06" stroke="url(#gold)" stroke-width="1.5"/>
+        <text x="0" y="8" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#b8413b">♥</text>
+      </g>
+      <g transform="translate(26 -2) rotate(14)">
+        <rect x="-17" y="-28" width="34" height="52" rx="3" fill="#120a06" stroke="url(#gold)" stroke-width="1.5"/>
+        <text x="0" y="8" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#b8413b">♦</text>
+      </g>
+    </g>
+
+    <g transform="translate(705, 120)">
+      <g transform="rotate(18)">
+        <rect x="-17" y="-28" width="34" height="52" rx="3" fill="#120a06" stroke="url(#gold)" stroke-width="1.5"/>
+        <text x="0" y="8" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#e9d9b5">♣</text>
+      </g>
+      <g transform="translate(-26 -2) rotate(-14)">
+        <rect x="-17" y="-28" width="34" height="52" rx="3" fill="#120a06" stroke="url(#gold)" stroke-width="1.5"/>
+        <text x="0" y="8" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#b8413b">♥</text>
+      </g>
+    </g>
+
+    <text x="400" y="132" text-anchor="middle"
+          font-family="'Cinzel Decorative', 'Cinzel', Georgia, serif"
+          font-weight="900" font-size="54"
+          fill="url(#gold)"
+          letter-spacing="6"
+          style="paint-order: stroke; stroke: #1a0e03; stroke-width: 2;">CARD MASTERS</text>
+
+    <g transform="translate(400, 165)" stroke="url(#goldSoft)" stroke-width="1.2" fill="url(#gold)">
+      <line x1="-260" y1="0" x2="-26" y2="0"/>
+      <line x1="26" y1="0" x2="260" y2="0"/>
+      <path d="M -18 0 L 0 -11 L 18 0 L 0 11 Z" stroke="#2b1a05" stroke-width="0.6"/>
+      <circle cx="-262" cy="0" r="2.2" stroke="none"/>
+      <circle cx="262" cy="0" r="2.2" stroke="none"/>
+    </g>
+  </svg>
+  <div class="status" id="status">Player 1's turn — pick a card</div>
+  <div class="scoreboard">
+    <div class="player" id="p1"><div>Player 1</div><div id="p1score">0</div></div>
+    <div class="player" id="p2"><div>Player 2</div><div id="p2score">0</div></div>
+  </div>
+  <div class="deck" id="deck"></div>
+  <div class="controls">
+    <button id="reset">New Game</button>
+  </div>
+  <div class="legend">
+    Points = card number × suit value &nbsp;·&nbsp; ♥ = 2, ♣ = 3, ♦ = 4 &nbsp;·&nbsp; A = 1, Q = 1 (ends game) &nbsp;·&nbsp; J/K = pick any number 1–10
+  </div>
+
+<script>
+const SUITS = [
+  { name: 'hearts',   symbol: '♥', red: true,  suitPoints: 2 },
+  { name: 'clubs',    symbol: '♣', red: false, suitPoints: 3 },
+  { name: 'diamonds', symbol: '♦', red: true,  suitPoints: 4 },
+];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+let deck = [];
+let currentPlayer = 1;
+let scores = { 1: 0, 2: 0 };
+let gameOver = false;
+
+function baseNumber(card) {
+  if (card.rank === 'A') return 1;
+  if (card.rank === 'Q') return 1;
+  if (card.rank === 'J' || card.rank === 'K') return null;
+  return parseInt(card.rank, 10);
+}
+
+function askWildNumber(rank) {
+  while (true) {
+    const input = prompt(`${rank} drawn — pick a number 1 through 10:`);
+    if (input === null) continue;
+    const n = parseInt(input, 10);
+    if (Number.isInteger(n) && n >= 1 && n <= 10) return n;
+  }
+}
+
+function cardPoints(card) {
+  const base = baseNumber(card);
+  const num = base === null ? askWildNumber(card.rank) : base;
+  card.chosenNumber = num;
+  return num * card.suitPoints;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function buildDeck() {
+  deck = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      deck.push({ rank, suit: suit.symbol, red: suit.red, suitPoints: suit.suitPoints });
+    }
+  }
+  shuffle(deck);
+}
+
+function render() {
+  const deckEl = document.getElementById('deck');
+  deckEl.innerHTML = '';
+  deck.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    if (card.flipped) {
+      el.classList.add('flipped');
+      if (card.red) el.classList.add('red');
+      el.innerHTML = `<div class="rank">${card.rank}</div><div class="suit">${card.suit}</div>`;
+    }
+    if (gameOver && !card.flipped) el.classList.add('disabled');
+    el.addEventListener('click', () => pickCard(i));
+    deckEl.appendChild(el);
+  });
+
+  document.getElementById('p1score').textContent = scores[1];
+  document.getElementById('p2score').textContent = scores[2];
+  document.getElementById('p1').classList.toggle('active', !gameOver && currentPlayer === 1);
+  document.getElementById('p2').classList.toggle('active', !gameOver && currentPlayer === 2);
+}
+
+function pickCard(i) {
+  if (gameOver) return;
+  const card = deck[i];
+  if (card.flipped) return;
+
+  card.flipped = true;
+  card.takenBy = currentPlayer;
+  const pts = cardPoints(card);
+  scores[currentPlayer] += pts;
+
+  const status = document.getElementById('status');
+
+  if (card.rank === 'Q') {
+    gameOver = true;
+    let msg = `Player ${currentPlayer} drew Q${card.suit} (+${pts}) — game over! `;
+    if (scores[1] > scores[2]) msg += `Player 1 wins ${scores[1]}–${scores[2]}.`;
+    else if (scores[2] > scores[1]) msg += `Player 2 wins ${scores[2]}–${scores[1]}.`;
+    else msg += `Tie at ${scores[1]}.`;
+    status.textContent = msg;
+  } else {
+    const chose = card.chosenNumber !== undefined && (card.rank === 'J' || card.rank === 'K')
+      ? ` (chose ${card.chosenNumber})` : '';
+    status.textContent = `Player ${currentPlayer} drew ${card.rank}${card.suit}${chose} (+${pts}). `;
+    currentPlayer = currentPlayer === 1 ? 2 : 1;
+    status.textContent += `Player ${currentPlayer}'s turn.`;
+  }
+  render();
+}
+
+function newGame() {
+  buildDeck();
+  currentPlayer = 1;
+  scores = { 1: 0, 2: 0 };
+  gameOver = false;
+  document.getElementById('status').textContent = "Player 1's turn — pick a card";
+  render();
+}
+
+document.getElementById('reset').addEventListener('click', newGame);
+newGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Monster Trucks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, #ff5a20 0%, #aa2a10 25%, #4a1408 60%, #0a0406 100%);
+    color: #ffe8c8;
+    margin: 0;
+    padding: 8px 14px 12px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 560px;
+    width: 100%;
+    max-height: 92px;
+    filter: drop-shadow(0 4px 10px rgba(255,90,30,0.5));
+  }
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 14px;
+    background: rgba(20,10,6,0.6);
+    border: 1px solid #8a3010;
+    border-radius: 4px;
+  }
+  .scoreboard .slot {
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 2px;
+    font-size: 14px;
+  }
+  .scoreboard .slot.p1 { color: #ff8060; }
+  .scoreboard .slot.p2 { color: #ffd060; }
+  .scoreboard .slot .v { font-size: 22px; display: block; }
+  .scoreboard .center {
+    text-align: center;
+    color: #ffd8a0;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .scoreboard .slot.active { text-shadow: 0 0 10px currentColor; }
+
+  .scene {
+    position: relative;
+    flex: 1;
+    min-height: 180px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffa050 0%, #ff6a30 30%, #6a1a08 70%, #2a0a02 100%);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+    border: 1.5px solid #8a3010;
+  }
+  .sun {
+    position: absolute; top: 24%; left: 50%;
+    width: 70px; height: 70px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff8b0 0%, #ffe040 40%, rgba(255,200,0,0) 75%);
+    border-radius: 50%;
+  }
+  .mountain {
+    position: absolute; bottom: 28%; left: 0; width: 100%; height: 90px;
+    background:
+      linear-gradient(180deg, transparent 0%, #3a140a 100%),
+      conic-gradient(from 220deg at 20% 120%, transparent 90deg, #4a1810 90deg 180deg);
+    opacity: 0.55;
+  }
+  .ground {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 28%;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 60px, rgba(0,0,0,0.15) 60px 61px),
+      linear-gradient(180deg, #6a3a12 0%, #3a1a06 100%);
+    border-top: 2px solid #8a4a1a;
+  }
+  .ramp {
+    position: absolute;
+    bottom: 28%;
+    left: 55%;
+    width: 100px;
+    height: 54px;
+    background: linear-gradient(180deg, #a0502a, #5a2010);
+    clip-path: polygon(0 100%, 100% 100%, 100% 0);
+    border-top: 2px solid #ffb060;
+  }
+  .ramp::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0;
+    width: 5px; height: 100%;
+    background: repeating-linear-gradient(0deg, #ffd080 0 10px, #0a0a0a 10px 20px);
+  }
+  .truck {
+    position: absolute;
+    bottom: 28%;
+    left: 6%;
+    width: 80px;
+    height: 50px;
+    transform-origin: 50% 70%;
+    transition: none;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .toy-car {
+    position: absolute;
+    bottom: calc(28% - 2px);
+    width: 44px;
+    height: 20px;
+    border-radius: 3px 10px 10px 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    z-index: 1;
+    transition: height 0.15s ease-out, transform 0.15s ease-out;
+  }
+  .toy-car::before, .toy-car::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    width: 7px; height: 7px;
+    background: #0a0a0a;
+    border-radius: 50%;
+  }
+  .toy-car::before { left: 5px; }
+  .toy-car::after  { right: 5px; }
+  .toy-car .win {
+    position: absolute;
+    left: 16px; right: 4px; top: 3px;
+    height: 8px;
+    background: rgba(200,230,255,0.6);
+    border-radius: 2px;
+  }
+  .toy-car.crushed {
+    height: 7px;
+    animation: none !important;
+    background: linear-gradient(180deg, #5a3a30, #2a1a18) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .toy-car.crushed .win { display: none; }
+  .toy-car.c1 { background: linear-gradient(180deg, #60a0ff, #2060c0); animation: drive1 5s linear infinite alternate; }
+  .toy-car.c2 { background: linear-gradient(180deg, #ffd060, #a06820); animation: drive2 4s linear infinite alternate; animation-delay: -1.5s; }
+  .toy-car.c3 { background: linear-gradient(180deg, #a0ff90, #2ea035); animation: drive3 6s linear infinite alternate; animation-delay: -2.8s; }
+  @keyframes drive1 { 0% { left: 62%; } 100% { left: 92%; } }
+  @keyframes drive2 { 0% { left: 90%; } 100% { left: 60%; } }
+  @keyframes drive3 { 0% { left: 70%; } 100% { left: 88%; } }
+  .scene .status {
+    position: absolute; top: 8px; left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Russo One', sans-serif;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: #fff8d0;
+    text-shadow: 0 2px 4px #000, 0 0 12px rgba(255,180,60,0.8);
+    padding: 4px 14px;
+    background: rgba(20,5,0,0.55);
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .meters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .meter {
+    position: relative;
+    height: 40px;
+    background: linear-gradient(180deg, #2a1a10, #14080a);
+    border: 1.5px solid #8a4a1a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .meter::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #ffd8a0;
+    z-index: 3;
+    text-shadow: 0 1px 2px #000;
+  }
+  .meter .track-bg {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg,
+        rgba(40,20,10,0.9) 0%,
+        rgba(120,40,10,0.5) 30%,
+        rgba(255,140,20,0.7) 60%,
+        rgba(255,80,20,0.9) 100%);
+  }
+  .meter .cursor {
+    position: absolute; top: 0; bottom: 0;
+    width: 4px;
+    background: #ffe8a0;
+    box-shadow: 0 0 10px #ffd060, 0 0 20px #ffa040;
+    left: 0%;
+    transition: none;
+  }
+  .meter.locked .cursor { background: #60ff80; box-shadow: 0 0 10px #90ffa0; }
+  .meter .value {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    color: #ffe8a0;
+    z-index: 3;
+    text-shadow: 0 1px 2px #000;
+  }
+
+  .remote {
+    display: block;
+    margin: 0 auto;
+    max-width: 620px;
+    width: 100%;
+    max-height: 180px;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6));
+    user-select: none;
+  }
+  .remote .rc-btn { cursor: pointer; }
+  .remote .rc-btn .btn-face { transition: filter 0.12s, transform 0.08s; transform-origin: center; transform-box: fill-box; }
+  .remote .rc-btn:hover:not(.disabled) .btn-face { filter: brightness(1.25); }
+  .remote .rc-btn:active:not(.disabled) .btn-face { transform: scale(0.92); filter: brightness(0.85); }
+  .remote .rc-btn.disabled { cursor: not-allowed; opacity: 0.35; }
+  .remote .rc-btn.disabled .btn-face { filter: grayscale(0.6); }
+  button {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    border-radius: 4px;
+    border: 2px solid #ffb060;
+    background: linear-gradient(180deg, #ff8030, #c04010);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  button:hover:not(:disabled) { filter: brightness(1.15); }
+
+  /* particles */
+  @keyframes puff {
+    0%   { opacity: 0.9; transform: translate(0,0) scale(0.4); }
+    100% { opacity: 0;   transform: translate(var(--dx,0px), var(--dy,-30px)) scale(1.3); }
+  }
+  .puff {
+    position: fixed;
+    pointer-events: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff2a0 0%, #ffa040 60%, rgba(255,80,0,0) 100%);
+    animation: puff 0.9s ease-out forwards;
+    z-index: 200;
+  }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(5,2,0,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #3a1a0a, #14050a);
+    border: 2px solid #ffd060;
+    border-radius: 8px;
+    padding: 28px 38px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 0 40px rgba(255,180,60,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    margin: 0 0 12px;
+    color: #ffd060;
+    letter-spacing: 4px;
+    font-size: 28px;
+  }
+  .overlay-box p { margin: 6px 0 16px; color: #ffe8c8; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Monster Trucks">
+  <defs>
+    <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#fff090"/>
+      <stop offset="35%" stop-color="#ffa030"/>
+      <stop offset="70%" stop-color="#e03810"/>
+      <stop offset="100%" stop-color="#8a1010"/>
+    </linearGradient>
+    <filter id="hot" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- left flames -->
+  <g opacity="0.85" filter="url(#hot)">
+    <path d="M 80 90 Q 60 70 80 50 Q 70 70 100 60 Q 90 80 120 70 Q 105 95 130 90 L 80 95 Z" fill="url(#fire)"/>
+    <path d="M 70 108 Q 55 95 75 78 Q 65 92 92 86 Q 82 104 110 100 L 70 110 Z" fill="#ffb040" opacity="0.8"/>
+  </g>
+  <!-- right flames -->
+  <g opacity="0.85" filter="url(#hot)" transform="translate(800 0) scale(-1 1)">
+    <path d="M 80 90 Q 60 70 80 50 Q 70 70 100 60 Q 90 80 120 70 Q 105 95 130 90 L 80 95 Z" fill="url(#fire)"/>
+    <path d="M 70 108 Q 55 95 75 78 Q 65 92 92 86 Q 82 104 110 100 L 70 110 Z" fill="#ffb040" opacity="0.8"/>
+  </g>
+
+  <!-- title -->
+  <text x="400" y="80" text-anchor="middle"
+        font-family="'Bungee', sans-serif"
+        font-size="58"
+        fill="url(#fire)"
+        letter-spacing="2"
+        style="paint-order: stroke; stroke: #2a0404; stroke-width: 3;">MONSTER TRUCKS</text>
+
+  <!-- tire track underline -->
+  <g transform="translate(140, 110)">
+    <rect x="0" y="0" width="520" height="7" fill="#2a1a0a"/>
+    <g fill="#ffd060">
+      <rect x="10"  y="2" width="18" height="3"/>
+      <rect x="50"  y="2" width="18" height="3"/>
+      <rect x="90"  y="2" width="18" height="3"/>
+      <rect x="130" y="2" width="18" height="3"/>
+      <rect x="170" y="2" width="18" height="3"/>
+      <rect x="210" y="2" width="18" height="3"/>
+      <rect x="250" y="2" width="18" height="3"/>
+      <rect x="290" y="2" width="18" height="3"/>
+      <rect x="330" y="2" width="18" height="3"/>
+      <rect x="370" y="2" width="18" height="3"/>
+      <rect x="410" y="2" width="18" height="3"/>
+      <rect x="450" y="2" width="18" height="3"/>
+      <rect x="490" y="2" width="18" height="3"/>
+    </g>
+  </g>
+</svg>
+
+<div class="scoreboard">
+  <div class="slot p1" id="slot1">
+    <div>PLAYER 1</div>
+    <span class="v" id="score1">0</span>
+  </div>
+  <div class="center" id="roundInfo">Round 1 / 3 · Player 1 up</div>
+  <div class="slot p2" id="slot2" style="text-align:right">
+    <div>PLAYER 2</div>
+    <span class="v" id="score2">0</span>
+  </div>
+</div>
+
+<div class="scene" id="scene">
+  <div class="sun"></div>
+  <div class="mountain"></div>
+  <div class="ground"></div>
+  <div class="ramp"></div>
+  <div class="toy-car c1"><div class="win"></div></div>
+  <div class="toy-car c2"><div class="win"></div></div>
+  <div class="toy-car c3"><div class="win"></div></div>
+  <svg class="truck" id="truck" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+    <!-- exhaust -->
+    <rect x="8" y="20" width="6" height="4" fill="#555"/>
+    <!-- body -->
+    <rect x="10" y="22" width="80" height="16" rx="2" fill="#c42020"/>
+    <rect x="10" y="22" width="80" height="5" rx="2" fill="#f05050"/>
+    <!-- cab -->
+    <path d="M 28 22 L 36 10 L 62 10 L 70 22 Z" fill="#3a0a0a"/>
+    <rect x="36" y="13" width="26" height="8" rx="1" fill="#80ccff" opacity="0.65"/>
+    <!-- skull decal -->
+    <circle cx="50" cy="32" r="2.5" fill="#fff"/>
+    <rect x="48" y="32" width="4" height="2" fill="#fff"/>
+    <!-- wheels -->
+    <circle cx="24" cy="46" r="12" fill="#111"/>
+    <circle cx="24" cy="46" r="7"  fill="#333"/>
+    <circle cx="24" cy="46" r="2.5" fill="#999"/>
+    <circle cx="76" cy="46" r="12" fill="#111"/>
+    <circle cx="76" cy="46" r="7"  fill="#333"/>
+    <circle cx="76" cy="46" r="2.5" fill="#999"/>
+    <!-- tire tread -->
+    <g stroke="#555" stroke-width="0.8">
+      <line x1="24" y1="34" x2="24" y2="36"/>
+      <line x1="12" y1="46" x2="14" y2="46"/>
+      <line x1="34" y1="46" x2="36" y2="46"/>
+      <line x1="76" y1="34" x2="76" y2="36"/>
+      <line x1="64" y1="46" x2="66" y2="46"/>
+      <line x1="86" y1="46" x2="88" y2="46"/>
+    </g>
+  </svg>
+  <div class="status" id="status">Press GO — pick your POWER.</div>
+</div>
+
+<div class="meters">
+  <div class="meter" id="powerMeter" data-label="POWER">
+    <div class="track-bg"></div>
+    <div class="cursor" id="powerCursor"></div>
+    <div class="value" id="powerValue">—</div>
+  </div>
+  <div class="meter" id="flipMeter" data-label="FLIP">
+    <div class="track-bg"></div>
+    <div class="cursor" id="flipCursor"></div>
+    <div class="value" id="flipValue">—</div>
+  </div>
+</div>
+
+<svg class="remote" viewBox="0 0 620 170" xmlns="http://www.w3.org/2000/svg" aria-label="RC Remote">
+  <defs>
+    <linearGradient id="rcBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6a4228"/>
+      <stop offset="55%" stop-color="#3a1e0e"/>
+      <stop offset="100%" stop-color="#1e0e06"/>
+    </linearGradient>
+    <radialGradient id="btnRed" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffb0a0"/>
+      <stop offset="45%" stop-color="#e83028"/>
+      <stop offset="100%" stop-color="#6a1008"/>
+    </radialGradient>
+    <radialGradient id="btnYellow" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#fff8a0"/>
+      <stop offset="45%" stop-color="#ffb020"/>
+      <stop offset="100%" stop-color="#6a3a00"/>
+    </radialGradient>
+    <radialGradient id="btnGreen" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#c0ffb0"/>
+      <stop offset="45%" stop-color="#30c040"/>
+      <stop offset="100%" stop-color="#0e4a18"/>
+    </radialGradient>
+    <radialGradient id="btnGray" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#c8c8d0"/>
+      <stop offset="45%" stop-color="#707080"/>
+      <stop offset="100%" stop-color="#181820"/>
+    </radialGradient>
+    <radialGradient id="btnOrange" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffd8a0"/>
+      <stop offset="45%" stop-color="#ff7020"/>
+      <stop offset="100%" stop-color="#6a1c08"/>
+    </radialGradient>
+  </defs>
+
+  <line x1="95" y1="6" x2="95" y2="40" stroke="#c8c8d0" stroke-width="3"/>
+  <circle cx="95" cy="5" r="5" fill="#ffd060" stroke="#8a5010" stroke-width="1"/>
+
+  <rect x="18" y="38" width="584" height="122" rx="14" fill="url(#rcBody)" stroke="#ffb060" stroke-width="2"/>
+  <rect x="22" y="42" width="576" height="20" rx="8" fill="rgba(255,200,120,0.08)"/>
+
+  <circle cx="30" cy="50" r="2.5" fill="#1a0806"/>
+  <circle cx="590" cy="50" r="2.5" fill="#1a0806"/>
+  <circle cx="30" cy="150" r="2.5" fill="#1a0806"/>
+  <circle cx="590" cy="150" r="2.5" fill="#1a0806"/>
+
+  <!-- LCD -->
+  <rect x="42" y="60" width="260" height="32" rx="3" fill="#0a1a08" stroke="#5a8030" stroke-width="2"/>
+  <rect x="42" y="60" width="260" height="8" fill="rgba(120,255,140,0.08)"/>
+  <text id="lcd" x="52" y="82" font-family="'Russo One', sans-serif" font-size="16" fill="#90ff90"
+        style="text-shadow: 0 0 6px #60ff80;">READY</text>
+
+  <!-- LED -->
+  <circle id="led" cx="320" cy="76" r="6" fill="#ff3030" stroke="#8a1010" stroke-width="1"/>
+  <text x="330" y="80" font-family="'Rajdhani', sans-serif" font-weight="700" font-size="11" fill="#ffd8a0" letter-spacing="2">PWR</text>
+  <text x="538" y="58" text-anchor="end" font-family="'Bungee', sans-serif" font-size="11" fill="#ffa060" letter-spacing="2">MT-RC</text>
+
+  <!-- D-pad (decorative) -->
+  <g transform="translate(90, 120)">
+    <rect x="-10" y="-26" width="20" height="52" rx="3" fill="#1e0e06" stroke="#4a2a1a"/>
+    <rect x="-26" y="-10" width="52" height="20" rx="3" fill="#1e0e06" stroke="#4a2a1a"/>
+    <circle cx="0" cy="0" r="6" fill="#0a0402"/>
+    <polygon points="0,-16 -5,-8 5,-8" fill="#6a4a2a"/>
+    <polygon points="0,16 -5,8 5,8" fill="#6a4a2a"/>
+    <polygon points="-16,0 -8,-5 -8,5" fill="#6a4a2a"/>
+    <polygon points="16,0 8,-5 8,5" fill="#6a4a2a"/>
+  </g>
+
+  <!-- GO -->
+  <g class="rc-btn" id="rcGo" data-action="go">
+    <circle cx="248" cy="130" r="26" class="btn-face" fill="url(#btnRed)" stroke="#1a0604" stroke-width="2"/>
+    <text x="248" y="136" text-anchor="middle" font-family="'Bungee', sans-serif" font-size="14" fill="#fff"
+          pointer-events="none" style="text-shadow: 0 1px 2px rgba(0,0,0,0.6);">GO</text>
+  </g>
+
+  <!-- STOP -->
+  <g class="rc-btn" id="rcStop" data-action="stop">
+    <circle cx="316" cy="130" r="24" class="btn-face" fill="url(#btnYellow)" stroke="#1a0604" stroke-width="2"/>
+    <text x="316" y="135" text-anchor="middle" font-family="'Bungee', sans-serif" font-size="10" fill="#2a1a00"
+          pointer-events="none">STOP</text>
+  </g>
+
+  <!-- CRUSH -->
+  <g class="rc-btn" id="rcCrush" data-action="crush">
+    <circle cx="386" cy="130" r="28" class="btn-face" fill="url(#btnOrange)" stroke="#1a0604" stroke-width="2.5"/>
+    <text x="386" y="135" text-anchor="middle" font-family="'Bungee', sans-serif" font-size="11" fill="#fff"
+          pointer-events="none" style="text-shadow: 0 1px 2px rgba(0,0,0,0.7);">CRUSH</text>
+  </g>
+
+  <!-- NEXT -->
+  <g class="rc-btn" id="rcNext" data-action="next">
+    <circle cx="456" cy="130" r="22" class="btn-face" fill="url(#btnGreen)" stroke="#1a0604" stroke-width="2"/>
+    <text x="456" y="135" text-anchor="middle" font-family="'Bungee', sans-serif" font-size="10" fill="#fff"
+          pointer-events="none" style="text-shadow: 0 1px 2px rgba(0,0,0,0.6);">NEXT</text>
+  </g>
+
+  <!-- NEW -->
+  <g class="rc-btn" id="rcReset" data-action="reset">
+    <circle cx="520" cy="130" r="20" class="btn-face" fill="url(#btnGray)" stroke="#1a0604" stroke-width="2"/>
+    <text x="520" y="134" text-anchor="middle" font-family="'Bungee', sans-serif" font-size="9" fill="#fff"
+          pointer-events="none" style="text-shadow: 0 1px 2px rgba(0,0,0,0.6);">NEW</text>
+  </g>
+</svg>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">CHAMPION</h2>
+    <p id="overBody"></p>
+    <button id="overClose">Rematch</button>
+  </div>
+</div>
+
+<script>
+const ROUNDS = 3;
+let state = 'idle';    // idle | power | flip | animating | result | gameover
+let currentPlayer = 1;
+let roundNum = 1;
+let scores = { 1: 0, 2: 0 };
+let runData = { power: 0, flip: 0 };
+let cursorRAF = null;
+let cursorDir = 1;
+let cursorPos = 0;
+const CURSOR_SPEED = 0.9; // percent per frame
+
+const truck = document.getElementById('truck');
+const scene = document.getElementById('scene');
+const statusEl = document.getElementById('status');
+const roundInfo = document.getElementById('roundInfo');
+
+function startGame() {
+  state = 'idle';
+  currentPlayer = 1;
+  roundNum = 1;
+  scores = { 1: 0, 2: 0 };
+  runData = { power: 0, flip: 0 };
+  airState = null;
+  resetMeters();
+  resetTruck();
+  resetCars();
+  document.getElementById('overlay').classList.remove('on');
+  render();
+  setStatus('Press GO — pick your POWER.');
+}
+
+function resetMeters() {
+  for (const id of ['powerMeter', 'flipMeter']) document.getElementById(id).classList.remove('locked');
+  document.getElementById('powerCursor').style.left = '0%';
+  document.getElementById('flipCursor').style.left = '0%';
+  document.getElementById('powerValue').textContent = '—';
+  document.getElementById('flipValue').textContent = '—';
+}
+
+function resetTruck() {
+  truck.style.transition = 'none';
+  truck.style.left = '6%';
+  truck.style.bottom = '28%';
+  truck.style.transform = 'translate(0,0) rotate(0deg)';
+}
+
+function setStatus(msg) { statusEl.textContent = msg; }
+
+function render() {
+  document.getElementById('score1').textContent = scores[1];
+  document.getElementById('score2').textContent = scores[2];
+  document.getElementById('slot1').classList.toggle('active', currentPlayer === 1 && state !== 'gameover');
+  document.getElementById('slot2').classList.toggle('active', currentPlayer === 2 && state !== 'gameover');
+  roundInfo.innerHTML = state === 'gameover'
+    ? '— FINAL —'
+    : `Round ${roundNum} / ${ROUNDS} · Player ${currentPlayer} up`;
+
+  setRc('rcGo',    state === 'idle');
+  setRc('rcStop',  state === 'power' || state === 'flip');
+  setRc('rcCrush', state === 'animating' && airState && !airState.interrupted);
+  setRc('rcNext',  state === 'result');
+  setRc('rcReset', true);
+
+  const lcdText = state === 'idle'      ? `P${currentPlayer} · PRESS GO`
+                 : state === 'power'     ? 'LOCK POWER'
+                 : state === 'flip'      ? 'LOCK FLIP'
+                 : state === 'animating' ? 'AIRBORNE!'
+                 : state === 'result'    ? `+${scores[currentPlayer] - (scores[currentPlayer] - lastGain)} PTS`
+                 : state === 'gameover'  ? 'FINAL'
+                 : 'READY';
+  setLcd(lcdText);
+
+  // LED: red when active player needs to act, green when animating
+  const led = document.getElementById('led');
+  if (state === 'animating')      { led.setAttribute('fill', '#30ff40'); }
+  else if (state === 'gameover')  { led.setAttribute('fill', '#808080'); }
+  else                            { led.setAttribute('fill', '#ff3030'); }
+}
+
+function setRc(id, enabled) {
+  document.getElementById(id).classList.toggle('disabled', !enabled);
+}
+function setLcd(text) {
+  document.getElementById('lcd').textContent = String(text).slice(0, 18).toUpperCase();
+}
+
+let lastGain = 0;
+let airState = null;
+
+// --- Meter animation ---
+function startCursor(meterId, cursorId) {
+  cursorPos = 0; cursorDir = 1;
+  const cursor = document.getElementById(cursorId);
+  const step = () => {
+    cursorPos += cursorDir * CURSOR_SPEED;
+    if (cursorPos >= 100) { cursorPos = 100; cursorDir = -1; }
+    if (cursorPos <= 0)   { cursorPos = 0;   cursorDir = 1;  }
+    cursor.style.left = cursorPos + '%';
+    cursorRAF = requestAnimationFrame(step);
+  };
+  cursorRAF = requestAnimationFrame(step);
+}
+function stopCursor() {
+  if (cursorRAF) cancelAnimationFrame(cursorRAF);
+  cursorRAF = null;
+  return Math.round(cursorPos);
+}
+
+// --- Game flow ---
+function handleGo() {
+  if (state !== 'idle') return;
+  resetTruck();
+  runData = { power: 0, flip: 0 };
+  resetMeters();
+  state = 'power';
+  setStatus(`P${currentPlayer}: lock your POWER.`);
+  startCursor('powerMeter', 'powerCursor');
+  render();
+}
+
+function handleStop() {
+  if (state === 'power') {
+    const v = stopCursor();
+    runData.power = v;
+    document.getElementById('powerMeter').classList.add('locked');
+    document.getElementById('powerValue').textContent = v + '%';
+    state = 'flip';
+    setStatus(`Now lock your FLIP.`);
+    startCursor('flipMeter', 'flipCursor');
+    render();
+  } else if (state === 'flip') {
+    const v = stopCursor();
+    runData.flip = v;
+    document.getElementById('flipMeter').classList.add('locked');
+    document.getElementById('flipValue').textContent = v + '%';
+    state = 'animating';
+    setStatus('GO GO GO!');
+    render();
+    animateRun();
+  }
+}
+
+function handleNext() {
+  if (state !== 'result') return;
+  // Advance: alternate players each turn; round increments after P2 finishes.
+  if (currentPlayer === 1) {
+    currentPlayer = 2;
+  } else {
+    currentPlayer = 1;
+    roundNum++;
+  }
+  if (roundNum > ROUNDS) { finishGame(); return; }
+  resetTruck();
+  resetMeters();
+  resetCars();
+  state = 'idle';
+  setStatus(`Press GO — P${currentPlayer}'s run.`);
+  render();
+}
+
+function resetCars() {
+  document.querySelectorAll('.toy-car').forEach(c => c.classList.remove('crushed'));
+}
+
+function handleCrush() {
+  if (state !== 'animating' || !airState || airState.interrupted) return;
+  airState.interrupted = true;
+  const a = airState;
+  // Slam down from current position, keep current rotation.
+  const dropStart = performance.now();
+  const dropDur = 230;
+  const startY = a.lastYRise;
+  const endRot = a.lastRot;
+  const x = a.lastX;
+  spawnPuff(scene.getBoundingClientRect().left + x, scene.getBoundingClientRect().top + scene.getBoundingClientRect().height * 0.72, 6);
+  render();
+  function dropFrame(now) {
+    const t = Math.min(1, (now - dropStart) / dropDur);
+    const y = startY * (1 - t * t); // ease-in
+    truck.style.bottom = `calc(28% + ${y}px)`;
+    truck.style.transform = `rotate(${endRot}deg)`;
+    if (t < 1) requestAnimationFrame(dropFrame);
+    else finishLanding(x, Math.abs(endRot));
+  }
+  requestAnimationFrame(dropFrame);
+}
+
+function finishGame() {
+  state = 'gameover';
+  let title, body;
+  if (scores[1] > scores[2])      { title = 'PLAYER 1 WINS'; body = `${scores[1]} vs ${scores[2]}. The crown is yours.`; }
+  else if (scores[2] > scores[1]) { title = 'PLAYER 2 WINS'; body = `${scores[2]} vs ${scores[1]}. The crown is yours.`; }
+  else                            { title = 'TIE';          body = `Both at ${scores[1]}. Rematch?`; }
+  document.getElementById('overTitle').textContent = title;
+  document.getElementById('overBody').textContent = body;
+  document.getElementById('overlay').classList.add('on');
+  render();
+}
+
+// --- Run animation ---
+function animateRun() {
+  const rect = scene.getBoundingClientRect();
+  const truckStartX = rect.width * 0.06;
+  const launchX = rect.width * 0.55;
+  const landX = rect.width * 0.88;
+
+  const airtime = 800 + runData.power * 14;       // 800–2200 ms
+  const maxHeight = 60 + runData.power * 1.8;     // 60–240 px
+  const rotPerSec = runData.flip * 7.5;           // 0–750 deg/s
+
+  truck.style.transition = 'none';
+  truck.style.left = truckStartX + 'px';
+  truck.style.bottom = '28%';
+  truck.style.transform = 'rotate(0deg)';
+
+  const t0 = performance.now();
+  const driveDur = 700;
+
+  function driveFrame(now) {
+    const t = Math.min(1, (now - t0) / driveDur);
+    const x = truckStartX + (launchX - truckStartX) * t;
+    truck.style.left = x + 'px';
+    truck.style.transform = 'rotate(0deg)';
+    if (t < 1) requestAnimationFrame(driveFrame);
+    else {
+      spawnPuff(x + rect.left, rect.top + rect.height * 0.72, 6);
+      airStart();
+    }
+  }
+
+  function airStart() {
+    airState = {
+      start: performance.now(),
+      airtime, launchX, landX, maxHeight, rotPerSec,
+      lastX: launchX, lastYRise: 0, lastRot: 0,
+      interrupted: false,
+    };
+    render(); // enable CRUSH button
+    requestAnimationFrame(airFrame);
+  }
+
+  function airFrame(now) {
+    if (!airState || airState.interrupted) return;
+    const a = airState;
+    const elapsed = now - a.start;
+    const t = Math.min(1, elapsed / a.airtime);
+    const x = a.launchX + (a.landX - a.launchX) * t;
+    const yRise = Math.sin(t * Math.PI) * a.maxHeight;
+    const rot = -a.rotPerSec * (elapsed / 1000);
+    a.lastX = x; a.lastYRise = yRise; a.lastRot = rot;
+    truck.style.left = x + 'px';
+    truck.style.bottom = `calc(28% + ${yRise}px)`;
+    truck.style.transform = `rotate(${rot}deg)`;
+    if (t < 1) requestAnimationFrame(airFrame);
+    else {
+      airState.interrupted = true;
+      finishLanding(x, Math.abs(rot));
+    }
+  }
+
+  requestAnimationFrame(driveFrame);
+}
+
+function finishLanding(xPx, totalRotAbs) {
+  const rect = scene.getBoundingClientRect();
+  const landPy = rect.top + rect.height * 0.72;
+
+  // Crush detection
+  const truckRect = truck.getBoundingClientRect();
+  const truckCx = truckRect.left + truckRect.width / 2;
+  let crushed = 0;
+  document.querySelectorAll('.toy-car').forEach(car => {
+    if (car.classList.contains('crushed')) return;
+    const r = car.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    if (Math.abs(truckCx - cx) < 32) {
+      car.classList.add('crushed');
+      crushed++;
+      spawnPuff(cx, landPy, 12);
+    }
+  });
+
+  // Flip scoring
+  const rotations = Math.floor(totalRotAbs / 360);
+  const rem = totalRotAbs % 360;
+  const off = Math.min(rem, 360 - rem);
+  let base = rotations * 100;
+  let bonus = 0;
+  let verdict = '';
+  if (off < 18) {
+    bonus = 300;
+    verdict = rotations >= 1 ? `${rotations}× FLIP, clean` : 'clean pop';
+    spawnPuff(xPx + rect.left, landPy, 10);
+  } else if (off < 50) {
+    bonus = 100;
+    verdict = `${rotations}× flip, wobble`;
+    spawnPuff(xPx + rect.left, landPy, 6);
+  } else {
+    base = Math.floor(base * 0.25);
+    verdict = `crash (${rotations} partial)`;
+    spawnPuff(xPx + rect.left, landPy, 18);
+  }
+  const crushPts = crushed * 400;
+  if (crushed > 0) verdict += ` · ${crushed} CAR${crushed > 1 ? 'S' : ''} CRUSHED!`;
+  const total = base + bonus + crushPts;
+  scores[currentPlayer] += total;
+  lastGain = total;
+  setStatus(`${verdict}  +${total} pts`);
+  state = 'result';
+  airState = null;
+  render();
+}
+
+// --- Particles ---
+function spawnPuff(x, y, count) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'puff';
+      p.style.left = (x - 7 + (Math.random() - 0.5) * 20) + 'px';
+      p.style.top  = (y - 7 + (Math.random() - 0.5) * 6) + 'px';
+      p.style.setProperty('--dx', ((Math.random() - 0.5) * 50) + 'px');
+      p.style.setProperty('--dy', (-10 - Math.random() * 40) + 'px');
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }, i * 30);
+  }
+}
+
+// --- Inputs ---
+function bindRc(id, handler) {
+  document.getElementById(id).addEventListener('click', () => {
+    if (document.getElementById(id).classList.contains('disabled')) return;
+    handler();
+  });
+}
+bindRc('rcGo',    handleGo);
+bindRc('rcStop',  handleStop);
+bindRc('rcCrush', handleCrush);
+bindRc('rcNext',  handleNext);
+bindRc('rcReset', startGame);
+document.getElementById('overClose').addEventListener('click', startGame);
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (state === 'idle')                            handleGo();
+    else if (state === 'power' || state === 'flip') handleStop();
+    else if (state === 'animating')                  handleCrush();
+    else if (state === 'result')                     handleNext();
+  }
+});
+
+startGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Forbidden Forest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600&family=Rajdhani:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; }
+  body {
+    font-family: 'Cinzel', Georgia, serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, #1a3818 0%, #08180a 50%, #02080a 100%);
+    color: #d8e8c8;
+    margin: 0;
+    padding: 10px 14px 12px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 540px;
+    width: 100%;
+    max-height: 92px;
+    filter: drop-shadow(0 4px 10px rgba(40,120,40,0.3));
+  }
+
+  .status {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #b8d8a0;
+    min-height: 18px;
+  }
+  .status .accent { color: #ffd680; font-weight: 600; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 14px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .backpack {
+    background: linear-gradient(180deg, rgba(40,30,18,0.85), rgba(15,10,6,0.95));
+    border: 1.5px solid #6a4a28;
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+  .backpack h3 {
+    margin: 0;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    letter-spacing: 4px;
+    text-align: center;
+    color: #d8c890;
+    border-bottom: 1px solid #5a4220;
+    padding-bottom: 6px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+  .stat-row .lbl { color: #a09080; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; }
+  .stat-row .val { color: #f0e0a8; font-weight: 600; font-size: 16px; }
+  .hearts { color: #ff8090; letter-spacing: 2px; }
+  .arrows { color: #d8e0a0; letter-spacing: 1px; }
+  .log {
+    flex: 1;
+    overflow-y: auto;
+    background: rgba(10,6,2,0.5);
+    border: 1px solid #3a2a14;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    min-height: 60px;
+  }
+  .log .entry { margin: 2px 0; color: #c8d8a8; }
+  .log .entry.bad  { color: #ff9aa8; }
+  .log .entry.good { color: #a0ffa8; }
+  .log .entry.big  { color: #ffd680; font-weight: 700; }
+
+  .board {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+    width: 100%;
+    max-width: 720px;
+    aspect-ratio: 12 / 8;
+    background: #0a1808;
+    padding: 2px;
+    border: 1.5px solid #3a5a28;
+    border-radius: 4px;
+  }
+  .cell {
+    position: relative;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(120,160,80,0.14), transparent 60%),
+      linear-gradient(135deg, #2a4a24, #1a3a18);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: filter 0.1s, box-shadow 0.1s;
+    user-select: none;
+    overflow: hidden;
+  }
+  .cell:hover { filter: brightness(1.18); }
+  .cell.tree {
+    background: linear-gradient(135deg, #18301a, #08180a);
+  }
+  .cell.tree::before {
+    content: '🌲';
+    position: absolute;
+    font-size: clamp(18px, 3.2vw, 30px);
+    opacity: 0.95;
+    text-shadow: 0 1px 2px #000;
+  }
+  .cell .creature {
+    position: relative;
+    z-index: 2;
+    font-size: clamp(14px, 2.6vw, 22px);
+    text-shadow: 0 1px 2px #000;
+  }
+  .cell.player {
+    box-shadow: inset 0 0 0 2px #ffd680, 0 0 8px rgba(255,200,100,0.4);
+  }
+  .cell.in-tree::before {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+  .cell.target-line {
+    box-shadow: inset 0 0 0 1px #ff8060;
+    background-color: rgba(255,120,80,0.15);
+  }
+  .cell.shootable {
+    cursor: crosshair;
+  }
+  .cell.shootable::after {
+    content: '✛';
+    position: absolute;
+    color: rgba(255,120,80,0.6);
+    font-size: 14px;
+    z-index: 3;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 3px;
+    border: 1px solid #6a8a48;
+    background: linear-gradient(180deg, #2a4a20, #142a10);
+    color: #e0e8c0;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:hover:not(:disabled) {
+    background: linear-gradient(180deg, #3a6028, #1a3818);
+    box-shadow: 0 0 8px rgba(140,200,80,0.4);
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.shoot { border-color: #b06038; background: linear-gradient(180deg, #4a2010, #2a1208); color: #ffc8a0; }
+  button.shoot.active { background: linear-gradient(180deg, #a04020, #5a1808); box-shadow: 0 0 14px rgba(255,120,60,0.5); color: #fff; }
+
+  /* arrow flight */
+  .arrow {
+    position: absolute;
+    pointer-events: none;
+    color: #ffd680;
+    font-size: 18px;
+    text-shadow: 0 0 6px #ffa040;
+    z-index: 100;
+    animation: arrowFly 0.4s linear forwards;
+  }
+  @keyframes arrowFly {
+    from { opacity: 1; }
+    to   { opacity: 0; transform: scale(1.3); }
+  }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(2,8,4,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #1a3818, #08180a);
+    border: 2px solid #b0d088;
+    border-radius: 8px;
+    padding: 28px 38px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 0 40px rgba(140,200,80,0.4);
+  }
+  .overlay-box h2 {
+    font-family: 'Cinzel Decorative', serif;
+    margin: 0 0 12px;
+    color: #ffd680;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 16px; color: #d8e8c8; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Forbidden Forest">
+  <defs>
+    <linearGradient id="leafGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8f0a0"/>
+      <stop offset="40%" stop-color="#5aa838"/>
+      <stop offset="100%" stop-color="#1a4a18"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#fff8d0"/>
+      <stop offset="100%" stop-color="#909068" stop-opacity="0.3"/>
+    </radialGradient>
+    <filter id="leafGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <ellipse cx="400" cy="85" rx="290" ry="36" fill="#3a8a2a" opacity="0.2"/>
+
+  <!-- crescent moon -->
+  <g transform="translate(400, 22)">
+    <circle r="13" fill="url(#moon)"/>
+    <circle cx="5" cy="-2" r="11" fill="#08180a"/>
+  </g>
+
+  <!-- left vine + leaves -->
+  <g transform="translate(110, 90)" fill="url(#leafGrad)" stroke="#0a2008" stroke-width="0.6">
+    <path d="M 0 -20 Q 10 -10 0 0 Q -10 -10 0 -20 Z"/>
+    <path d="M -22 -8 Q -12 -16 -2 -8 Q -12 0 -22 -8 Z" opacity="0.85"/>
+    <path d="M 18 -2 Q 28 -10 38 -2 Q 28 6 18 -2 Z" opacity="0.85"/>
+    <line x1="0" y1="0" x2="0" y2="14" stroke="#3a5a18" stroke-width="1.5"/>
+  </g>
+  <!-- right vine + leaves -->
+  <g transform="translate(690, 90) scale(-1, 1)" fill="url(#leafGrad)" stroke="#0a2008" stroke-width="0.6">
+    <path d="M 0 -20 Q 10 -10 0 0 Q -10 -10 0 -20 Z"/>
+    <path d="M -22 -8 Q -12 -16 -2 -8 Q -12 0 -22 -8 Z" opacity="0.85"/>
+    <path d="M 18 -2 Q 28 -10 38 -2 Q 28 6 18 -2 Z" opacity="0.85"/>
+    <line x1="0" y1="0" x2="0" y2="14" stroke="#3a5a18" stroke-width="1.5"/>
+  </g>
+
+  <!-- title -->
+  <text x="400" y="92" text-anchor="middle"
+        font-family="'Cinzel Decorative', serif"
+        font-weight="900" font-size="42"
+        fill="url(#leafGrad)"
+        letter-spacing="5"
+        filter="url(#leafGlow)"
+        style="paint-order: stroke; stroke: #02080a; stroke-width: 2.5;">FORBIDDEN FOREST</text>
+
+  <!-- tagline -->
+  <text x="400" y="120" text-anchor="middle"
+        font-family="'Cinzel', serif"
+        font-size="13" fill="#88a868" letter-spacing="6">tread softly · the wood remembers</text>
+</svg>
+
+<div class="status">
+  <span id="statusLine"><span class="accent">Turn 1</span> · click an adjacent tile to walk · click a tree to climb</span>
+</div>
+
+<div class="layout">
+  <div class="backpack">
+    <h3>BACKPACK</h3>
+    <div class="stat-row"><span class="lbl">Health</span><span class="val hearts" id="hearts">♥ ♥</span></div>
+    <div class="stat-row"><span class="lbl">Bow</span><span class="val">🏹</span></div>
+    <div class="stat-row"><span class="lbl">Arrows</span><span class="val arrows" id="arrows">8</span></div>
+    <div class="stat-row"><span class="lbl">Beasts</span><span class="val" id="beasts">5</span></div>
+    <div class="log" id="log"></div>
+  </div>
+  <div class="board"><div class="grid" id="grid"></div></div>
+</div>
+
+<div class="actions">
+  <button id="shoot" class="shoot">Aim Arrow</button>
+  <button id="rest">Wait</button>
+  <button id="reset">New Forest</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">VICTORY</h2>
+    <p id="overBody"></p>
+    <button id="overClose">Walk Again</button>
+  </div>
+</div>
+
+<script>
+const W = 12, H = 8;
+const TREES = 26;
+const MAX_HP = 2;
+const MAX_ARROWS = 8;
+const ANIMAL_TYPES = [
+  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
+  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
+  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
+  { name: 'wolf', icon: '🐺', hp: 1, slow: false },
+  { name: 'bear', icon: '🐻', hp: 2, slow: true  },
+];
+
+let tiles, player, animals, mode, turn, gameOver;
+
+function newGame() {
+  tiles = [];
+  for (let y = 0; y < H; y++) {
+    const row = [];
+    for (let x = 0; x < W; x++) row.push({ tree: false });
+    tiles.push(row);
+  }
+  // sprinkle trees
+  let placed = 0, attempts = 0;
+  while (placed < TREES && attempts < 400) {
+    attempts++;
+    const x = Math.floor(Math.random() * W);
+    const y = Math.floor(Math.random() * H);
+    if (tiles[y][x].tree) continue;
+    tiles[y][x].tree = true;
+    placed++;
+  }
+  // player
+  const py = Math.floor(H / 2);
+  if (tiles[py][0].tree) tiles[py][0].tree = false;
+  if (tiles[py][1].tree) tiles[py][1].tree = false;
+  player = { x: 0, y: py, hp: MAX_HP, arrows: MAX_ARROWS };
+
+  // animals — far from player
+  animals = [];
+  let id = 0;
+  for (const t of ANIMAL_TYPES) {
+    let x, y, tries = 0;
+    do {
+      x = Math.floor(Math.random() * W);
+      y = Math.floor(Math.random() * H);
+      tries++;
+      if (tries > 200) break;
+    } while (
+      tiles[y][x].tree ||
+      Math.abs(x - player.x) + Math.abs(y - player.y) < 6 ||
+      animals.some(a => a.x === x && a.y === y)
+    );
+    animals.push({ id: id++, x, y, ...t });
+  }
+
+  mode = 'walk';
+  turn = 1;
+  gameOver = false;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('overlay').classList.remove('on');
+  addLog('You enter the forest. The trees watch.', 'big');
+  render();
+}
+
+function addLog(msg, cls) {
+  const el = document.createElement('div');
+  el.className = 'entry' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+  const log = document.getElementById('log');
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function inBounds(x, y) { return x >= 0 && x < W && y >= 0 && y < H; }
+function playerInTree() { return tiles[player.y][player.x].tree; }
+
+function adj(a, b) {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+}
+
+// Available shoot targets: cardinal direction cells (any distance) up to and including first obstacle.
+function shootableCells() {
+  const cells = [];
+  if (player.arrows <= 0) return cells;
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+  for (const [dx, dy] of dirs) {
+    let x = player.x + dx, y = player.y + dy;
+    while (inBounds(x, y)) {
+      cells.push({ x, y });
+      // tree blocks beyond
+      if (tiles[y][x].tree) break;
+      // animal blocks beyond
+      if (animals.some(a => a.x === x && a.y === y)) break;
+      x += dx; y += dy;
+    }
+  }
+  return cells;
+}
+
+function handleCellClick(x, y) {
+  if (gameOver) return;
+  if (mode === 'shoot') {
+    fireAt(x, y);
+    return;
+  }
+  // walk / climb to adjacent
+  const dx = x - player.x, dy = y - player.y;
+  if (Math.abs(dx) + Math.abs(dy) !== 1) {
+    addLog('Too far — pick an adjacent tile.');
+    return;
+  }
+  if (animals.some(a => a.x === x && a.y === y)) {
+    addLog('A beast snarls in the way.', 'bad');
+    return;
+  }
+  player.x = x; player.y = y;
+  if (tiles[y][x].tree) addLog('You climb up the boughs.', 'good');
+  else addLog(playerInTree() ? 'You drop to the soft moss.' : 'You step softly.');
+  endTurn();
+}
+
+function fireAt(x, y) {
+  if (player.arrows <= 0) { addLog('Quiver empty.', 'bad'); resetMode(); return; }
+  const dx = x - player.x, dy = y - player.y;
+  if (dx !== 0 && dy !== 0) { addLog('Arrows fly only straight.'); return; }
+  if (dx === 0 && dy === 0) { addLog('You cannot shoot yourself.'); return; }
+  const sx = Math.sign(dx), sy = Math.sign(dy);
+  let cx = player.x + sx, cy = player.y + sy;
+  let hit = null, blocked = null;
+  while (inBounds(cx, cy)) {
+    if (tiles[cy][cx].tree) { blocked = { x: cx, y: cy, kind: 'tree' }; break; }
+    const a = animals.find(a => a.x === cx && a.y === cy);
+    if (a) { hit = a; break; }
+    cx += sx; cy += sy;
+  }
+  player.arrows--;
+  flyArrow(player.x, player.y, cx, cy, sx, sy);
+
+  if (hit) {
+    hit.hp--;
+    if (hit.hp <= 0) {
+      animals = animals.filter(a => a.id !== hit.id);
+      addLog(`Your arrow fells the ${hit.name}.`, 'good');
+    } else {
+      addLog(`Arrow strikes the ${hit.name}.`);
+    }
+  } else if (blocked) {
+    addLog('Arrow thuds into a tree.');
+  } else {
+    addLog('Arrow vanishes into the green dark.');
+  }
+  resetMode();
+  endTurn();
+}
+
+function resetMode() {
+  mode = 'walk';
+  document.getElementById('shoot').classList.remove('active');
+}
+
+function rest() {
+  if (gameOver) return;
+  addLog('You hold your breath, listening…');
+  endTurn();
+}
+
+function endTurn() {
+  turn++;
+  // animal moves
+  for (const a of [...animals]) {
+    if (a.slow && turn % 2 === 0) continue;
+    moveAnimal(a);
+  }
+  // animal attacks (only if you're on the ground)
+  if (!playerInTree()) {
+    for (const a of animals) {
+      if (Math.abs(a.x - player.x) + Math.abs(a.y - player.y) === 1) {
+        player.hp--;
+        addLog(`The ${a.name} strikes! −1 ♥`, 'bad');
+        if (player.hp <= 0) break;
+      }
+    }
+  }
+  if (player.hp <= 0) {
+    gameOver = true;
+    finishGame(false);
+  } else if (animals.length === 0) {
+    gameOver = true;
+    finishGame(true);
+  }
+  render();
+}
+
+function moveAnimal(a) {
+  const dx = player.x - a.x, dy = player.y - a.y;
+  const adx = Math.abs(dx), ady = Math.abs(dy);
+  const tries = [];
+  if (adx >= ady) {
+    if (dx !== 0) tries.push([Math.sign(dx), 0]);
+    if (dy !== 0) tries.push([0, Math.sign(dy)]);
+    if (dy !== 0) tries.push([0, -Math.sign(dy)]);
+    if (dx !== 0) tries.push([-Math.sign(dx), 0]);
+  } else {
+    if (dy !== 0) tries.push([0, Math.sign(dy)]);
+    if (dx !== 0) tries.push([Math.sign(dx), 0]);
+    if (dx !== 0) tries.push([-Math.sign(dx), 0]);
+    if (dy !== 0) tries.push([0, -Math.sign(dy)]);
+  }
+  for (const [tx, ty] of tries) {
+    const nx = a.x + tx, ny = a.y + ty;
+    if (!inBounds(nx, ny)) continue;
+    if (tiles[ny][nx].tree) continue; // can't enter trees
+    if (animals.some(o => o !== a && o.x === nx && o.y === ny)) continue;
+    a.x = nx; a.y = ny;
+    return;
+  }
+}
+
+function finishGame(won) {
+  let title, body;
+  if (won) {
+    title = 'THE FOREST IS STILL';
+    body = `Every beast laid low. ${player.arrows} arrow${player.arrows === 1 ? '' : 's'} remain in your quiver.`;
+  } else {
+    title = 'YOU HAVE FALLEN';
+    body = 'The wood swallows another wanderer. The trees do not weep.';
+  }
+  document.getElementById('overTitle').textContent = title;
+  document.getElementById('overBody').textContent = body;
+  document.getElementById('overlay').classList.add('on');
+}
+
+function render() {
+  // Stats
+  document.getElementById('hearts').textContent = '♥ '.repeat(player.hp).trim() || '—';
+  document.getElementById('arrows').textContent = String(player.arrows);
+  document.getElementById('beasts').textContent = String(animals.length);
+
+  // Status
+  document.getElementById('statusLine').innerHTML =
+    `<span class="accent">Turn ${turn}</span> · ${
+      gameOver ? 'the hunt is done' :
+      mode === 'shoot' ? 'pick a tile in line of sight' :
+      'click adjacent to walk · click a tree to climb'
+    }`;
+
+  // Grid
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const targets = mode === 'shoot' ? shootableCells() : [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      if (tiles[y][x].tree) cell.className += ' tree';
+      const isPlayer = (player.x === x && player.y === y);
+      if (isPlayer) {
+        cell.className += ' player';
+        if (tiles[y][x].tree) cell.className += ' in-tree';
+      }
+      if (mode === 'shoot' && targets.some(t => t.x === x && t.y === y)) {
+        cell.className += ' shootable';
+      }
+      // creature
+      if (isPlayer) {
+        const span = document.createElement('span');
+        span.className = 'creature';
+        span.textContent = '🏹';
+        cell.appendChild(span);
+      } else {
+        const a = animals.find(a => a.x === x && a.y === y);
+        if (a) {
+          const span = document.createElement('span');
+          span.className = 'creature';
+          span.textContent = a.icon;
+          cell.appendChild(span);
+        }
+      }
+      cell.dataset.x = x; cell.dataset.y = y;
+      cell.addEventListener('click', () => handleCellClick(x, y));
+      grid.appendChild(cell);
+    }
+  }
+
+  // Buttons
+  document.getElementById('shoot').classList.toggle('active', mode === 'shoot');
+  document.getElementById('shoot').disabled = gameOver || player.arrows <= 0;
+  document.getElementById('rest').disabled = gameOver;
+}
+
+function flyArrow(fx, fy, tx, ty, sx, sy) {
+  // visual only
+  const grid = document.getElementById('grid');
+  const cells = grid.children;
+  const fromCell = cells[fy * W + fx];
+  const toCell = (inBounds(tx, ty)) ? cells[ty * W + tx] : cells[(fy + sy) * W + (fx + sx)] || fromCell;
+  const fr = fromCell.getBoundingClientRect();
+  const tr = toCell.getBoundingClientRect();
+  const arrow = document.createElement('div');
+  arrow.className = 'arrow';
+  arrow.textContent = sx > 0 ? '➤' : sx < 0 ? '⮜' : sy > 0 ? '⮟' : '⮝';
+  arrow.style.left = (fr.left + fr.width/2) + 'px';
+  arrow.style.top  = (fr.top + fr.height/2) + 'px';
+  arrow.style.transition = 'left 0.35s linear, top 0.35s linear, opacity 0.35s';
+  document.body.appendChild(arrow);
+  requestAnimationFrame(() => {
+    arrow.style.left = (tr.left + tr.width/2) + 'px';
+    arrow.style.top  = (tr.top + tr.height/2) + 'px';
+  });
+  setTimeout(() => arrow.remove(), 450);
+}
+
+document.getElementById('shoot').addEventListener('click', () => {
+  if (gameOver || player.arrows <= 0) return;
+  mode = (mode === 'shoot') ? 'walk' : 'shoot';
+  render();
+});
+document.getElementById('rest').addEventListener('click', rest);
+document.getElementById('reset').addEventListener('click', newGame);
+document.getElementById('overClose').addEventListener('click', newGame);
+
+window.addEventListener('keydown', e => {
+  if (gameOver) return;
+  const map = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1],
+                a:[-1,0], d:[1,0], w:[0,-1], s:[0,1] };
+  const k = map[e.key];
+  if (k) { e.preventDefault(); handleCellClick(player.x + k[0], player.y + k[1]); }
+  else if (e.key === 'f' || e.key === 'F') {
+    if (player.arrows > 0) { mode = (mode === 'shoot') ? 'walk' : 'shoot'; render(); }
+  }
+  else if (e.key === '.') rest();
+});
+
+newGame();
+</script>
+</body>
+</html>
