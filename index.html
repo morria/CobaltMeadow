@@ -199,6 +199,27 @@
   .tile.marble3d:hover { border-color: #ffd060; box-shadow: 0 0 22px rgba(255,210,80,0.5); }
   .tile.marble3d h2 { font-family: 'Bungee', sans-serif; color: #ffd080; letter-spacing: 3px; font-size: 20px; }
 
+  /* City Marbles — neon skyline */
+  .tile.citymarbles {
+    border-color: #5040a0;
+    background: linear-gradient(180deg, rgba(18,8,40,0.92), rgba(6,2,14,0.95));
+    position: relative;
+  }
+  .tile.citymarbles:hover { border-color: #ff60c0; box-shadow: 0 0 22px rgba(255,120,200,0.5); }
+  .tile.citymarbles h2 { font-family: 'Bungee', sans-serif; color: #ff8ae0; letter-spacing: 3px; font-size: 20px; }
+  .tile.citymarbles .badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-family: 'Bungee', sans-serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: #ffd060;
+    background: rgba(40,16,60,0.8);
+    border: 1px solid #ffd060;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
 
   footer {
     margin-top: 6px;
@@ -513,6 +534,47 @@
     </div>
     <h2>MARBLE RUN</h2>
     <p>3D Rube Goldberg · see-saws, candle cart, pendulum, finish.</p>
+  </a>
+
+  <a class="tile citymarbles" href="city-marbles.html">
+    <div class="badge">3D DEMO</div>
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <!-- skyline buildings -->
+        <g>
+          <rect x="4"  y="26" width="10" height="26" fill="#2a1a50"/>
+          <rect x="16" y="18" width="9"  height="34" fill="#2a1a50"/>
+          <rect x="27" y="30" width="10" height="22" fill="#2a1a50"/>
+          <rect x="39" y="22" width="9"  height="30" fill="#2a1a50"/>
+          <rect x="50" y="28" width="10" height="24" fill="#2a1a50"/>
+          <rect x="62" y="14" width="9"  height="38" fill="#2a1a50"/>
+        </g>
+        <!-- lit windows -->
+        <g fill="#ffd060">
+          <rect x="6"  y="30" width="2" height="2"/><rect x="10" y="34" width="2" height="2"/>
+          <rect x="18" y="22" width="2" height="2"/><rect x="22" y="28" width="2" height="2"/>
+          <rect x="30" y="34" width="2" height="2"/><rect x="34" y="40" width="2" height="2"/>
+          <rect x="41" y="26" width="2" height="2"/><rect x="45" y="34" width="2" height="2"/>
+          <rect x="52" y="32" width="2" height="2"/><rect x="56" y="38" width="2" height="2"/>
+          <rect x="64" y="18" width="2" height="2"/><rect x="68" y="26" width="2" height="2"/>
+        </g>
+        <!-- gold tracks across rooftops -->
+        <g stroke="#ffd060" stroke-width="1.5" stroke-linecap="round">
+          <line x1="4"  y1="25" x2="14" y2="25"/>
+          <line x1="16" y1="17" x2="25" y2="17"/>
+          <line x1="27" y1="29" x2="37" y2="29"/>
+          <line x1="39" y1="21" x2="48" y2="21"/>
+          <line x1="50" y1="27" x2="60" y2="27"/>
+          <line x1="62" y1="13" x2="71" y2="13"/>
+        </g>
+        <!-- a red gap -->
+        <rect x="30" y="28" width="5" height="3" fill="#ff3060" opacity="0.85"/>
+        <!-- marble -->
+        <circle cx="20" cy="15" r="2" fill="#ff4060"/>
+      </svg>
+    </div>
+    <h2>CITY MARBLES</h2>
+    <p>Fix broken rooftop tracks before the marble rolls off.</p>
   </a>
 </div>
 

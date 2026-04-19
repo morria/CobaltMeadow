@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="City Marbles">
+<meta name="theme-color" content="#060418">
+<title>City Marbles · 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #030318; color: #fff; font-family: 'Rajdhani', sans-serif; }
+  #game { position: fixed; inset: 0; touch-action: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hud {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    z-index: 10;
+    min-width: 180px;
+  }
+  .hud .row {
+    background: rgba(10,6,30,0.65);
+    border: 1px solid #5040a0;
+    padding: 6px 12px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+  }
+  .hud .row .v { color: #ffd060; }
+  .title {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    font-family: 'Bungee', sans-serif;
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: #ff80c0;
+    background: rgba(10,6,30,0.65);
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #5040a0;
+    z-index: 10;
+    text-shadow: 0 0 8px rgba(255,120,200,0.6);
+  }
+  .hint {
+    position: fixed;
+    bottom: max(70px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #c0a0ff;
+    background: rgba(10,6,30,0.65);
+    padding: 5px 14px;
+    border-radius: 4px;
+    border: 1px solid #5040a0;
+    z-index: 10;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .controls {
+    position: fixed;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    font-family: 'Russo One', sans-serif;
+    padding: 10px 18px;
+    border: 1.5px solid #c080ff;
+    background: linear-gradient(180deg, #3a1a68, #1a0838);
+    color: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-size: 13px;
+    min-height: 44px;
+    text-transform: uppercase;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #5028a0, #241050); box-shadow: 0 0 12px rgba(180,120,255,0.5); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #a06020, #5a3010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #c88028, #6e4018); }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(4,2,18,0.9);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #201040, #08041a);
+    border: 2px solid #c080ff;
+    padding: 28px 36px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 380px;
+    box-shadow: 0 0 40px rgba(180,120,255,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 16px; color: #d8c8f5; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<div id="game"></div>
+<div class="title">CITY MARBLES · 3D</div>
+<div class="hud">
+  <div class="row">FIXED · <span class="v" id="fixed">0 / 0</span></div>
+  <div class="row">TRACK · <span class="v" id="progress">0%</span></div>
+  <div class="row">STATUS · <span class="v" id="status">ready</span></div>
+</div>
+<div class="hint">Tap the red gaps to repair · keep the marble rolling</div>
+<div class="controls">
+  <button id="playBtn" class="primary">▶ RELEASE MARBLE</button>
+  <button id="resetBtn">RESET</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <button id="overClose" class="primary">Play Again</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- Scene ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x040318);
+scene.fog = new THREE.Fog(0x14082a, 35, 90);
+
+const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(0, 10, 32);
+camera.lookAt(0, 6, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('game').appendChild(renderer.domElement);
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ---------- Lights ----------
+scene.add(new THREE.HemisphereLight(0xc0a0ff, 0x201048, 0.45));
+const sun = new THREE.DirectionalLight(0xffe0c0, 1.25);
+sun.position.set(-15, 30, 15);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
+sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -10;
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 80;
+scene.add(sun);
+const neon = new THREE.PointLight(0xff60c0, 0.8, 40);
+neon.position.set(0, 14, 10);
+scene.add(neon);
+
+// ---------- Ground ----------
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 40),
+  new THREE.MeshStandardMaterial({ color: 0x0a0420, roughness: 0.95 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Street markings
+const street = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 4),
+  new THREE.MeshStandardMaterial({ color: 0x141028, roughness: 0.9 })
+);
+street.rotation.x = -Math.PI / 2;
+street.position.y = 0.02;
+scene.add(street);
+
+// ---------- Buildings ----------
+const BUILDINGS = [
+  { x: -18, w: 5, d: 4, h: 7  },
+  { x: -11, w: 4, d: 4, h: 9  },
+  { x: -4,  w: 5, d: 4, h: 5.5 },
+  { x: 3,   w: 4, d: 4, h: 8  },
+  { x: 10,  w: 5, d: 4, h: 6  },
+  { x: 17,  w: 4, d: 4, h: 10 },
+];
+
+const windowColors = [0xffd060, 0x80c8ff, 0xa0ffb0, 0xffa0d0];
+
+function makeBuilding(b) {
+  const grp = new THREE.Group();
+  scene.add(grp);
+  // Body
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color().setHSL(0.7 + Math.random() * 0.15, 0.35, 0.22),
+    roughness: 0.75,
+  });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), bodyMat);
+  body.position.set(b.x, b.h / 2, 0);
+  body.castShadow = true; body.receiveShadow = true;
+  grp.add(body);
+  // Windows (front face)
+  const winRows = Math.max(2, Math.floor((b.h - 1) / 1.2));
+  const winCols = Math.max(2, Math.floor((b.w - 0.8) / 1.0));
+  for (let r = 0; r < winRows; r++) {
+    for (let c = 0; c < winCols; c++) {
+      if (Math.random() < 0.12) continue; // skip some
+      const wCol = windowColors[Math.floor(Math.random() * windowColors.length)];
+      const win = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.45, 0.55),
+        new THREE.MeshStandardMaterial({
+          color: 0x101028,
+          emissive: wCol,
+          emissiveIntensity: 0.7 + Math.random() * 0.3,
+        })
+      );
+      const colSpacing = (b.w - 0.8) / winCols;
+      const rowSpacing = (b.h - 1) / winRows;
+      win.position.set(
+        b.x - (b.w - 0.8) / 2 + colSpacing * (c + 0.5),
+        0.6 + rowSpacing * (r + 0.5),
+        b.d / 2 + 0.02
+      );
+      grp.add(win);
+    }
+  }
+  return b;
+}
+
+BUILDINGS.forEach(makeBuilding);
+
+// ---------- Track path ----------
+// Build path by walking across each rooftop then ramp to next.
+const path = [];
+BUILDINGS.forEach((b, i) => {
+  path.push({ x: b.x - b.w / 2 + 0.5, y: b.h });   // left edge of roof track
+  path.push({ x: b.x + b.w / 2 - 0.5, y: b.h });   // right edge
+});
+// path now has pairs: (entry, exit) per building. Between buildings we add a ramp segment — which is just path[i*2+1] -> path[(i+1)*2].
+// No extra insertion needed; consecutive points implicitly form the ramp segment.
+
+// Segments
+const segments = [];
+for (let i = 0; i < path.length - 1; i++) {
+  const p1 = path[i], p2 = path[i + 1];
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy);
+  segments.push({
+    p1, p2, len,
+    angle: Math.atan2(dy, dx),
+    broken: false, repaired: false,
+    isRoof: (i % 2 === 0),  // 0,2,4,... are roof tops
+    mesh: null, warn: null,
+  });
+}
+
+// Compute total length
+const totalLen = segments.reduce((s, seg) => s + seg.len, 0);
+
+// Choose broken segments — aim for 4 broken, skip the first roof so player can see the start
+function pickBroken() {
+  const candidates = segments.map((_, i) => i).filter(i => i !== 0 && i !== segments.length - 1);
+  // Shuffle
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+  candidates.slice(0, 4).forEach(i => segments[i].broken = true);
+}
+pickBroken();
+
+// Render segments
+const matGold = new THREE.MeshStandardMaterial({ color: 0xffd060, emissive: 0x604010, emissiveIntensity: 0.3, metalness: 0.5, roughness: 0.3 });
+const matWarnShared = new THREE.MeshStandardMaterial({ color: 0xff2040, emissive: 0xff2040, emissiveIntensity: 0.9, transparent: true, opacity: 0.55 });
+
+segments.forEach((seg, i) => {
+  const midX = (seg.p1.x + seg.p2.x) / 2;
+  const midY = (seg.p1.y + seg.p2.y) / 2;
+  // Solid track
+  const track = new THREE.Mesh(new THREE.BoxGeometry(seg.len, 0.28, 1.4), matGold);
+  track.position.set(midX, midY - 0.14, 0);
+  track.rotation.z = seg.angle;
+  track.castShadow = true; track.receiveShadow = true;
+  seg.mesh = track;
+  if (!seg.broken) {
+    scene.add(track);
+  } else {
+    // Warning marker (clickable)
+    const warn = new THREE.Mesh(new THREE.BoxGeometry(seg.len * 0.95, 0.5, 1.6), matWarnShared);
+    warn.position.set(midX, midY + 0.05, 0);
+    warn.rotation.z = seg.angle;
+    warn.userData.segmentIndex = i;
+    scene.add(warn);
+    seg.warn = warn;
+    // Pulse storage
+    seg.pulseT = Math.random() * Math.PI * 2;
+  }
+});
+
+// Finish flag at end of track
+const endP = path[path.length - 1];
+const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.8, 10), new THREE.MeshStandardMaterial({ color: 0x302040 }));
+pole.position.set(endP.x + 0.6, endP.y + 1.2, 0);
+pole.castShadow = true;
+scene.add(pole);
+const flag = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.6, 0.9),
+  new THREE.MeshBasicMaterial({ color: 0xffd060 })
+);
+flag.position.set(endP.x + 1.4, endP.y + 2.1, 0);
+scene.add(flag);
+
+// ---------- Marble ----------
+const marble = new THREE.Mesh(
+  new THREE.SphereGeometry(0.32, 28, 28),
+  new THREE.MeshStandardMaterial({ color: 0xff4060, emissive: 0x300010, emissiveIntensity: 0.4, metalness: 0.55, roughness: 0.22 })
+);
+marble.castShadow = true;
+scene.add(marble);
+
+function placeMarbleAtT(t) {
+  t = Math.max(0, Math.min(1, t));
+  let acc = 0;
+  for (let i = 0; i < segments.length; i++) {
+    const s = segments[i];
+    const t1 = acc / totalLen;
+    const t2 = (acc + s.len) / totalLen;
+    if (t <= t2 || i === segments.length - 1) {
+      const localT = (t - t1) / (t2 - t1);
+      const x = s.p1.x + (s.p2.x - s.p1.x) * localT;
+      const y = s.p1.y + (s.p2.y - s.p1.y) * localT;
+      marble.position.set(x, y + 0.32, 0);
+      return { segIdx: i, localT };
+    }
+    acc += s.len;
+  }
+}
+
+// ---------- State ----------
+let marbleT = 0;
+let running = false;
+let falling = false;
+let finished = false;
+const SPEED = 4.5; // units per second
+
+function updateHud() {
+  const fixed = segments.filter(s => s.broken && s.repaired).length;
+  const total = segments.filter(s => s.broken).length;
+  document.getElementById('fixed').textContent = `${fixed} / ${total}`;
+  document.getElementById('progress').textContent = `${Math.round(marbleT * 100)}%`;
+}
+
+// Place marble at start
+placeMarbleAtT(0);
+updateHud();
+
+// ---------- Raycast click to repair ----------
+const raycaster = new THREE.Raycaster();
+const mouseVec = new THREE.Vector2();
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  mouseVec.x = (e.clientX / innerWidth) * 2 - 1;
+  mouseVec.y = -(e.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouseVec, camera);
+  const warns = segments.filter(s => s.broken && !s.repaired && s.warn).map(s => s.warn);
+  const hits = raycaster.intersectObjects(warns);
+  if (hits.length > 0) {
+    const idx = hits[0].object.userData.segmentIndex;
+    repairSegment(idx);
+  }
+});
+
+function repairSegment(i) {
+  const seg = segments[i];
+  if (!seg.broken || seg.repaired) return;
+  seg.repaired = true;
+  // Flash / swap in the real track
+  scene.remove(seg.warn);
+  seg.warn = null;
+  scene.add(seg.mesh);
+  // Small pulse effect — briefly scale up
+  const startTime = performance.now();
+  (function pulse() {
+    const t = (performance.now() - startTime) / 260;
+    if (t >= 1) { seg.mesh.scale.set(1, 1, 1); return; }
+    const s = 1 + 0.4 * Math.sin(Math.PI * t);
+    seg.mesh.scale.set(1, s, s);
+    requestAnimationFrame(pulse);
+  })();
+  updateHud();
+}
+
+// ---------- Main loop ----------
+let lastTime = performance.now();
+function animate(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  // Pulse warnings
+  for (const s of segments) {
+    if (s.broken && !s.repaired && s.warn) {
+      s.pulseT += dt * 4;
+      s.warn.material.opacity = 0.35 + Math.sin(s.pulseT) * 0.3;
+      s.warn.scale.y = 1 + Math.sin(s.pulseT * 1.5) * 0.15;
+    }
+  }
+
+  if (running && !finished) {
+    if (!falling) {
+      marbleT += (SPEED * dt) / totalLen;
+      if (marbleT >= 1) {
+        marbleT = 1;
+        finished = true;
+        running = false;
+        placeMarbleAtT(marbleT);
+        document.getElementById('status').textContent = 'SUCCESS';
+        const fixed = segments.filter(s => s.broken && s.repaired).length;
+        const total = segments.filter(s => s.broken).length;
+        document.getElementById('overTitle').textContent = 'MARBLE MADE IT';
+        document.getElementById('overBody').textContent = `All the way across · fixed ${fixed} / ${total} gaps`;
+        document.getElementById('overlay').classList.add('on');
+      } else {
+        const loc = placeMarbleAtT(marbleT);
+        const seg = segments[loc.segIdx];
+        // Rotate marble for a rolling feel
+        marble.rotation.z -= dt * SPEED * 0.7;
+        if (seg.broken && !seg.repaired) {
+          falling = true;
+          document.getElementById('status').textContent = 'FALLING!';
+        }
+      }
+    } else {
+      // Fall animation
+      marble.position.y -= dt * 12;
+      marble.rotation.x += dt * 4;
+      marble.rotation.z += dt * 2;
+      if (marble.position.y < -3) {
+        running = false;
+        finished = true;
+        document.getElementById('overTitle').textContent = 'MARBLE FELL';
+        const atT = Math.round(marbleT * 100);
+        document.getElementById('overBody').textContent = `Broken track at ${atT}% of the way. Fix the reds sooner next time.`;
+        document.getElementById('overlay').classList.add('on');
+      }
+    }
+  }
+
+  updateHud();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+// Subtle camera drift
+let camDrift = 0;
+(function drift() {
+  camDrift += 0.003;
+  camera.position.x = Math.sin(camDrift) * 2;
+  camera.position.y = 10 + Math.sin(camDrift * 0.6) * 0.5;
+  camera.lookAt(0, 6, 0);
+  requestAnimationFrame(drift);
+})();
+
+// ---------- Controls ----------
+function play() {
+  if (running) return;
+  if (finished) reset();
+  running = true;
+  document.getElementById('status').textContent = 'rolling';
+  document.getElementById('playBtn').disabled = true;
+}
+function reset() {
+  // Re-roll broken segments
+  segments.forEach(s => {
+    if (s.broken) {
+      s.broken = false;
+      s.repaired = false;
+      if (s.warn) { scene.remove(s.warn); s.warn = null; }
+      if (!s.mesh.parent) scene.add(s.mesh);
+      s.mesh.scale.set(1, 1, 1);
+    }
+  });
+  pickBroken();
+  segments.forEach((seg, i) => {
+    if (seg.broken) {
+      scene.remove(seg.mesh);
+      const midX = (seg.p1.x + seg.p2.x) / 2;
+      const midY = (seg.p1.y + seg.p2.y) / 2;
+      const warn = new THREE.Mesh(new THREE.BoxGeometry(seg.len * 0.95, 0.5, 1.6), matWarnShared);
+      warn.position.set(midX, midY + 0.05, 0);
+      warn.rotation.z = seg.angle;
+      warn.userData.segmentIndex = i;
+      scene.add(warn);
+      seg.warn = warn;
+      seg.pulseT = Math.random() * Math.PI * 2;
+    }
+  });
+  marbleT = 0;
+  falling = false;
+  finished = false;
+  running = false;
+  placeMarbleAtT(0);
+  document.getElementById('status').textContent = 'ready';
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('playBtn').textContent = '▶ RELEASE MARBLE';
+  updateHud();
+}
+document.getElementById('playBtn').addEventListener('click', play);
+document.getElementById('resetBtn').addEventListener('click', reset);
+document.getElementById('overClose').addEventListener('click', () => {
+  reset();
+  setTimeout(play, 100);
+});
+
+// Initial UI sync
+updateHud();
+</script>
+</body>
+</html>
