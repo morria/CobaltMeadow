@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stranded">
+<meta name="theme-color" content="#03040a">
+<title>Stranded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(60,100,180,0.2), transparent 55%),
+      linear-gradient(180deg, #040714 0%, #02030a 60%, #010105 100%);
+    color: #cfe0ff;
+    margin: 0;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: hidden;
+  }
+
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 520px;
+    width: 100%;
+    max-height: 84px;
+    filter: drop-shadow(0 4px 12px rgba(60,140,220,0.45));
+  }
+
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    border-radius: 3px;
+    border: 1px solid #3a5890;
+    background: linear-gradient(180deg, #0a1838, #05081a);
+    color: #a0c0ff;
+    cursor: pointer;
+  }
+  .music-toggle.on {
+    border-color: #60a0ff;
+    background: linear-gradient(180deg, #143060, #061028);
+    color: #c0dcff;
+    box-shadow: 0 0 12px rgba(80,140,220,0.5);
+  }
+
+  .hud-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .hud-box {
+    background: rgba(8,14,32,0.78);
+    border: 1px solid #3a5890;
+    border-radius: 4px;
+    padding: 6px 12px;
+  }
+  .hud-box .lbl {
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #80a0d0;
+  }
+  .hud-box .v { font-family: 'Russo One', sans-serif; font-size: 15px; color: #ffd060; letter-spacing: 2px; }
+  .hud-box.signal { border-color: #80e090; }
+  .hud-box.signal .lbl { color: #a0ffb0; }
+  .hud-box.signal .v { color: #a0ffb0; }
+
+  .resources {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .res {
+    background: rgba(8,14,32,0.7);
+    border: 1px solid #3a5890;
+    border-radius: 4px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .res .ico { font-size: 18px; }
+  .res .info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .res .name {
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #80a0d0;
+    text-transform: uppercase;
+  }
+  .res .bar { height: 6px; background: #0a0a1a; border-radius: 2px; overflow: hidden; }
+  .res .fill { height: 100%; transition: width 0.3s; }
+  .res.food .fill { background: linear-gradient(90deg, #80ff80, #30c040); }
+  .res.water .fill { background: linear-gradient(90deg, #80c8ff, #2060c0); }
+  .res.o2 .fill { background: linear-gradient(90deg, #a0e0ff, #60a0ff); }
+  .res.fuel .fill { background: linear-gradient(90deg, #ffa060, #c04020); }
+  .res.morale .fill { background: linear-gradient(90deg, #ffd060, #c08020); }
+  .res.hull .fill { background: linear-gradient(90deg, #c0c8d0, #606870); }
+  .res.low .fill { animation: lowPulse 1s ease-in-out infinite; }
+  @keyframes lowPulse {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.6); }
+  }
+  .res .num {
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: #ffe890;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .ship-frame {
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(80,140,220,0.1), transparent 70%),
+      #040714;
+    border: 1px solid #2a4878;
+    border-radius: 6px;
+    padding: 6px;
+  }
+  .ship-frame svg { display: block; width: 100%; height: auto; max-height: 180px; }
+
+  .rooms svg .room rect { stroke: #3a5a88; stroke-width: 1.5; transition: fill 0.3s, stroke 0.3s; }
+  .rooms svg .room.active rect { stroke: #ffd060; filter: drop-shadow(0 0 8px rgba(255,210,80,0.8)); }
+
+  .turn-banner {
+    text-align: center;
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 3px;
+    font-size: 13px;
+    padding: 6px 10px;
+    background: rgba(10,18,40,0.75);
+    border: 1px solid #3a5890;
+    border-radius: 4px;
+    color: #ffd060;
+  }
+  .turn-banner .p1 { color: #ff9080; }
+  .turn-banner .p2 { color: #80c0ff; }
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  @media (min-width: 720px) {
+    .action-grid { grid-template-columns: repeat(8, 1fr); }
+  }
+  .action {
+    background: linear-gradient(180deg, #1a2850, #0a1226);
+    border: 1.5px solid #4060a0;
+    border-radius: 4px;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
+    user-select: none;
+    text-align: center;
+  }
+  .action:hover:not(.disabled) { transform: translateY(-2px); box-shadow: 0 0 10px rgba(100,160,240,0.5); }
+  .action.disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.5); }
+  .action .ico { font-size: 22px; }
+  .action .name { font-family: 'Russo One', sans-serif; font-size: 10px; letter-spacing: 1px; color: #c0d8ff; text-transform: uppercase; }
+  .action .desc { font-size: 10px; color: #80a0d0; line-height: 1.15; min-height: 22px; }
+
+  .log-box {
+    background: rgba(8,14,32,0.7);
+    border: 1px solid #3a5890;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    max-height: 110px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+  .log-box .entry { margin: 2px 0; color: #c0d8ff; }
+  .log-box .entry.good { color: #a0ffb0; }
+  .log-box .entry.bad  { color: #ff9aa8; }
+  .log-box .entry.big  { color: #ffd060; font-weight: 700; }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: 'Russo One', sans-serif;
+    padding: 10px 18px;
+    border: 1.5px solid #60a0ff;
+    background: linear-gradient(180deg, #1a3260, #08162a);
+    color: #cfe0ff;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-size: 13px;
+    min-height: 44px;
+    text-transform: uppercase;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #234688, #0c1c3a); box-shadow: 0 0 12px rgba(100,160,240,0.5); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #804020, #402010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #a05828, #5a2814); }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,5,14,0.94);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #0c1840, #02060f);
+    border: 2px solid #80a0ff;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 0 40px rgba(100,160,240,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 16px; color: #c0d8ff; }
+
+  @media (max-width: 720px) {
+    .logo { max-height: 62px; }
+    .resources { grid-template-columns: repeat(2, 1fr); }
+    .action .desc { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="music" class="music-toggle">🔇 Music</button>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Stranded">
+  <defs>
+    <linearGradient id="stGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#c0dcff"/>
+      <stop offset="55%" stop-color="#60a0ff"/>
+      <stop offset="100%" stop-color="#3a5898"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="400" cy="80" rx="320" ry="38" fill="#3060a0" opacity="0.22"/>
+  <!-- stranded ship -->
+  <g transform="translate(100, 70)">
+    <ellipse cx="0" cy="0" rx="42" ry="14" fill="#304080" stroke="#80c0ff" stroke-width="1.5"/>
+    <rect x="-6" y="-26" width="12" height="14" fill="#60a0ff"/>
+    <circle cx="0" cy="-30" r="5" fill="#ffd060"/>
+  </g>
+  <g transform="translate(700, 64)">
+    <ellipse cx="0" cy="0" rx="36" ry="12" fill="#402030" stroke="#ff8080" stroke-width="1.2" opacity="0.8"/>
+    <rect x="-4" y="-22" width="8" height="12" fill="#804040"/>
+  </g>
+  <!-- stars -->
+  <g fill="#fff">
+    <circle cx="160" cy="32" r="0.9"/>
+    <circle cx="240" cy="18" r="0.7"/>
+    <circle cx="300" cy="40" r="0.8"/>
+    <circle cx="560" cy="28" r="0.9"/>
+    <circle cx="640" cy="42" r="0.7"/>
+    <circle cx="740" cy="22" r="0.8"/>
+  </g>
+  <text x="400" y="82" text-anchor="middle"
+        font-family="'Bungee', sans-serif"
+        font-size="56"
+        fill="url(#stGrad)"
+        letter-spacing="8"
+        style="paint-order: stroke; stroke: #02040e; stroke-width: 2.5;">STRANDED</text>
+  <text x="400" y="108" text-anchor="middle"
+        font-family="'Russo One', sans-serif"
+        font-size="11" fill="#80a0d0" letter-spacing="6">two crew · one dying ship · no rescue yet</text>
+</svg>
+
+<div class="hud-row">
+  <div class="hud-box"><div class="lbl">Day</div><div class="v" id="dayV">1 / ∞</div></div>
+  <div class="hud-box signal"><div class="lbl">Rescue Signal</div><div class="v" id="signalV">0 / 10</div></div>
+</div>
+
+<div class="resources" id="resources"></div>
+
+<div class="ship-frame">
+  <svg viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg" class="rooms" id="shipSvg">
+    <!-- hull outline -->
+    <path d="M 50 60 Q 50 30 120 30 L 680 30 Q 760 30 760 110 Q 760 190 680 190 L 120 190 Q 50 190 50 150 Z"
+          fill="#0a1428" stroke="#4070a8" stroke-width="2"/>
+    <!-- engine nozzle at back -->
+    <path d="M 30 90 L 50 90 L 50 130 L 30 130 Z" fill="#1a2040" stroke="#4070a8" stroke-width="1.5"/>
+    <circle cx="30" cy="110" r="6" fill="#ff8040" opacity="0.6"/>
+    <!-- bridge at front -->
+    <g class="room" data-room="bridge">
+      <rect x="620" y="55" width="120" height="110" rx="4" fill="#182440"/>
+      <text x="680" y="85" text-anchor="middle" font-size="10" fill="#a0c0ff" font-family="Russo One, sans-serif" letter-spacing="2">BRIDGE</text>
+      <circle cx="660" cy="110" r="4" fill="#80c0ff"/>
+      <rect x="650" y="125" width="60" height="18" rx="2" fill="#0a0f26" stroke="#60a0ff" stroke-width="1"/>
+      <text x="680" y="137" text-anchor="middle" font-size="9" fill="#ffd060" font-family="Russo One, sans-serif">📡</text>
+    </g>
+    <!-- greenhouse -->
+    <g class="room" data-room="green">
+      <rect x="480" y="55" width="120" height="110" rx="4" fill="#14321c"/>
+      <text x="540" y="85" text-anchor="middle" font-size="10" fill="#a0ffb0" font-family="Russo One, sans-serif" letter-spacing="2">GREENHOUSE</text>
+      <g fill="#60c060">
+        <circle cx="510" cy="140" r="6"/>
+        <circle cx="540" cy="135" r="7"/>
+        <circle cx="570" cy="142" r="6"/>
+      </g>
+      <rect x="500" y="148" width="80" height="8" fill="#4a2810"/>
+    </g>
+    <!-- recycler -->
+    <g class="room" data-room="water">
+      <rect x="340" y="55" width="120" height="110" rx="4" fill="#14243a"/>
+      <text x="400" y="85" text-anchor="middle" font-size="10" fill="#80c8ff" font-family="Russo One, sans-serif" letter-spacing="2">RECYCLER</text>
+      <rect x="376" y="100" width="48" height="50" rx="3" fill="#0e1a2e" stroke="#60a0ff" stroke-width="1.5"/>
+      <rect x="380" y="116" width="40" height="30" fill="#2060c0" opacity="0.7"/>
+    </g>
+    <!-- scrubber -->
+    <g class="room" data-room="o2">
+      <rect x="200" y="55" width="120" height="110" rx="4" fill="#1a2a3a"/>
+      <text x="260" y="85" text-anchor="middle" font-size="10" fill="#a0e0ff" font-family="Russo One, sans-serif" letter-spacing="2">SCRUBBER</text>
+      <circle cx="260" cy="125" r="18" fill="none" stroke="#a0e0ff" stroke-width="2"/>
+      <circle cx="260" cy="125" r="8" fill="#60a0ff" opacity="0.6"/>
+    </g>
+    <!-- quarters / rest -->
+    <g class="room" data-room="rest">
+      <rect x="80" y="55" width="100" height="110" rx="4" fill="#1a1a2a"/>
+      <text x="130" y="85" text-anchor="middle" font-size="10" fill="#ffb080" font-family="Russo One, sans-serif" letter-spacing="2">QUARTERS</text>
+      <rect x="92" y="110" width="36" height="10" rx="2" fill="#60304a"/>
+      <rect x="134" y="110" width="36" height="10" rx="2" fill="#305a60"/>
+    </g>
+    <!-- hull repair marker (bottom band) -->
+    <g class="room" data-room="repair">
+      <rect x="200" y="165" width="320" height="20" rx="2" fill="#2a2218"/>
+      <text x="360" y="180" text-anchor="middle" font-size="9" fill="#ffd060" font-family="Russo One, sans-serif" letter-spacing="2">HULL · REPAIR BAY</text>
+    </g>
+    <!-- mine airlock (bottom right) -->
+    <g class="room" data-room="mine">
+      <rect x="560" y="165" width="140" height="20" rx="2" fill="#2a1014"/>
+      <text x="630" y="180" text-anchor="middle" font-size="9" fill="#ff8080" font-family="Russo One, sans-serif" letter-spacing="2">AIRLOCK · SALVAGE</text>
+    </g>
+  </svg>
+</div>
+
+<div class="turn-banner" id="turnBanner">Day 1 — <span class="p1">Player 1</span> choose an action</div>
+
+<div class="action-grid" id="actionGrid"></div>
+
+<div class="log-box" id="log"></div>
+
+<div class="controls">
+  <button id="endDayBtn" disabled>END DAY →</button>
+  <button id="resetBtn">RESET</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <button id="overClose" class="primary">Try Again</button>
+  </div>
+</div>
+
+<script>
+// ---------- Resource & game state ----------
+const MAX = 10;
+const SIGNAL_WIN = 10;
+const START = () => ({ food: 8, water: 8, o2: 8, fuel: 2, morale: 9, hull: 10 });
+
+let res = START();
+let signal = 0;
+let day = 1;
+let currentPlayer = 1;
+let p1Choice = null, p2Choice = null;
+let gameOver = false;
+
+const RES_DEFS = [
+  { id: 'food',   name: 'Food',   ico: '🍎', vital: true },
+  { id: 'water',  name: 'Water',  ico: '💧', vital: true },
+  { id: 'o2',     name: 'Oxygen', ico: '🫧', vital: true },
+  { id: 'fuel',   name: 'Fuel',   ico: '⛽', vital: false },
+  { id: 'morale', name: 'Morale', ico: '🙂', vital: false },
+  { id: 'hull',   name: 'Hull',   ico: '⛑', vital: false },
+];
+
+const ACTIONS = [
+  { id: 'green',  room: 'green',  ico: '🌱', name: 'Grow',    desc: '+3 Food, -1 Water',
+    can: () => res.water > 0,
+    apply: () => { res.food = clamp(res.food + 3); res.water--; return 'grew food (+3 Food, -1 Water)'; },
+  },
+  { id: 'water',  room: 'water',  ico: '💧', name: 'Recycle', desc: '+3 Water',
+    can: () => true,
+    apply: () => { res.water = clamp(res.water + 3); return 'recycled water (+3 Water)'; },
+  },
+  { id: 'o2',     room: 'o2',     ico: '🫧', name: 'Scrub',   desc: '+3 Oxygen',
+    can: () => true,
+    apply: () => { res.o2 = clamp(res.o2 + 3); return 'scrubbed CO₂ (+3 O₂)'; },
+  },
+  { id: 'repair', room: 'repair', ico: '🔧', name: 'Repair',  desc: '+2 Hull, +1 Morale',
+    can: () => true,
+    apply: () => { res.hull = clamp(res.hull + 2); res.morale = clamp(res.morale + 1); return 'patched the hull (+2 Hull, +1 Morale)'; },
+  },
+  { id: 'radio',  room: 'bridge', ico: '📡', name: 'Radio',   desc: 'Signal +1',
+    can: () => true,
+    apply: () => { signal = Math.min(SIGNAL_WIN, signal + 1); return 'broadcast a plea (Signal +1)'; },
+  },
+  { id: 'mine',   room: 'mine',   ico: '⛏️', name: 'Mine',   desc: '+2 Fuel · hull risk',
+    can: () => true,
+    apply: () => {
+      res.fuel = clamp(res.fuel + 2);
+      let note = 'mined salvage (+2 Fuel)';
+      if (Math.random() < 0.35) { res.hull -= 2; note += ' · ACCIDENT! Hull -2'; }
+      return note;
+    },
+  },
+  { id: 'rest',   room: 'rest',   ico: '💤', name: 'Rest',    desc: '+3 Morale',
+    can: () => true,
+    apply: () => { res.morale = clamp(res.morale + 3); return 'rested (+3 Morale)'; },
+  },
+  { id: 'study',  room: 'bridge', ico: '📖', name: 'Study',   desc: 'Signal +1, no room spared',
+    can: () => res.morale > 1,
+    apply: () => { signal = Math.min(SIGNAL_WIN, signal + 1); res.morale = Math.max(0, res.morale - 1); return 'studied rescue patterns (Signal +1, Morale -1)'; },
+  },
+];
+
+const EVENTS = [
+  { msg: 'Micrometeor strike · Hull -2',    apply: () => { res.hull = Math.max(0, res.hull - 2); }, cls: 'bad' },
+  { msg: 'Solar flare · O₂ -2',             apply: () => { res.o2 = Math.max(0, res.o2 - 2); },     cls: 'bad' },
+  { msg: 'Food spoilage · Food -2',         apply: () => { res.food = Math.max(0, res.food - 2); }, cls: 'bad' },
+  { msg: 'Coolant leak · Water -2',         apply: () => { res.water = Math.max(0, res.water - 2); }, cls: 'bad' },
+  { msg: 'Distant signal picked up · Signal +1', apply: () => { signal = Math.min(SIGNAL_WIN, signal + 1); }, cls: 'good' },
+  { msg: 'Quiet day in the void.',          apply: () => {}, cls: '' },
+  { msg: 'Quiet day in the void.',          apply: () => {}, cls: '' },
+  { msg: 'Salvage drift · +1 Fuel',         apply: () => { res.fuel = clamp(res.fuel + 1); }, cls: 'good' },
+];
+
+function clamp(v) { return Math.max(0, Math.min(MAX, v)); }
+
+// ---------- Rendering ----------
+const resEl = document.getElementById('resources');
+function renderResources() {
+  resEl.innerHTML = '';
+  RES_DEFS.forEach(r => {
+    const val = res[r.id];
+    const row = document.createElement('div');
+    row.className = 'res ' + r.id + (val <= 2 ? ' low' : '');
+    row.innerHTML = `
+      <div class="ico">${r.ico}</div>
+      <div class="info">
+        <div class="name">${r.name}</div>
+        <div class="bar"><div class="fill" style="width:${val/MAX*100}%"></div></div>
+      </div>
+      <div class="num">${val} / ${MAX}</div>`;
+    resEl.appendChild(row);
+  });
+}
+
+function renderActions() {
+  const grid = document.getElementById('actionGrid');
+  grid.innerHTML = '';
+  ACTIONS.forEach(a => {
+    const el = document.createElement('div');
+    const avail = a.can();
+    el.className = 'action' + (avail ? '' : ' disabled');
+    el.innerHTML = `<div class="ico">${a.ico}</div><div class="name">${a.name}</div><div class="desc">${a.desc}</div>`;
+    el.addEventListener('click', () => {
+      if (!avail || gameOver) return;
+      pickAction(a);
+    });
+    grid.appendChild(el);
+  });
+}
+
+function highlightRoom(roomId) {
+  document.querySelectorAll('#shipSvg .room').forEach(g => g.classList.remove('active'));
+  if (!roomId) return;
+  const el = document.querySelector(`#shipSvg .room[data-room="${roomId}"]`);
+  if (el) el.classList.add('active');
+}
+
+function setTurnBanner() {
+  const el = document.getElementById('turnBanner');
+  if (gameOver) return;
+  if (!p1Choice) {
+    el.innerHTML = `Day ${day} — <span class="p1">Player 1</span> choose an action`;
+    highlightRoom(null);
+  } else if (!p2Choice) {
+    el.innerHTML = `Day ${day} — P1: <b>${p1Choice.name}</b> · <span class="p2">Player 2</span> choose`;
+    highlightRoom(p1Choice.room);
+  } else {
+    el.innerHTML = `Day ${day} — P1: <b>${p1Choice.name}</b> · P2: <b>${p2Choice.name}</b>`;
+  }
+}
+
+function updateHud() {
+  document.getElementById('dayV').textContent = `Day ${day}`;
+  document.getElementById('signalV').textContent = `${signal} / ${SIGNAL_WIN}`;
+  document.getElementById('endDayBtn').disabled = !(p1Choice && p2Choice) || gameOver;
+}
+
+function addLog(msg, cls) {
+  const el = document.createElement('div');
+  el.className = 'entry' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+  const log = document.getElementById('log');
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ---------- Game flow ----------
+function pickAction(a) {
+  if (!p1Choice) {
+    p1Choice = a;
+    const note = a.apply();
+    addLog(`Day ${day} · Player 1 ${note}.`, 'good');
+    currentPlayer = 2;
+  } else if (!p2Choice) {
+    p2Choice = a;
+    const note = a.apply();
+    addLog(`Day ${day} · Player 2 ${note}.`, 'good');
+  }
+  setTurnBanner();
+  renderResources();
+  renderActions();
+  updateHud();
+  checkEnd();
+}
+
+function endDay() {
+  if (!p1Choice || !p2Choice || gameOver) return;
+  // Daily decay
+  res.food = Math.max(0, res.food - 1);
+  res.water = Math.max(0, res.water - 1);
+  res.o2 = Math.max(0, res.o2 - 1);
+  res.morale = Math.max(0, res.morale - 1);
+  addLog(`— Night ${day}: daily rations used (Food, Water, O₂, Morale -1).`);
+  // Low morale causes problems
+  if (res.morale <= 2) addLog('Morale is dangerously low — crew is slowing down.', 'bad');
+  // Random event
+  const ev = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  addLog(`— Event: ${ev.msg}`, ev.cls);
+  ev.apply();
+  // Advance
+  day++;
+  p1Choice = p2Choice = null;
+  currentPlayer = 1;
+  renderResources();
+  renderActions();
+  setTurnBanner();
+  updateHud();
+  checkEnd();
+}
+
+function checkEnd() {
+  if (gameOver) return;
+  if (signal >= SIGNAL_WIN) {
+    gameOver = true;
+    setTimeout(() => {
+      document.getElementById('overTitle').textContent = 'RESCUE INCOMING';
+      document.getElementById('overBody').textContent =
+        `A signal cut through the static. After ${day-1} days of surviving by duct tape and dumb luck, the two of you are going home.`;
+      document.getElementById('overlay').classList.add('on');
+    }, 600);
+    return;
+  }
+  const vital = ['food', 'water', 'o2'];
+  for (const v of vital) {
+    if (res[v] <= 0) {
+      gameOver = true;
+      const label = RES_DEFS.find(r => r.id === v).name;
+      setTimeout(() => {
+        document.getElementById('overTitle').textContent = 'THE SHIP GOES QUIET';
+        document.getElementById('overBody').textContent =
+          `${label} ran out on day ${day}. The rescue signal was at ${signal}/${SIGNAL_WIN}.`;
+        document.getElementById('overlay').classList.add('on');
+      }, 600);
+      return;
+    }
+  }
+  if (res.hull <= 0) {
+    gameOver = true;
+    setTimeout(() => {
+      document.getElementById('overTitle').textContent = 'HULL BREACH';
+      document.getElementById('overBody').textContent =
+        `The hull finally gave. No signal could save you. Day ${day}.`;
+      document.getElementById('overlay').classList.add('on');
+    }, 600);
+  }
+}
+
+function reset() {
+  res = START();
+  signal = 0; day = 1; currentPlayer = 1;
+  p1Choice = p2Choice = null; gameOver = false;
+  document.getElementById('log').innerHTML = '';
+  addLog('Day 1 — the reactor sputters out. Two of you, one dying ship, no rescue yet.', 'big');
+  document.getElementById('overlay').classList.remove('on');
+  renderResources(); renderActions(); setTurnBanner(); updateHud();
+}
+
+document.getElementById('endDayBtn').addEventListener('click', endDay);
+document.getElementById('resetBtn').addEventListener('click', reset);
+document.getElementById('overClose').addEventListener('click', reset);
+
+// ---------- Music (lonely drifting) ----------
+let sCtx = null, sMaster = null;
+function sStart() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  sCtx = new Ctx();
+  sMaster = sCtx.createGain();
+  sMaster.gain.value = 0;
+  sMaster.connect(sCtx.destination);
+  sMaster.gain.linearRampToValueAtTime(0.15, sCtx.currentTime + 3);
+  const drone = sCtx.createOscillator();
+  drone.type = 'sine'; drone.frequency.value = 49;
+  const dG = sCtx.createGain(); dG.gain.value = 0.35;
+  drone.connect(dG); dG.connect(sMaster);
+  const fifth = sCtx.createOscillator();
+  fifth.type = 'sine'; fifth.frequency.value = 73.4;
+  const fG = sCtx.createGain(); fG.gain.value = 0.2;
+  fifth.connect(fG); fG.connect(sMaster);
+  const lfo = sCtx.createOscillator(); lfo.frequency.value = 0.04;
+  const lfoG = sCtx.createGain(); lfoG.gain.value = 0.9;
+  lfo.connect(lfoG); lfoG.connect(drone.frequency); lfoG.connect(fifth.frequency);
+  drone.start(); fifth.start(); lfo.start();
+  [220, 277.2, 329.6].forEach((f, i) => {
+    const o = sCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+    const filt = sCtx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 900;
+    const g = sCtx.createGain(); g.gain.value = 0.02;
+    const lf = sCtx.createOscillator(); lf.frequency.value = 0.05 + i * 0.018;
+    const lfG = sCtx.createGain(); lfG.gain.value = 0.016;
+    lf.connect(lfG); lfG.connect(g.gain);
+    o.connect(filt); filt.connect(g); g.connect(sMaster);
+    o.start(); lf.start();
+  });
+  return true;
+}
+function sToggle() {
+  const btn = document.getElementById('music');
+  if (!sCtx) { if (!sStart()) return; btn.textContent = '🔊 Music'; btn.classList.add('on'); return; }
+  if (sCtx.state === 'running') { sCtx.suspend(); btn.textContent = '🔇 Music'; btn.classList.remove('on'); }
+  else                          { sCtx.resume();  btn.textContent = '🔊 Music'; btn.classList.add('on'); }
+}
+document.getElementById('music').addEventListener('click', sToggle);
+
+// ---------- Start ----------
+reset();
+</script>
+</body>
+</html>

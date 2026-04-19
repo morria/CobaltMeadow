@@ -190,6 +190,14 @@
     border-radius: 3px;
   }
 
+  /* Stranded — deep-space blue */
+  .tile.stranded {
+    border-color: #3a5a90;
+    background: linear-gradient(180deg, rgba(14,22,48,0.92), rgba(4,6,16,0.95));
+  }
+  .tile.stranded:hover { border-color: #80b0ff; box-shadow: 0 0 22px rgba(120,170,240,0.5); }
+  .tile.stranded h2 { font-family: 'Bungee', sans-serif; color: #a0c8ff; letter-spacing: 3px; font-size: 22px; }
+
 
   footer {
     margin-top: 6px;
@@ -478,6 +486,45 @@
     </div>
     <h2>CITY MARBLES</h2>
     <p>Fix broken rooftop tracks before the marble rolls off.</p>
+  </a>
+
+  <a class="tile stranded" href="stranded.html">
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gSt" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#80c0ff"/>
+            <stop offset="100%" stop-color="#304880"/>
+          </linearGradient>
+        </defs>
+        <!-- stars -->
+        <g fill="#fff">
+          <circle cx="8"  cy="10" r="0.8"/>
+          <circle cx="22" cy="6"  r="0.6"/>
+          <circle cx="40" cy="12" r="0.8"/>
+          <circle cx="60" cy="8"  r="0.6"/>
+          <circle cx="72" cy="14" r="0.8"/>
+          <circle cx="16" cy="42" r="0.6"/>
+          <circle cx="56" cy="46" r="0.6"/>
+          <circle cx="68" cy="38" r="0.7"/>
+        </g>
+        <!-- drifting ship -->
+        <g transform="translate(40, 30)">
+          <ellipse cx="0" cy="0" rx="22" ry="6" fill="url(#gSt)" stroke="#c0dcff" stroke-width="0.8"/>
+          <rect x="-4" y="-14" width="8" height="8" fill="#60a0ff" stroke="#c0dcff" stroke-width="0.6"/>
+          <!-- window -->
+          <circle cx="0" cy="-10" r="1.8" fill="#ffd060"/>
+          <!-- smoke / leak -->
+          <g fill="#ff8080" opacity="0.75">
+            <circle cx="-20" cy="-3" r="1.4"/>
+            <circle cx="-24" cy="-1" r="1"/>
+            <circle cx="-28" cy="0"  r="0.8"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <h2>STRANDED</h2>
+    <p>Two crew, dying ship · manage resources until rescue reaches you.</p>
   </a>
 </div>
 
