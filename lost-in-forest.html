@@ -379,6 +379,44 @@
   .cell.player  { border-color: #ffd080 !important; box-shadow: inset 0 0 10px rgba(255,210,80,0.6); filter: brightness(1.2); }
   .cell.adj     { border-color: #a0d060; background: #183c12; cursor: pointer; }
   .cell:hover.adj { filter: brightness(1.3); }
+  .cell.flash { animation: cellFlash 0.6s ease-out; }
+  @keyframes cellFlash {
+    0%   { background: #ffd060; }
+    50%  { background: #a0ff60; }
+    100% { background: #10260c; }
+  }
+  .cell.flash-bad { animation: cellFlashBad 0.6s ease-out; }
+  @keyframes cellFlashBad {
+    0%   { background: #ff3040; }
+    100% { background: #10260c; }
+  }
+  .map-grid { position: relative; }
+  .pickup-chip {
+    position: absolute;
+    pointer-events: none;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    color: #ffd080;
+    text-shadow: 0 0 6px #000, 0 2px 3px #000;
+    z-index: 5;
+    animation: pickupFloat 1s ease-out forwards;
+  }
+  .pickup-chip.bad { color: #ff7a7a; }
+  @keyframes pickupFloat {
+    0%   { opacity: 1; transform: translate(-50%, 0) scale(0.9); }
+    100% { opacity: 0; transform: translate(-50%, -40px) scale(1.25); }
+  }
+  .last-find {
+    text-align: center;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #ffd080;
+    margin-top: 6px;
+    min-height: 14px;
+    text-transform: uppercase;
+  }
+  .last-find.bad { color: #ff7a7a; }
 
   .haul {
     display: flex;
@@ -526,6 +564,7 @@
       <div>HEALTH · <span id="mapHealth">3</span></div>
     </div>
     <div class="map-grid" id="mapGrid"></div>
+    <div class="last-find" id="mapLastFind">&nbsp;</div>
     <div class="haul" id="mapHaul"></div>
     <div class="map-actions">
       <button id="mapLeaveBtn" class="primary">Return to Camp</button>
@@ -930,11 +969,12 @@ function tileGlyph(kind) {
   }
 }
 
-function renderMap() {
+function renderMap(pickupInfo, pickupCoord) {
   document.getElementById('mapMoves').textContent = exp.moves;
   document.getElementById('mapHealth').textContent = exp.health;
   const grid = document.getElementById('mapGrid');
   grid.innerHTML = '';
+  let flashTarget = null;
   for (const c of exp.cells) {
     const el = document.createElement('div');
     const visited = exp.visited.has(`${c.x},${c.y}`);
@@ -943,15 +983,35 @@ function renderMap() {
     el.className = 'cell ' + (visited ? 'visited' : 'unknown') + (isPc ? ' player' : '') + (adj ? ' adj' : '');
     if (isPc) el.textContent = '🧒';
     else if (visited) el.textContent = tileGlyph(c.kind);
-    if (adj) {
-      el.addEventListener('click', () => moveTo(c.x, c.y));
-    }
+    if (adj) el.addEventListener('click', () => moveTo(c.x, c.y));
     grid.appendChild(el);
+    if (pickupCoord && c.x === pickupCoord.x && c.y === pickupCoord.y && pickupInfo) {
+      flashTarget = el;
+    }
   }
-  // Haul
   const h = exp.haul;
   document.getElementById('mapHaul').innerHTML =
     `🪵 ${h.wood} · 🍖 ${h.food} · 🫐 ${h.berries} · 🔥 ${h.signal}`;
+
+  const lastFind = document.getElementById('mapLastFind');
+  if (pickupInfo) {
+    lastFind.textContent = pickupInfo.text;
+    lastFind.className = 'last-find' + (pickupInfo.bad ? ' bad' : '');
+  }
+  if (flashTarget && pickupInfo) {
+    flashTarget.classList.add(pickupInfo.bad ? 'flash-bad' : 'flash');
+    if (pickupInfo.chip) {
+      const chip = document.createElement('div');
+      chip.className = 'pickup-chip' + (pickupInfo.bad ? ' bad' : '');
+      chip.textContent = pickupInfo.chip;
+      const r = flashTarget.getBoundingClientRect();
+      const g = grid.getBoundingClientRect();
+      chip.style.left = (r.left + r.width / 2 - g.left) + 'px';
+      chip.style.top  = (r.top + 4 - g.top) + 'px';
+      grid.appendChild(chip);
+      setTimeout(() => chip.remove(), 1000);
+    }
+  }
 }
 
 function moveTo(x, y) {
@@ -961,42 +1021,44 @@ function moveTo(x, y) {
   exp.moves--;
   const key = `${x},${y}`;
   const cell = exp.cells[y * MAP_COLS + x];
+  let pickupInfo = null;
   if (!exp.visited.has(key)) {
     exp.visited.add(key);
-    resolveEncounter(cell);
+    pickupInfo = resolveEncounter(cell);
   }
+  renderMap(pickupInfo, { x, y });
   if (exp.health <= 0) {
-    endExpedition(true);
+    setTimeout(() => endExpedition(true), 600);
     return;
   }
   if (exp.moves <= 0) {
-    endExpedition(false);
+    setTimeout(() => endExpedition(false), 400);
     return;
   }
-  renderMap();
 }
 
 function resolveEncounter(cell) {
   switch (cell.kind) {
     case 'grass':
-      break;
+      return { text: 'Empty clearing.', chip: '', bad: false };
     case 'tree':
       exp.haul.wood += 8;
-      break;
+      return { text: '+8 wood from a fallen pine!', chip: '+8 🪵', bad: false };
     case 'berry':
       exp.haul.berries += 4;
-      break;
+      return { text: '+4 berries picked!', chip: '+4 🫐', bad: false };
     case 'fish':
       exp.haul.food += 6;
-      break;
+      return { text: '+6 food from a fish!', chip: '+6 🍖', bad: false };
     case 'bear':
       exp.health -= 1;
       exp.moves = Math.max(0, exp.moves - 1);
-      break;
+      return { text: 'BEAR! −1 health, −1 move', chip: '−1 ❤', bad: true };
     case 'chest':
       exp.haul.signal += 6;
-      break;
+      return { text: 'Plane wreckage · +6 signal!', chip: '+6 🔥', bad: false };
   }
+  return null;
 }
 
 function endExpedition(wounded) {
