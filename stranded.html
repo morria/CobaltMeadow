@@ -304,8 +304,8 @@
 </svg>
 
 <div class="hud-row">
-  <div class="hud-box"><div class="lbl">Day</div><div class="v" id="dayV">1 / ∞</div></div>
-  <div class="hud-box signal"><div class="lbl">Rescue Signal</div><div class="v" id="signalV">0 / 10</div></div>
+  <div class="hud-box"><div class="lbl">Day</div><div class="v" id="dayV">Day 1</div></div>
+  <div class="hud-box signal"><div class="lbl">Goal · max all four</div><div class="v" id="goalV">⛽ 🫧 ⛑ 📡</div></div>
 </div>
 
 <div class="resources" id="resources"></div>
@@ -523,7 +523,12 @@ function setTurnBanner() {
 
 function updateHud() {
   document.getElementById('dayV').textContent = `Day ${day}`;
-  document.getElementById('signalV').textContent = `${signal} / ${SIGNAL_WIN}`;
+  const okFuel   = res.fuel  >= MAX ? '✓' : `${res.fuel}/${MAX}`;
+  const okO2     = res.o2    >= MAX ? '✓' : `${res.o2}/${MAX}`;
+  const okHull   = res.hull  >= MAX ? '✓' : `${res.hull}/${MAX}`;
+  const okSignal = signal    >= SIGNAL_WIN ? '✓' : `${signal}/${SIGNAL_WIN}`;
+  document.getElementById('goalV').innerHTML =
+    `⛽ ${okFuel} · 🫧 ${okO2} · ⛑ ${okHull} · 📡 ${okSignal}`;
   document.getElementById('endDayBtn').disabled = !(p1Choice && p2Choice) || gameOver;
 }
 
@@ -582,16 +587,18 @@ function endDay() {
 
 function checkEnd() {
   if (gameOver) return;
-  if (signal >= SIGNAL_WIN) {
+  // Win: Fuel, O2, Hull, Signal all maxed at the same time
+  if (res.fuel >= MAX && res.o2 >= MAX && res.hull >= MAX && signal >= SIGNAL_WIN) {
     gameOver = true;
     setTimeout(() => {
-      document.getElementById('overTitle').textContent = 'RESCUE INCOMING';
+      document.getElementById('overTitle').textContent = 'ALL SYSTEMS GREEN';
       document.getElementById('overBody').textContent =
-        `A signal cut through the static. After ${day-1} days of surviving by duct tape and dumb luck, the two of you are going home.`;
+        `Fuel, oxygen, hull, and signal all peaked on day ${day}. The two of you fire the engines and head for home.`;
       document.getElementById('overlay').classList.add('on');
     }, 600);
     return;
   }
+  // Lose: any vital life-support (food / water / O2) hits 0
   const vital = ['food', 'water', 'o2'];
   for (const v of vital) {
     if (res[v] <= 0) {
@@ -600,7 +607,7 @@ function checkEnd() {
       setTimeout(() => {
         document.getElementById('overTitle').textContent = 'THE SHIP GOES QUIET';
         document.getElementById('overBody').textContent =
-          `${label} ran out on day ${day}. The rescue signal was at ${signal}/${SIGNAL_WIN}.`;
+          `${label} ran out on day ${day}. Fuel ${res.fuel}/${MAX}, O₂ ${res.o2}/${MAX}, Hull ${res.hull}/${MAX}, Signal ${signal}/${SIGNAL_WIN}.`;
         document.getElementById('overlay').classList.add('on');
       }, 600);
       return;
@@ -611,7 +618,7 @@ function checkEnd() {
     setTimeout(() => {
       document.getElementById('overTitle').textContent = 'HULL BREACH';
       document.getElementById('overBody').textContent =
-        `The hull finally gave. No signal could save you. Day ${day}.`;
+        `The hull finally gave on day ${day}. No signal could save you.`;
       document.getElementById('overlay').classList.add('on');
     }, 600);
   }
@@ -622,7 +629,8 @@ function reset() {
   signal = 0; day = 1; currentPlayer = 1;
   p1Choice = p2Choice = null; gameOver = false;
   document.getElementById('log').innerHTML = '';
-  addLog('Day 1 — the reactor sputters out. Two of you, one dying ship, no rescue yet.', 'big');
+  addLog('Day 1 — reactor sputters out. Goal: max Fuel, O₂, Hull, and the Rescue Signal — all at 10 simultaneously.', 'big');
+  addLog('Food, Water, and Morale only need to stay above zero.');
   document.getElementById('overlay').classList.remove('on');
   renderResources(); renderActions(); setTurnBanner(); updateHud();
 }
