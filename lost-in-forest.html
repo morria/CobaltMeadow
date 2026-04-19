@@ -453,6 +453,31 @@
   }
   .last-find.bad { color: #ff7a7a; }
 
+  .expedition-end {
+    text-align: center;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #ffd080;
+    border-radius: 5px;
+    background: rgba(20,14,6,0.7);
+    display: none;
+  }
+  .expedition-end.on { display: block; }
+  .expedition-end.bad { border-color: #ff6060; background: rgba(40,10,10,0.7); }
+  .expedition-end h3 {
+    margin: 0 0 6px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #ffd080;
+  }
+  .expedition-end.bad h3 { color: #ff8a7a; }
+  .expedition-end .summary {
+    font-size: 12px;
+    color: #d0e0a0;
+    line-height: 1.4;
+  }
+
   .haul {
     display: flex;
     gap: 10px;
@@ -608,6 +633,10 @@
     <div class="map-grid" id="mapGrid"></div>
     <div class="last-find" id="mapLastFind">&nbsp;</div>
     <div class="haul" id="mapHaul"></div>
+    <div class="expedition-end" id="expeditionEnd">
+      <h3 id="expEndTitle">—</h3>
+      <div class="summary" id="expEndBody">—</div>
+    </div>
     <div class="map-actions">
       <button id="mapLeaveBtn" class="primary">Return to Camp</button>
     </div>
@@ -659,7 +688,7 @@ const UPGRADES = [
   },
   {
     id: 'snare',  ico: '🪢', name: 'Snare Trap',
-    desc: '+1 food every 6s',
+    desc: 'Passive camp trap · +1 🍖 every 6s',
     baseCost: { wood: 40 },
     costScale: 1.8,
     apply: () => {},
@@ -672,8 +701,8 @@ const UPGRADES = [
     apply: () => {},
   },
   {
-    id: 'fishing', ico: '🎣', name: 'Fishing Line',
-    desc: '+1 food every 3s',
+    id: 'fishing', ico: '🎣', name: 'Shore Fishing',
+    desc: 'Passive camp rig · +1 🍖 every 3s (fish tiles on the map still drop food on their own)',
     baseCost: { wood: 180 },
     costScale: 1.8,
     apply: () => {},
@@ -1088,7 +1117,13 @@ function startExpedition() {
     health: 3,
     haul: { wood: 0, food: 0, berries: 0, signal: 0, flint: 0 },
     visited: new Set(),
+    finished: false,
+    wounded: false,
   };
+  const panel = document.getElementById('expeditionEnd');
+  panel.classList.remove('on', 'bad');
+  document.getElementById('mapLeaveBtn').textContent = 'Return to Camp';
+  document.getElementById('mapLastFind').textContent = '\u00a0';
   for (let y = 0; y < MAP_ROWS; y++) {
     for (let x = 0; x < MAP_COLS; x++) {
       exp.cells.push({ x, y, kind: rollTile(), used: false });
@@ -1174,7 +1209,7 @@ function renderMap(pickupInfo, pickupCoord) {
 
 function moveTo(x, y) {
   if (!exp) return;
-  if (exp.moves <= 0 || exp.health <= 0) return;
+  if (exp.finished) return;
   exp.pc.x = x; exp.pc.y = y;
   exp.moves--;
   const key = `${x},${y}`;
@@ -1186,13 +1221,28 @@ function moveTo(x, y) {
   }
   renderMap(pickupInfo, { x, y });
   if (exp.health <= 0) {
-    setTimeout(() => endExpedition(true), 600);
+    finishExpedition('BEAR MAULED YOU', 'Forced back by a bear · tap Return to Camp', 'bad', true);
     return;
   }
   if (exp.moves <= 0) {
-    setTimeout(() => endExpedition(false), 400);
+    finishExpedition('OUT OF MOVES', 'The light is failing · tap Return to Camp', 'neutral', false);
     return;
   }
+}
+
+function finishExpedition(title, body, tone, wounded) {
+  exp.finished = true;
+  exp.wounded = wounded;
+  const panel = document.getElementById('expeditionEnd');
+  panel.className = 'expedition-end on' + (tone === 'bad' ? ' bad' : '');
+  document.getElementById('expEndTitle').textContent = title;
+  const h = exp.haul;
+  document.getElementById('expEndBody').innerHTML =
+    `${body}<br><br>Haul: 🪵 ${h.wood} · 🍖 ${h.food} · 🫐 ${h.berries} · 🪨 ${h.flint} · +${h.signal} 🔥`;
+  // Also emphasize the Return button
+  const btn = document.getElementById('mapLeaveBtn');
+  btn.textContent = 'Bank the haul · Return to Camp';
+  btn.classList.add('primary');
 }
 
 function resolveEncounter(cell) {
@@ -1245,7 +1295,7 @@ function endExpedition(wounded) {
 
 document.getElementById('mapLeaveBtn').addEventListener('click', () => {
   if (!exp) return;
-  endExpedition(false);
+  endExpedition(exp.wounded);
 });
 
 window.addEventListener('keydown', (e) => {
@@ -1320,8 +1370,9 @@ document.getElementById('music').addEventListener('click', fToggle);
 
 // ---------- Boot ----------
 addLog('Day 1 — the plane is gone. You have a saw, your wits, and the pines.', 'big');
-addLog('The signal fire needs WOOD and FLINT to ignite. Find flint in the forest. Eat food or hunger will gnaw you.');
-addLog('Skunks, wolves and bears will test the camp — defend or pay for it.');
+addLog('Signal fire needs 5 🪵 + 1 🪨 flint per feed. 25 feeds to win. Flint only drops from forest expeditions.');
+addLog('Snare + Shore Fishing upgrades farm food at camp. Fish / berry tiles on the forest map drop food too — no rod needed.');
+addLog('Skunks, wolves and bears will test the camp — defend or pay for it. An expedition ends when moves or health run out; a summary panel tells you why.');
 renderAll();
 renderTreeHp();
 renderHouses();
