@@ -681,34 +681,54 @@ function costString(cost) {
 }
 function isCompassMaxed(u) { return u.id === 'compass' && (state.upgrades.compass || 0) >= 1; }
 
+const upgradeEls = {};
+
 function renderUpgrades() {
   const container = document.getElementById('upgrades');
   container.innerHTML = '<h3>⚒ UPGRADES</h3>';
   for (const u of UPGRADES) {
-    const owned = state.upgrades[u.id] || 0;
-    const cost = costFor(u);
-    const afford = canAfford(cost);
-    const maxed = isCompassMaxed(u);
     const el = document.createElement('div');
-    el.className = 'upgrade' + (afford && !maxed ? '' : ' locked');
+    el.className = 'upgrade';
     el.innerHTML = `
       <div class="ico">${u.ico}</div>
       <div class="info">
         <div class="uname">${u.name}</div>
         <div class="udesc">${u.desc}</div>
-        <div class="lvl">Owned · ${owned}${maxed ? ' (max)' : ''}</div>
+        <div class="lvl"></div>
       </div>
-      <div class="cost">${maxed ? '—' : costString(cost)}</div>`;
-    el.addEventListener('click', () => {
-      if (maxed) return;
-      if (!canAfford(cost)) { addLog(`Not enough for ${u.name}.`, 'bad'); return; }
-      spend(cost);
-      state.upgrades[u.id] = owned + 1;
-      u.apply();
-      addLog(`Built ${u.name} (x${owned + 1}).`, 'good');
-      renderAll();
-    });
+      <div class="cost"></div>`;
+    el.addEventListener('click', () => buyUpgrade(u));
+    upgradeEls[u.id] = el;
     container.appendChild(el);
+  }
+  updateUpgradeStates();
+}
+
+function buyUpgrade(u) {
+  const maxed = isCompassMaxed(u);
+  if (maxed) return;
+  const cost = costFor(u);
+  if (!canAfford(cost)) { addLog(`Not enough for ${u.name}.`, 'bad'); return; }
+  spend(cost);
+  const owned = state.upgrades[u.id] || 0;
+  state.upgrades[u.id] = owned + 1;
+  u.apply();
+  addLog(`Built ${u.name} (x${owned + 1}).`, 'good');
+  updateUpgradeStates();
+  renderHud();
+}
+
+function updateUpgradeStates() {
+  for (const u of UPGRADES) {
+    const el = upgradeEls[u.id];
+    if (!el) continue;
+    const owned = state.upgrades[u.id] || 0;
+    const cost = costFor(u);
+    const afford = canAfford(cost);
+    const maxed = isCompassMaxed(u);
+    el.classList.toggle('locked', !afford || maxed);
+    el.querySelector('.lvl').textContent = `Owned · ${owned}${maxed ? ' (max)' : ''}`;
+    el.querySelector('.cost').textContent = maxed ? '—' : costString(cost);
   }
 }
 
@@ -731,6 +751,7 @@ function renderHud() {
 function renderAll() {
   renderHud();
   renderUpgrades();
+  updateUpgradeStates();
 }
 
 // ---------- Tree clicker ----------
@@ -777,10 +798,12 @@ document.getElementById('tree').addEventListener('click', (e) => {
       void tree.offsetWidth;
       renderTreeHp();
       renderHud();
+      updateUpgradeStates();
     }, 620);
   }
   renderTreeHp();
   renderHud();
+  updateUpgradeStates();
 });
 
 // ---------- House display ----------
@@ -896,6 +919,7 @@ function tick(now) {
       state.exploreCooldown = Math.max(0, state.exploreCooldown - dt);
     }
     renderHud();
+    updateUpgradeStates();
     checkWin();
   }
   requestAnimationFrame(tick);
