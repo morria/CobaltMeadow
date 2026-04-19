@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Orb Rush">
+<meta name="theme-color" content="#0a0618">
+<title>Orb Rush · 3D Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #020208; color: #fff; font-family: 'Rajdhani', sans-serif; }
+  #game { position: fixed; inset: 0; touch-action: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  .hud {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    z-index: 10;
+  }
+  .hud .row {
+    background: rgba(10,6,30,0.65);
+    border: 1px solid #5040a0;
+    padding: 6px 12px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    text-shadow: 0 2px 4px #000;
+  }
+  .hud .row .v { color: #ffd060; }
+  .logo-tag {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    font-family: 'Bungee', sans-serif;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #c080ff;
+    background: rgba(10,6,30,0.65);
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #5040a0;
+    text-shadow: 0 0 8px rgba(180,120,255,0.6);
+    z-index: 10;
+  }
+  .hint {
+    position: fixed;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #c0a0ff;
+    background: rgba(10,6,30,0.65);
+    padding: 5px 14px;
+    border-radius: 4px;
+    border: 1px solid #5040a0;
+    z-index: 10;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(4,2,18,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #201040, #08041a);
+    border: 2px solid #c080ff;
+    padding: 28px 36px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 380px;
+    box-shadow: 0 0 40px rgba(180,120,255,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 16px; color: #d8c8f5; letter-spacing: 1px; }
+  button {
+    font-family: 'Russo One', sans-serif;
+    padding: 10px 18px;
+    border: 1.5px solid #c080ff;
+    background: linear-gradient(180deg, #3a1a68, #1a0838);
+    color: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+  button:hover { background: linear-gradient(180deg, #5028a0, #241050); box-shadow: 0 0 12px rgba(180,120,255,0.5); }
+
+  .joystick {
+    position: fixed;
+    bottom: 70px;
+    left: 24px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(10,6,30,0.6);
+    border: 2px solid #5040a0;
+    z-index: 5;
+    touch-action: none;
+    display: none;
+  }
+  .joystick .knob {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #c080ff, #5028a0);
+    box-shadow: 0 0 12px rgba(180,120,255,0.6);
+  }
+  .jump-btn {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffd060, #a06020);
+    border: 2px solid #ffd060;
+    color: #2a1400;
+    font-family: 'Bungee', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-align: center;
+    line-height: 72px;
+    box-shadow: 0 0 18px rgba(255,210,80,0.6);
+    z-index: 5;
+    touch-action: none;
+    cursor: pointer;
+    display: none;
+    user-select: none;
+  }
+  @media (pointer: coarse) {
+    .joystick, .jump-btn { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game"></div>
+
+<div class="hud">
+  <div class="row">ORBS · <span class="v" id="score">0 / 12</span></div>
+  <div class="row">TIME · <span class="v" id="timer">00.0</span></div>
+</div>
+<div class="logo-tag">ORB RUSH · 3D</div>
+<div class="hint">WASD / ARROWS to roll · SPACE jump · drag joystick on touch</div>
+
+<div class="joystick" id="joystick"><div class="knob" id="joystickKnob"></div></div>
+<div class="jump-btn" id="jumpBtn">JUMP</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <button id="overClose">Play Again</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- Scene ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0618);
+scene.fog = new THREE.Fog(0x1a0a30, 24, 70);
+
+const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(0, 6, 10);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('game').appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ---------- Lights ----------
+scene.add(new THREE.HemisphereLight(0xc0a0ff, 0x201048, 0.55));
+const sun = new THREE.DirectionalLight(0xfff0c0, 1.2);
+sun.position.set(18, 28, 12);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -32; sun.shadow.camera.right = 32;
+sun.shadow.camera.top = 32; sun.shadow.camera.bottom = -32;
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 80;
+scene.add(sun);
+
+const accent = new THREE.PointLight(0xff60a0, 0.8, 40);
+accent.position.set(-10, 6, -8);
+scene.add(accent);
+
+// ---------- Ground ----------
+const groundGeom = new THREE.PlaneGeometry(60, 60);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x2a1a4a, roughness: 0.85 });
+const ground = new THREE.Mesh(groundGeom, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const grid = new THREE.GridHelper(60, 30, 0x8060d0, 0x3a1a6a);
+grid.position.y = 0.02;
+scene.add(grid);
+
+// ---------- Boundary walls ----------
+const wallMat = new THREE.MeshStandardMaterial({ color: 0x4a2890, emissive: 0x2a0e60, emissiveIntensity: 0.6 });
+function makeWall(w, h, d, x, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+  m.position.set(x, h / 2, z);
+  m.castShadow = true; m.receiveShadow = true;
+  scene.add(m);
+}
+makeWall(60, 1.2, 1, 0, -30);
+makeWall(60, 1.2, 1, 0,  30);
+makeWall(1, 1.2, 60, -30, 0);
+makeWall(1, 1.2, 60,  30, 0);
+
+// ---------- Decor obstacles ----------
+const obsMat = new THREE.MeshStandardMaterial({ color: 0x6040c0, emissive: 0x20104a, emissiveIntensity: 0.4, metalness: 0.4, roughness: 0.35 });
+const obstacles = [];
+for (let i = 0; i < 9; i++) {
+  const s = 1.5 + Math.random() * 2;
+  const box = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), obsMat);
+  box.position.set((Math.random() - 0.5) * 48, s / 2, (Math.random() - 0.5) * 48);
+  box.rotation.y = Math.random() * Math.PI;
+  box.castShadow = true; box.receiveShadow = true;
+  scene.add(box);
+  obstacles.push({ mesh: box, size: s });
+}
+
+// Add a few floating rings for vibe
+const ringMat = new THREE.MeshStandardMaterial({ color: 0xff80c0, emissive: 0xff4080, emissiveIntensity: 0.4, metalness: 0.5, roughness: 0.3 });
+for (let i = 0; i < 4; i++) {
+  const r = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.18, 12, 32), ringMat);
+  r.position.set((Math.random() - 0.5) * 40, 4 + Math.random() * 4, (Math.random() - 0.5) * 40);
+  r.rotation.x = Math.random() * Math.PI;
+  r.rotation.y = Math.random() * Math.PI;
+  r.castShadow = true;
+  scene.add(r);
+}
+
+// ---------- Player ball ----------
+const ball = new THREE.Mesh(
+  new THREE.SphereGeometry(0.6, 32, 32),
+  new THREE.MeshStandardMaterial({ color: 0xff6080, emissive: 0x500018, emissiveIntensity: 0.35, roughness: 0.25, metalness: 0.6 })
+);
+ball.position.y = 0.6;
+ball.castShadow = true;
+scene.add(ball);
+
+// ---------- Orbs ----------
+const orbMat = new THREE.MeshStandardMaterial({ color: 0xffd060, emissive: 0xff8020, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.7 });
+const orbs = [];
+function placeOrb(i) {
+  const orb = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.22, 14, 28), orbMat);
+  let tries = 0;
+  do {
+    orb.position.set((Math.random() - 0.5) * 50, 1.1, (Math.random() - 0.5) * 50);
+    tries++;
+  } while (tries < 40 && orb.position.distanceTo(ball.position) < 5);
+  orb.userData.phase = i * 0.6;
+  orb.castShadow = true;
+  scene.add(orb);
+  orbs.push(orb);
+}
+for (let i = 0; i < 12; i++) placeOrb(i);
+
+// ---------- Particles ----------
+const particles = [];
+function spawnParticles(position) {
+  const count = 22;
+  const geom = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    positions[i*3]   = position.x;
+    positions[i*3+1] = position.y;
+    positions[i*3+2] = position.z;
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xffd060, size: 0.28, transparent: true, opacity: 1 });
+  const pts = new THREE.Points(geom, mat);
+  pts.userData = {
+    life: 1,
+    velocities: Array.from({length: count}, () => new THREE.Vector3(
+      (Math.random() - 0.5) * 0.4,
+      Math.random() * 0.35,
+      (Math.random() - 0.5) * 0.4
+    )),
+  };
+  scene.add(pts);
+  particles.push(pts);
+}
+
+// ---------- Physics / Input ----------
+const velocity = new THREE.Vector3();
+const MOVE_ACCEL = 0.028;
+const FRICTION = 0.90;
+const MAX_SPEED = 0.36;
+const GRAVITY = -0.025;
+const JUMP_V = 0.38;
+let vy = 0;
+let grounded = true;
+
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.code === 'Space') { keys.space = true; e.preventDefault(); }
+});
+window.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+  if (e.code === 'Space') keys.space = false;
+});
+
+// Virtual joystick for touch
+let joy = { x: 0, y: 0, active: false };
+const joyEl = document.getElementById('joystick');
+const knob = document.getElementById('joystickKnob');
+const jumpBtn = document.getElementById('jumpBtn');
+function setJoy(e) {
+  if (!joy.active) return;
+  const r = joyEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const dx = e.clientX - cx;
+  const dy = e.clientY - cy;
+  const max = r.width / 2 - 10;
+  const d = Math.hypot(dx, dy);
+  const clamped = Math.min(1, d / max);
+  joy.x = (dx / (d || 1)) * clamped;
+  joy.y = (dy / (d || 1)) * clamped;
+  knob.style.left = (50 + joy.x * 50 * 0.7) + '%';
+  knob.style.top  = (50 + joy.y * 50 * 0.7) + '%';
+}
+joyEl.addEventListener('pointerdown', e => { joy.active = true; joyEl.setPointerCapture(e.pointerId); setJoy(e); });
+joyEl.addEventListener('pointermove', e => setJoy(e));
+joyEl.addEventListener('pointerup', e => {
+  joy.active = false; joy.x = joy.y = 0;
+  knob.style.left = '50%'; knob.style.top = '50%';
+});
+jumpBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (grounded) { vy = JUMP_V; grounded = false; }
+});
+
+// ---------- Game state ----------
+const totalOrbs = orbs.length;
+let score = 0;
+const startTime = performance.now();
+let finished = false;
+
+function updateHud() {
+  document.getElementById('score').textContent = `${score} / ${totalOrbs}`;
+  document.getElementById('timer').textContent = ((performance.now() - startTime) / 1000).toFixed(1);
+}
+
+function obstacleCollide(pos) {
+  const pR = 0.6;
+  for (const o of obstacles) {
+    const half = o.size / 2 + pR;
+    const dx = pos.x - o.mesh.position.x;
+    const dz = pos.z - o.mesh.position.z;
+    if (Math.abs(dx) < half && Math.abs(dz) < half) {
+      // Determine push-out axis
+      const pushX = half - Math.abs(dx);
+      const pushZ = half - Math.abs(dz);
+      if (pushX < pushZ) {
+        pos.x += Math.sign(dx) * pushX;
+        velocity.x = 0;
+      } else {
+        pos.z += Math.sign(dz) * pushZ;
+        velocity.z = 0;
+      }
+    }
+  }
+}
+
+// ---------- Animate ----------
+function animate(now) {
+  if (finished) return;
+
+  // Input → acceleration
+  let ax = 0, az = 0;
+  if (keys['arrowup']    || keys['w']) az -= MOVE_ACCEL;
+  if (keys['arrowdown']  || keys['s']) az += MOVE_ACCEL;
+  if (keys['arrowleft']  || keys['a']) ax -= MOVE_ACCEL;
+  if (keys['arrowright'] || keys['d']) ax += MOVE_ACCEL;
+  ax += joy.x * MOVE_ACCEL;
+  az += joy.y * MOVE_ACCEL;
+
+  velocity.x = (velocity.x + ax) * FRICTION;
+  velocity.z = (velocity.z + az) * FRICTION;
+  const speed = Math.hypot(velocity.x, velocity.z);
+  if (speed > MAX_SPEED) {
+    velocity.x *= MAX_SPEED / speed;
+    velocity.z *= MAX_SPEED / speed;
+  }
+
+  if (keys.space && grounded) {
+    vy = JUMP_V;
+    grounded = false;
+  }
+  vy += GRAVITY;
+  ball.position.y += vy;
+  if (ball.position.y <= 0.6) {
+    ball.position.y = 0.6;
+    vy = 0;
+    grounded = true;
+  }
+
+  ball.position.x += velocity.x;
+  ball.position.z += velocity.z;
+  ball.position.x = Math.max(-28.8, Math.min(28.8, ball.position.x));
+  ball.position.z = Math.max(-28.8, Math.min(28.8, ball.position.z));
+  obstacleCollide(ball.position);
+
+  // Rolling effect
+  ball.rotation.z -= velocity.x * 2.2;
+  ball.rotation.x += velocity.z * 2.2;
+
+  // Camera chase
+  const camOffset = new THREE.Vector3(-velocity.x * 3, 5.5, -velocity.z * 3 + 9);
+  const camTarget = ball.position.clone().add(camOffset);
+  camera.position.lerp(camTarget, 0.12);
+  camera.lookAt(ball.position.x, ball.position.y + 0.5, ball.position.z);
+
+  // Orbs bob + rotate + collect
+  for (let i = orbs.length - 1; i >= 0; i--) {
+    const orb = orbs[i];
+    orb.rotation.y += 0.045;
+    orb.position.y = 1.1 + Math.sin(now / 500 + orb.userData.phase) * 0.3;
+    if (orb.position.distanceTo(ball.position) < 1.25) {
+      scene.remove(orb);
+      orbs.splice(i, 1);
+      score++;
+      spawnParticles(orb.position);
+      updateHud();
+      if (score >= totalOrbs) {
+        finished = true;
+        const t = ((performance.now() - startTime) / 1000).toFixed(1);
+        document.getElementById('overTitle').textContent = 'ALL ORBS COLLECTED';
+        document.getElementById('overBody').textContent = `Time: ${t}s`;
+        document.getElementById('overlay').classList.add('on');
+      }
+    }
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.userData.life -= 0.022;
+    if (p.userData.life <= 0) {
+      scene.remove(p);
+      particles.splice(i, 1);
+      continue;
+    }
+    p.material.opacity = p.userData.life;
+    const arr = p.geometry.attributes.position.array;
+    for (let j = 0; j < p.userData.velocities.length; j++) {
+      const v = p.userData.velocities[j];
+      v.y -= 0.012;
+      arr[j*3]     += v.x;
+      arr[j*3 + 1] += v.y;
+      arr[j*3 + 2] += v.z;
+    }
+    p.geometry.attributes.position.needsUpdate = true;
+  }
+
+  updateHud();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+document.getElementById('overClose').addEventListener('click', () => location.reload());
+</script>
+</body>
+</html>
