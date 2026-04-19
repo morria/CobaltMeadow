@@ -289,6 +289,41 @@
     overflow-y: auto;
     line-height: 1.35;
   }
+
+  .attack-banner {
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #4a1020, #1a0608);
+    border: 2px solid #ff6040;
+    border-radius: 6px;
+    padding: 10px 16px;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 0 20px rgba(255,80,60,0.6);
+    max-width: 520px;
+    width: calc(100% - 28px);
+  }
+  .attack-banner.hidden { display: none; }
+  .attack-banner .attack-ico { font-size: 28px; }
+  .attack-banner .attack-info { flex: 1; min-width: 0; font-size: 12px; color: #ffe0d0; line-height: 1.3; }
+  .attack-banner .attack-info b { font-family: 'Russo One', sans-serif; color: #ff8060; letter-spacing: 2px; font-size: 12px; }
+  .attack-banner .timer {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #ff6040, #ffd060);
+    transition: width 0.1s linear;
+  }
+  .attack-banner button {
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
   .log .entry { margin: 2px 0; color: #c0d080; }
   .log .entry.good { color: #a0ffa0; }
   .log .entry.bad  { color: #ff9a7a; }
@@ -518,7 +553,7 @@
   <div class="res"><div class="ico">🪵</div><div class="name">Wood</div><div class="num" id="woodN">0</div></div>
   <div class="res"><div class="ico">🍖</div><div class="name">Food</div><div class="num" id="foodN">0</div></div>
   <div class="res"><div class="ico">🫐</div><div class="name">Berries</div><div class="num" id="berryN">0</div></div>
-  <div class="res"><div class="ico">🔥</div><div class="name">Firewood</div><div class="num" id="fireN">0</div></div>
+  <div class="res"><div class="ico">🪨</div><div class="name">Flint</div><div class="num" id="flintN">0</div></div>
 </div>
 
 <div class="main-area">
@@ -542,7 +577,7 @@
     <div class="saw-level" id="sawLevelV">Saw Level 1 · +1 wood / click</div>
     <div class="house-row" id="houseRow"></div>
     <div class="manual-actions">
-      <button id="buildFireBtn">🔥 Feed Signal Fire<br><span style="font-size:9px;color:#ffc080">-5 🪵 · +4 signal</span></button>
+      <button id="buildFireBtn">🔥 Feed Signal Fire<br><span style="font-size:9px;color:#ffc080">-5 🪵 · -1 🪨 · +4 signal</span></button>
       <button id="eatBtn">🍖 Cook & Eat<br><span style="font-size:9px;color:#ffc080">-2 🍖 · +10 morale</span></button>
     </div>
     <button id="exploreBtn" class="primary" style="margin-top:4px;width:100%">🗺 Go Exploring</button>
@@ -554,6 +589,13 @@
 </div>
 
 <div class="log" id="log"></div>
+
+<div class="attack-banner hidden" id="attackBanner">
+  <div class="attack-ico" id="attackIco">🦨</div>
+  <div class="attack-info" id="attackInfo"></div>
+  <button id="defendBtn" class="primary">DEFEND</button>
+  <div class="timer" id="attackTimer"></div>
+</div>
 
 <!-- Rogue-like expedition map -->
 <div class="map-overlay" id="mapOverlay">
@@ -584,9 +626,9 @@
 // ---------- State ----------
 const state = {
   wood: 0,
-  food: 0,
+  food: 2,
   berries: 0,
-  fire: 0,        // firewood stockpile (unused here but displayed)
+  flint: 0,       // new: needed to ignite signal fire
   signal: 0,      // 0 - 100
   morale: 60,     // 0 - 100
   day: 1,
@@ -739,7 +781,7 @@ function renderHud() {
   document.getElementById('woodN').textContent = Math.floor(state.wood);
   document.getElementById('foodN').textContent = Math.floor(state.food);
   document.getElementById('berryN').textContent = Math.floor(state.berries);
-  document.getElementById('fireN').textContent = Math.floor(state.fire);
+  document.getElementById('flintN').textContent = Math.floor(state.flint);
   document.getElementById('sawLevelV').textContent =
     `Saw Level ${state.sawLevel} · +${state.sawLevel} per click`;
   const cd = Math.max(0, state.exploreCooldown);
@@ -835,10 +877,12 @@ function renderHouses() {
 // Manual actions
 document.getElementById('buildFireBtn').addEventListener('click', () => {
   if (state.gameOver) return;
-  if (state.wood < 5) { addLog('Need 5 wood to feed the signal fire.', 'bad'); return; }
+  if (state.flint < 1) { addLog('No flint! Head into the forest to find some rocks.', 'bad'); return; }
+  if (state.wood  < 5) { addLog('Need 5 wood to feed the signal fire.', 'bad'); return; }
   state.wood -= 5;
+  state.flint -= 1;
   state.signal = Math.min(100, state.signal + 4);
-  addLog('You feed the signal fire (+4 signal).', 'good');
+  addLog('Flint sparks wood · signal fire roars (+4 signal).', 'good');
   renderAll();
   checkWin();
 });
@@ -860,7 +904,71 @@ document.getElementById('exploreBtn').addEventListener('click', () => {
 
 // ---------- Tick ----------
 let lastTick = performance.now();
-let timeAcc = { snare: 0, shelter: 0, fishing: 0, signalFire: 0, house: 0, day: 0, decay: 0 };
+let timeAcc = { snare: 0, shelter: 0, fishing: 0, signalFire: 0, house: 0, day: 0, decay: 0, meal: 0, attack: 0 };
+let activeAttack = null;
+const ATTACK_DURATION = 14000;
+const ATTACKS = {
+  skunk: { ico: '🦨', name: 'Skunk',
+    msg: 'A skunk is circling the food cache!',
+    cost: { food: 2 },
+    dmg: () => { state.food = Math.max(0, state.food - 6); state.morale = Math.max(0, state.morale - 4); return 'Food stank for days · −6 🍖 −4 morale.'; },
+  },
+  wolf:  { ico: '🐺', name: 'Wolf',
+    msg: 'Wolves are stalking the tree line!',
+    cost: { wood: 6 },
+    dmg: () => { state.food = Math.max(0, state.food - 4); state.morale = Math.max(0, state.morale - 14); return 'Wolves got into the stores · −4 🍖 −14 morale.'; },
+  },
+  bear:  { ico: '🐻', name: 'Bear',
+    msg: 'A bear is at the camp!',
+    cost: { wood: 10, flint: 1 },
+    dmg: () => {
+      state.morale = Math.max(0, state.morale - 22);
+      state.wood   = Math.max(0, state.wood - 12);
+      // Chance to destroy a log cabin
+      const houses = state.upgrades.house || 0;
+      if (houses > 0) { state.upgrades.house = houses - 1; renderHouses(); return 'A cabin is smashed · −12 🪵 −22 morale.'; }
+      return 'Bear wrecked the camp · −12 🪵 −22 morale.';
+    },
+  },
+};
+
+function triggerAttack() {
+  const r = Math.random();
+  const type = r < 0.55 ? 'skunk' : r < 0.88 ? 'wolf' : 'bear';
+  activeAttack = { type, startTime: performance.now(), duration: ATTACK_DURATION };
+  const a = ATTACKS[type];
+  document.getElementById('attackIco').textContent = a.ico;
+  document.getElementById('attackInfo').innerHTML = `<b>${a.name.toUpperCase()} ATTACK</b><br>${a.msg}`;
+  document.getElementById('defendBtn').textContent = `DEFEND · ${costString(a.cost)}`;
+  document.getElementById('attackBanner').classList.remove('hidden');
+  addLog(`ALERT: ${a.name} at the camp — defend or suffer!`, 'bad');
+}
+
+function defendAttack() {
+  if (!activeAttack) return;
+  const a = ATTACKS[activeAttack.type];
+  if (!canAfford(a.cost)) { addLog(`Not enough to defend against ${a.name}.`, 'bad'); return; }
+  spend(a.cost);
+  addLog(`You drove off the ${a.name.toLowerCase()}.`, 'good');
+  clearAttack();
+}
+
+function resolveAttackTimeout() {
+  if (!activeAttack) return;
+  const a = ATTACKS[activeAttack.type];
+  const note = a.dmg();
+  addLog(`The ${a.name.toLowerCase()} got through · ${note}`, 'bad');
+  clearAttack();
+  if (state.morale <= 0) gameOver(false, 'morale');
+}
+
+function clearAttack() {
+  activeAttack = null;
+  document.getElementById('attackBanner').classList.add('hidden');
+  renderAll();
+}
+
+document.getElementById('defendBtn').addEventListener('click', defendAttack);
 
 function tick(now) {
   const dt = Math.min(0.1, (now - lastTick) / 1000);
@@ -908,6 +1016,30 @@ function tick(now) {
       timeAcc.decay = 0;
       if (state.morale <= 0) { gameOver(false, 'morale'); }
     }
+    // Meals: eat food every 18s — if empty, morale suffers (hunger)
+    if (timeAcc.meal >= 18) {
+      timeAcc.meal = 0;
+      if (state.food > 0) {
+        state.food--;
+      } else {
+        state.morale = Math.max(0, state.morale - 3);
+        addLog('Hunger gnaws · −3 morale.', 'bad');
+        if (state.morale <= 0) { gameOver(false, 'morale'); }
+      }
+    }
+    // Attacks
+    if (activeAttack) {
+      const elapsed = performance.now() - activeAttack.startTime;
+      const pct = Math.max(0, 1 - elapsed / activeAttack.duration);
+      document.getElementById('attackTimer').style.width = (pct * 100) + '%';
+      if (elapsed >= activeAttack.duration) resolveAttackTimeout();
+    } else {
+      timeAcc.attack += dt;
+      if (timeAcc.attack > 35 + Math.random() * 25) {
+        timeAcc.attack = 0;
+        triggerAttack();
+      }
+    }
     // Day progression: advance every 60s
     if (timeAcc.day >= 60) {
       state.day++;
@@ -954,7 +1086,7 @@ function startExpedition() {
     pc: { x: Math.floor(MAP_COLS / 2), y: Math.floor(MAP_ROWS / 2) },
     moves: 12 + extraMoves,
     health: 3,
-    haul: { wood: 0, food: 0, berries: 0, signal: 0 },
+    haul: { wood: 0, food: 0, berries: 0, signal: 0, flint: 0 },
     visited: new Set(),
   };
   for (let y = 0; y < MAP_ROWS; y++) {
@@ -972,11 +1104,12 @@ function startExpedition() {
 
 function rollTile() {
   const r = Math.random();
-  if (r < 0.40) return 'grass';
-  if (r < 0.60) return 'tree';
-  if (r < 0.75) return 'berry';
-  if (r < 0.82) return 'fish';
-  if (r < 0.95) return 'bear';
+  if (r < 0.30) return 'grass';
+  if (r < 0.48) return 'tree';
+  if (r < 0.60) return 'berry';
+  if (r < 0.72) return 'fish';
+  if (r < 0.84) return 'flint';
+  if (r < 0.94) return 'bear';
   return 'chest';
 }
 
@@ -987,6 +1120,7 @@ function tileGlyph(kind) {
     case 'berry':  return '🫐';
     case 'fish':   return '🐟';
     case 'bear':   return '🐻';
+    case 'flint':  return '🪨';
     case 'chest':  return '🎁';
     case 'start':  return '🏕';
     default:       return '';
@@ -1015,7 +1149,7 @@ function renderMap(pickupInfo, pickupCoord) {
   }
   const h = exp.haul;
   document.getElementById('mapHaul').innerHTML =
-    `🪵 ${h.wood} · 🍖 ${h.food} · 🫐 ${h.berries} · 🔥 ${h.signal}`;
+    `🪵 ${h.wood} · 🍖 ${h.food} · 🫐 ${h.berries} · 🪨 ${h.flint} · 🔥 ${h.signal}`;
 
   const lastFind = document.getElementById('mapLastFind');
   if (pickupInfo) {
@@ -1078,9 +1212,13 @@ function resolveEncounter(cell) {
       exp.health -= 1;
       exp.moves = Math.max(0, exp.moves - 1);
       return { text: 'BEAR! −1 health, −1 move', chip: '−1 ❤', bad: true };
+    case 'flint':
+      exp.haul.flint += 2;
+      return { text: '+2 flint — fire starter!', chip: '+2 🪨', bad: false };
     case 'chest':
       exp.haul.signal += 6;
-      return { text: 'Plane wreckage · +6 signal!', chip: '+6 🔥', bad: false };
+      exp.haul.flint += 1;
+      return { text: 'Plane wreckage · +6 signal +1 🪨!', chip: '+6 🔥', bad: false };
   }
   return null;
 }
@@ -1090,13 +1228,13 @@ function endExpedition(wounded) {
   state.wood += h.wood;
   state.food += h.food;
   state.berries += h.berries;
+  state.flint += h.flint;
   state.signal = Math.min(100, state.signal + h.signal);
   if (h.berries > 0) {
-    // Berries count as food too (simplified)
     state.food += Math.floor(h.berries * 0.5);
   }
   state.exploreCooldown = 25;
-  const summary = `Returned with 🪵${h.wood} 🍖${h.food} 🫐${h.berries} 🔥+${h.signal} signal`;
+  const summary = `Returned with 🪵${h.wood} 🍖${h.food} 🫐${h.berries} 🪨${h.flint} 🔥+${h.signal} signal`;
   addLog(wounded ? `Bruised and scared. ${summary}` : summary, wounded ? 'bad' : 'good');
   if (wounded) state.morale = Math.max(0, state.morale - 8);
   document.getElementById('mapOverlay').classList.remove('on');
@@ -1182,7 +1320,8 @@ document.getElementById('music').addEventListener('click', fToggle);
 
 // ---------- Boot ----------
 addLog('Day 1 — the plane is gone. You have a saw, your wits, and the pines.', 'big');
-addLog('Click a pine to saw it down. Build cabins, feed the signal fire, or head into the rogue forest for rare loot.');
+addLog('The signal fire needs WOOD and FLINT to ignite. Find flint in the forest. Eat food or hunger will gnaw you.');
+addLog('Skunks, wolves and bears will test the camp — defend or pay for it.');
 renderAll();
 renderTreeHp();
 renderHouses();
