@@ -326,6 +326,16 @@
     filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
   }
 
+  .miner {
+    position: absolute;
+    width: clamp(34px, 5vw, 50px);
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    pointer-events: none;
+    transition: left 0.3s linear, top 0.3s linear;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));
+  }
+
   .scene.underground {
     background: linear-gradient(180deg, #1a0c08 0%, #281408 45%, #3a1a08 100%);
   }
@@ -755,6 +765,30 @@ const DRONE_SVG = `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
   <path d="M 26 34 L 24 40 L 30 38 L 36 40 L 34 34 Z" fill="#303038" stroke="#1a1c28" stroke-width="1"/>
 </svg>`;
 
+// ---------- Miner bot SVG ----------
+const MINER_SVG = `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- body -->
+  <rect x="16" y="18" width="28" height="20" rx="3" fill="#4a4048" stroke="#1a1418" stroke-width="1.2"/>
+  <!-- eyes -->
+  <circle cx="24" cy="26" r="3" fill="#ff8040">
+    <animate attributeName="fill" values="#ff8040;#ffd080;#ff8040" dur="0.9s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="36" cy="26" r="3" fill="#ff8040">
+    <animate attributeName="fill" values="#ff8040;#ffd080;#ff8040" dur="0.9s" repeatCount="indefinite"/>
+  </circle>
+  <rect x="22" y="32" width="16" height="3" fill="#181014"/>
+  <!-- treads -->
+  <rect x="12" y="38" width="36" height="8" rx="2" fill="#2a2228" stroke="#1a1418" stroke-width="1"/>
+  <g fill="#403840">
+    <circle cx="18" cy="42" r="2"/>
+    <circle cx="30" cy="42" r="2"/>
+    <circle cx="42" cy="42" r="2"/>
+  </g>
+  <!-- drill arm -->
+  <rect x="42" y="22" width="8" height="4" fill="#302830"/>
+  <polygon points="50,20 58,24 50,28" fill="#a08060" stroke="#302830" stroke-width="0.8"/>
+</svg>`;
+
 // ---------- Robot SVG ----------
 const ROBOT_SVG = `<svg viewBox="0 0 120 170" xmlns="http://www.w3.org/2000/svg">
   <!-- chimney smoke -->
@@ -853,7 +887,7 @@ const BOMB_GRAVITY = 0.06;    // gentle arc, bombs travel farther
 let birdX = 18, birdY = 50;          // percent of scene
 let targetX = 18, targetY = 50;
 let bird, robot, city;
-let bombs = [], blasts = [], drones = [];
+let bombs = [], blasts = [], drones = [], miners = [];
 let lastShot = 0, lastBlast = 0, lastCityTick = 0;
 let running = false;
 let phase = 'boss';                  // 'boss' | 'swarm' | 'dig' | 'rebuild'
@@ -883,7 +917,7 @@ function startBattle() {
   bird = { hp: BIRD_HP, maxHp: BIRD_HP };
   robot = { hp: ROBOT_HP, maxHp: ROBOT_HP };
   city = { hp: CITY_HP, maxHp: CITY_HP };
-  bombs = []; blasts = []; drones = []; dirtBlocks = []; digButton = null; digPressed = false; rebuildPct = 0;
+  bombs = []; blasts = []; drones = []; miners = []; dirtBlocks = []; digButton = null; digPressed = false; rebuildPct = 0;
   swarmKilled = 0;
   birdX = targetX = 18; birdY = targetY = 50;
   lastShot = lastBlast = lastCityTick = performance.now();
@@ -896,7 +930,7 @@ function startBattle() {
 
 function clearStrayEls() {
   const scene = document.getElementById('scene');
-  scene.querySelectorAll('.bomb,.blast,.boom,.drone,.dirt,.dig-btn,.phase-banner,.rebuild-bar').forEach(e => e.remove());
+  scene.querySelectorAll('.bomb,.blast,.boom,.drone,.miner,.dirt,.dig-btn,.phase-banner,.rebuild-bar').forEach(e => e.remove());
 }
 
 function showBanner(text, sub) {
@@ -987,6 +1021,20 @@ function loop(now) {
   }
   // ---- PHASE: DIG ----
   else if (phase === 'dig') {
+    // miner bots periodically fire at bird
+    for (const m of miners) {
+      if (now - m.lastShot > m.cool) {
+        m.lastShot = now;
+        spawnDroneShot(m);
+      }
+    }
+    // drift miners gently
+    for (const m of miners) {
+      m.t += 0.03;
+      m.el.style.left = m.baseX + Math.sin(m.t) * 3 + '%';
+      m.el.style.top  = m.baseY + Math.cos(m.t * 0.8) * 2 + '%';
+    }
+    updateBlasts();
     updateBombs(hitDirt);
     // check if button reached
     if (digButton && digButton.hp <= 0 && !digPressed) {
@@ -1088,6 +1136,23 @@ function hitDrones(b, sceneRect) {
 }
 
 function hitDirt(b, sceneRect) {
+  // Check miners
+  for (let i = miners.length - 1; i >= 0; i--) {
+    const m = miners[i];
+    const r = m.el.getBoundingClientRect();
+    const mbox = {
+      left: r.left - sceneRect.left, right: r.right - sceneRect.left,
+      top:  r.top  - sceneRect.top,  bottom: r.bottom - sceneRect.top,
+    };
+    if (b.x >= mbox.left && b.x <= mbox.right && b.y >= mbox.top && b.y <= mbox.bottom) {
+      m.hp -= b.dmg;
+      if (m.hp <= 0) {
+        m.el.remove();
+        miners.splice(i, 1);
+      }
+      return true;
+    }
+  }
   // Check button
   if (digButton) {
     const r = digButton.el.getBoundingClientRect();
@@ -1291,6 +1356,26 @@ function startDig() {
   btn.style.top  = '68%';
   scene.appendChild(btn);
   digButton = { el: btn, hp: 3 };
+
+  // Spawn a few weak miner bots to harass the bird while digging
+  const minerSpots = [
+    { x: 28, y: 60 },
+    { x: 34, y: 78 },
+    { x: 24, y: 82 },
+  ];
+  for (const spot of minerSpots) {
+    const m = document.createElement('div');
+    m.className = 'miner';
+    m.innerHTML = MINER_SVG;
+    m.style.left = spot.x + '%';
+    m.style.top  = spot.y + '%';
+    scene.appendChild(m);
+    miners.push({
+      el: m, baseX: spot.x, baseY: spot.y, t: Math.random() * Math.PI * 2,
+      hp: 1, lastShot: performance.now() + 1200 + Math.random() * 2000,
+      cool: 3200 + Math.random() * 1800,
+    });
+  }
 }
 
 function startRebuild() {
@@ -1299,6 +1384,9 @@ function startRebuild() {
   rebuildPct = 0;
   document.querySelectorAll('.dirt').forEach(e => e.remove());
   dirtBlocks = [];
+  miners.forEach(m => m.el.remove());
+  miners = [];
+  blasts.forEach(b => b.el.remove()); blasts = [];
   if (digButton) digButton.el.classList.add('pressed');
   const scene = document.getElementById('scene');
   scene.classList.remove('underground');
