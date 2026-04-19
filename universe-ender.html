@@ -341,7 +341,7 @@
 
   .hud-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 8px;
   }
   .hud-box {
@@ -367,6 +367,32 @@
   }
   .hud-bar .fill { height: 100%; transition: width 0.25s; }
   .hud-bar.bh .fill { background: linear-gradient(90deg, #1a1030, #6030ff, #ff60a0); }
+  .hud-bar { position: relative; }
+  .hud-bar .bh-mark {
+    position: absolute;
+    top: -2px; bottom: -2px;
+    width: 2px;
+    background: #ffd060;
+    transform: translateX(-50%);
+    box-shadow: 0 0 6px #ffd060;
+    opacity: 0.8;
+    pointer-events: none;
+  }
+  .freq-bar .tgt-trail {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .freq-bar .tgt-trail span {
+    position: absolute;
+    top: 2px; bottom: 2px;
+    width: 3px;
+    background: #60ff90;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
 
   /* Frequency dial */
   .freq-panel {
@@ -419,7 +445,6 @@
     transform: translateX(-50%);
     pointer-events: none;
     box-shadow: 0 0 14px rgba(100,255,140,0.8);
-    transition: left 0.3s;
   }
   .freq-hint {
     font-size: 10px;
@@ -695,25 +720,25 @@
 
   <div class="hud-row">
     <div class="hud-box">
-      <div class="lbl">Black Hole · Mass</div>
-      <div class="hud-bar bh"><div class="fill" id="bhHp"></div></div>
-    </div>
-    <div class="hud-box">
-      <div class="lbl">Your Ship · Hull</div>
-      <div class="hud-bar"><div class="fill" id="shipHp" style="background:linear-gradient(90deg,#60a0ff,#a0e0ff)"></div></div>
+      <div class="lbl">Black Hole · Mass (drain to 0 to win)</div>
+      <div class="hud-bar bh">
+        <div class="fill" id="bhHp"></div>
+        <div class="bh-mark" id="bhStartMark"></div>
+      </div>
     </div>
   </div>
 
   <div class="freq-panel">
     <div class="title">
-      <span>Wave Frequency</span>
-      <span class="nums">YOU <span id="freqV">500</span> Hz · <span class="target">TARGET <span id="tgtV">500</span> Hz</span></span>
+      <span>Wave Frequency · set then fire (wave flight ≈ 1.4s)</span>
+      <span class="nums">YOU <span id="freqV">500</span> · <span class="target">TGT <span id="tgtV">500</span> Hz</span></span>
     </div>
     <div class="freq-bar" id="freqBar">
+      <div class="tgt-trail" id="tgtTrail"></div>
       <div class="target-marker" id="tgtMarker"></div>
       <div class="needle" id="freqNeedle"></div>
     </div>
-    <div class="freq-hint"><span id="matchHint">Tune the needle to the green marker, then fire.</span></div>
+    <div class="freq-hint"><span id="matchHint">Target drifts smoothly. Predict where it'll land when your wave arrives.</span></div>
   </div>
 
   <div class="controls-row">
@@ -725,10 +750,11 @@
   <div class="tutorial-box">
     <h3>HOW TO FIGHT A BLACK HOLE</h3>
     <ul>
-      <li><span class="icon">✋</span><span><b>DRAG ANYWHERE</b> on the star field to fly your ship. Keep a safe distance from the event horizon.</span></li>
-      <li><span class="icon">🎚️</span><span><b>TUNE THE WAVE BAR</b> — drag the white needle onto the glowing green marker to match the hole's resonant frequency.</span></li>
-      <li><span class="icon">🌀</span><span><b>FIRE</b> when the bar reads <i>MATCH</i>. A matched wave bleeds mass as Hawking radiation. A mismatched wave feeds the hole.</span></li>
-      <li><span class="icon">⏳</span><span>The target frequency <b>drifts every few seconds</b> — re-tune and fire again.</span></li>
+      <li><span class="icon">🛰️</span><span>Your ship <b>orbits automatically</b> at a safe distance. You do not steer.</span></li>
+      <li><span class="icon">🎚️</span><span><b>TUNE THE WAVE BAR</b> — drag the white needle to where you think the hole's resonant frequency will be when your wave arrives.</span></li>
+      <li><span class="icon">〰️</span><span>The target frequency (green marker) <b>drifts continuously</b>. A faint trail shows its recent path — use it to predict ahead.</span></li>
+      <li><span class="icon">🌀</span><span><b>Fire</b> and the wave takes <b>~1.4 sec</b> to reach the hole. Damage is judged at impact — lead the shot.</span></li>
+      <li><span class="icon">☠️</span><span>A mismatched wave <b>feeds the black hole</b>. Miss too often and it consumes Earth.</span></li>
     </ul>
     <button class="primary got-it" id="tutorialClose">GOT IT — ENGAGE</button>
   </div>
@@ -771,21 +797,41 @@ const MATCH_TOLERANCE = 70;  // Hz within which damage applies
 let bh, ship, waves = [];
 let bfState = null;   // battle state
 let tutorialShown = false;
+const WAVE_TRAVEL_MS = 1400;
+const ORBIT_RADIUS_PCT = 35;     // distance from hole center (percent of min stage dim)
+const ORBIT_SPEED = 0.55;        // rad/sec
+const TRAIL_COUNT = 8;           // target-history dots
+const TRAIL_INTERVAL_MS = 110;   // spacing of trail samples
 
 function startBattle() {
   show('battle');
-  bh = { hp: 100, maxHp: 100, targetFreq: 520, shiftAt: performance.now() + 14000, dying: false, firstShift: true };
+  bh = {
+    hp: 50, maxHp: 100,
+    targetFreq: 500,
+    t0: performance.now(),
+    dying: false,
+    trail: [],              // [{t, f}, ...]
+  };
   ship = {
-    x: 15, y: 82,       // % positions within stage (far from hole at 50,48)
-    tx: 15, ty: 82,
-    hp: 5, maxHp: 5,
+    orbitAngle: -Math.PI / 2,   // start top
+    x: 50, y: 12,               // computed each tick
     freq: 500,
     lastFire: 0,
   };
   waves = [];
   bhEl.classList.remove('dying', 'hurt');
   bhEl.style.width = bhEl.style.height = '120px';
-  shipEl.classList.remove('hurt');
+  // Build trail dots once
+  const trailHost = document.getElementById('tgtTrail');
+  trailHost.innerHTML = '';
+  for (let i = 0; i < TRAIL_COUNT; i++) {
+    const d = document.createElement('span');
+    d.style.opacity = '0';
+    trailHost.appendChild(d);
+  }
+  // Start-mark on mass bar (shows 50% line)
+  document.getElementById('bhStartMark').style.left = '50%';
+  driftTarget(0);
   updateHud();
   if (!tutorialShown) {
     document.getElementById('tutorial').classList.add('on');
@@ -797,20 +843,14 @@ function startBattle() {
   }
 }
 
-function pickNewTarget() {
-  // Move target toward a new random value. First shift stays close to 500; later shifts can range further.
-  let t;
-  if (bh.firstShift) {
-    // Easy first target: 440-580 Hz
-    t = 440 + Math.floor(Math.random() * 8) * 20;
-    bh.firstShift = false;
-  } else {
-    do {
-      t = FREQ_MIN + Math.floor(Math.random() * (FREQ_MAX - FREQ_MIN) / 20) * 20;
-    } while (Math.abs(t - bh.targetFreq) < 120);
-  }
-  bh.targetFreq = t;
-  bh.shiftAt = performance.now() + (8000 + Math.random() * 5000);
+function driftTarget(elapsedMs) {
+  const t = elapsedMs / 1000;
+  // Sum of three sines — smooth, quasi-periodic, not trivially guessable.
+  const f = 500
+          + 170 * Math.sin(t * 0.31)
+          +  90 * Math.sin(t * 0.79 + 1.3)
+          +  50 * Math.sin(t * 1.63 + 2.5);
+  bh.targetFreq = Math.max(FREQ_MIN + 20, Math.min(FREQ_MAX - 20, f));
 }
 
 function freqToPct(f) {
@@ -819,22 +859,32 @@ function freqToPct(f) {
 
 function updateHud() {
   document.getElementById('bhHp').style.width = (bh.hp / bh.maxHp * 100) + '%';
-  document.getElementById('shipHp').style.width = (ship.hp / ship.maxHp * 100) + '%';
   document.getElementById('freqV').textContent = Math.round(ship.freq);
   document.getElementById('tgtV').textContent = Math.round(bh.targetFreq);
   document.getElementById('freqNeedle').style.left = freqToPct(ship.freq) + '%';
   document.getElementById('tgtMarker').style.left = freqToPct(bh.targetFreq) + '%';
+  // Trail dots — older samples fainter.
+  const dots = document.getElementById('tgtTrail').children;
+  for (let i = 0; i < dots.length; i++) {
+    const s = bh.trail[bh.trail.length - 1 - i];
+    if (s) {
+      dots[i].style.left = freqToPct(s.f) + '%';
+      dots[i].style.opacity = (0.5 * (1 - i / dots.length)).toFixed(2);
+    } else {
+      dots[i].style.opacity = '0';
+    }
+  }
   const diff = Math.abs(ship.freq - bh.targetFreq);
   const hint = document.getElementById('matchHint');
   if (diff <= MATCH_TOLERANCE) {
-    hint.innerHTML = `<span class="match">MATCH · wave will hit for ${Math.round(damageFor(diff))} damage</span>`;
+    hint.innerHTML = `<span class="match">Aligned NOW (Δ${Math.round(diff)} Hz) — but your wave flies ${(WAVE_TRAVEL_MS/1000).toFixed(1)}s. Will it still match at impact?</span>`;
     document.getElementById('fireBtn').classList.add('ready');
   } else {
-    hint.textContent = `Off by ${Math.round(diff)} Hz — slide the needle toward the green marker.`;
+    hint.textContent = `Δ ${Math.round(diff)} Hz now. Predict where the target will drift in ${(WAVE_TRAVEL_MS/1000).toFixed(1)}s.`;
     document.getElementById('fireBtn').classList.remove('ready');
   }
-  // Black hole size scales with mass
-  const scale = 0.35 + (bh.hp / bh.maxHp) * 0.95;
+  // Black hole size scales with mass (larger when closer to consuming Earth)
+  const scale = 0.45 + (bh.hp / bh.maxHp) * 0.85;
   const px = 120 * scale;
   bhEl.style.width = bhEl.style.height = px + 'px';
 }
@@ -842,7 +892,7 @@ function updateHud() {
 function damageFor(diff) {
   if (diff > MATCH_TOLERANCE) return 0;
   const pct = 1 - (diff / MATCH_TOLERANCE);
-  return 6 + pct * 12; // 6 .. 18
+  return 3 + pct * 7; // 3 .. 10
 }
 
 // ---------- Ship control ----------
@@ -854,23 +904,6 @@ window.addEventListener('keydown', e => {
   if (e.key === '.' || e.key === ']') ship && (ship.freq = Math.min(FREQ_MAX, ship.freq + 10));
 });
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-
-(function wireShip() {
-  let dragging = false;
-  function setTarget(e) {
-    if (!ship) return;
-    const r = stage.getBoundingClientRect();
-    ship.tx = Math.max(5, Math.min(95, (e.clientX - r.left) / r.width * 100));
-    ship.ty = Math.max(5, Math.min(95, (e.clientY - r.top) / r.height * 100));
-  }
-  stage.addEventListener('pointerdown', e => {
-    dragging = true;
-    try { stage.setPointerCapture(e.pointerId); } catch(_) {}
-    setTarget(e);
-  });
-  stage.addEventListener('pointermove', e => { if (dragging) setTarget(e); });
-  stage.addEventListener('pointerup', e => { dragging = false; try { stage.releasePointerCapture(e.pointerId); } catch(_) {} });
-})();
 
 (function wireFreq() {
   const bar = document.getElementById('freqBar');
@@ -902,14 +935,13 @@ document.getElementById('tutorialClose').addEventListener('click', () => {
 function tryFire() {
   if (!ship || bfState !== 'running') return;
   const now = performance.now();
-  if (now - ship.lastFire < 600) return;
+  if (now - ship.lastFire < 850) return;
   ship.lastFire = now;
   const r = stage.getBoundingClientRect();
   const shipX = r.width * ship.x / 100;
   const shipY = r.height * ship.y / 100;
   const bhX = r.width * 0.5;
   const bhY = r.height * 0.48;
-  // Spawn wave
   const el = document.createElement('div');
   el.className = 'wave';
   const hue = ((ship.freq - FREQ_MIN) / (FREQ_MAX - FREQ_MIN)) * 300;
@@ -925,7 +957,7 @@ function tryFire() {
     dx: bhX - shipX, dy: bhY - shipY,
     size: 16, maxSize: 140,
     freq: ship.freq,
-    life: 1000,
+    life: WAVE_TRAVEL_MS,
     born: now,
   });
 }
@@ -937,38 +969,38 @@ function battleTick(now) {
   if (bfState !== 'running') return;
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
-  // Ship move (ease toward target)
-  ship.x += (ship.tx - ship.x) * 0.12;
-  ship.y += (ship.ty - ship.y) * 0.12;
-  // Gravitational pull — only kicks in near the event horizon, and is modest
-  const dxPct = 50 - ship.x, dyPct = 48 - ship.y;
-  const distPct = Math.hypot(dxPct, dyPct);
-  if (distPct < 30) {
-    const proximity = 1 - (distPct / 30);
-    const pullStrength = proximity * proximity * 0.015 * (bh.hp / bh.maxHp);
-    ship.tx += dxPct * pullStrength;
-    ship.ty += dyPct * pullStrength;
-  }
+
+  // Ship orbits automatically around the black hole.
+  ship.orbitAngle += ORBIT_SPEED * dt;
+  const rStage = stage.getBoundingClientRect();
+  // Orbit path is circular in stage-min-dimension units so it doesn't stretch on wide screens.
+  const minDim = Math.min(rStage.width, rStage.height);
+  const orbitPx = minDim * (ORBIT_RADIUS_PCT / 100);
+  const bhXPx = rStage.width * 0.5;
+  const bhYPx = rStage.height * 0.48;
+  const shipXPx = bhXPx + Math.cos(ship.orbitAngle) * orbitPx;
+  const shipYPx = bhYPx + Math.sin(ship.orbitAngle) * orbitPx;
+  ship.x = (shipXPx / rStage.width) * 100;
+  ship.y = (shipYPx / rStage.height) * 100;
   shipEl.style.left = ship.x + '%';
   shipEl.style.top  = ship.y + '%';
-  // Point toward black hole
-  const rStage = stage.getBoundingClientRect();
-  const angle = Math.atan2((48 - ship.y) * rStage.height / 100, (50 - ship.x) * rStage.width / 100);
+  // Ship points radially inward toward the hole.
+  const angle = Math.atan2(bhYPx - shipYPx, bhXPx - shipXPx);
   shipEl.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI + 90}deg)`;
 
-  // Target frequency shift
-  if (now >= bh.shiftAt) {
-    pickNewTarget();
+  // Smooth target-frequency drift, sampled every frame.
+  driftTarget(now - bh.t0);
+  // Append to trail at a fixed cadence so old samples fall off smoothly.
+  const lastSample = bh.trail[bh.trail.length - 1];
+  if (!lastSample || now - lastSample.t >= TRAIL_INTERVAL_MS) {
+    bh.trail.push({ t: now, f: bh.targetFreq });
+    if (bh.trail.length > TRAIL_COUNT + 1) bh.trail.shift();
   }
 
-  // Move waves
+  // Move waves.
   for (let i = waves.length - 1; i >= 0; i--) {
     const w = waves[i];
     const t = Math.min(1, (now - w.born) / w.life);
-    const cx = (rStage.width * ship.x / 100) + (w.dx * t);
-    const cy = (rStage.height * ship.y / 100) + (w.dy * t);
-    // Actually let wave travel from its spawn point; simpler:
-    // Use stored initial x/y and interpolate toward bh center.
     const curSize = 16 + (w.maxSize - 16) * t;
     w.el.style.left = (w.x + w.dx * t) + 'px';
     w.el.style.top  = (w.y + w.dy * t) + 'px';
@@ -976,7 +1008,7 @@ function battleTick(now) {
     w.el.style.height = curSize + 'px';
     w.el.style.opacity = (1 - t * 0.35).toString();
     if (t >= 1) {
-      // Wave reaches BH — apply damage based on frequency match
+      // Damage judged at IMPACT against the live target frequency.
       const diff = Math.abs(w.freq - bh.targetFreq);
       const dmg = damageFor(diff);
       if (dmg > 0) {
@@ -984,32 +1016,20 @@ function battleTick(now) {
         bhEl.classList.add('hurt');
         setTimeout(() => bhEl.classList.remove('hurt'), 160);
       } else {
-        // Wrong frequency — wave absorbed; black hole gains a tiny bit
-        bh.hp = Math.min(bh.maxHp, bh.hp + 1);
+        // Mis-fire feeds the hole.
+        bh.hp = Math.min(bh.maxHp, bh.hp + 3);
       }
       w.el.remove();
       waves.splice(i, 1);
-      updateHud();
-      if (bh.hp <= 0) evaporate();
+      if (bh.hp <= 0) { evaporate(); return; }
+      if (bh.hp >= bh.maxHp) {
+        endBattle(false, 'The black hole reached critical mass and swallowed Earth.');
+        return;
+      }
     }
   }
 
-  // Black hole pulls and damages if ship gets too close to event horizon
-  const shipXPx = rStage.width * ship.x / 100;
-  const shipYPx = rStage.height * ship.y / 100;
-  const bhXPx = rStage.width * 0.5, bhYPx = rStage.height * 0.48;
-  const dist = Math.hypot(shipXPx - bhXPx, shipYPx - bhYPx);
-  const bhRadius = parseFloat(bhEl.style.width) / 2;
-  if (dist < bhRadius * 0.55) {
-    // Caught in gravity well
-    ship.hp = Math.max(0, ship.hp - 0.06);
-    shipEl.classList.add('hurt');
-    updateHud();
-    if (ship.hp <= 0) { endBattle(false, 'The gravity well took you.'); return; }
-  } else {
-    shipEl.classList.remove('hurt');
-  }
-
+  updateHud();
   requestAnimationFrame(battleTick);
 }
 
