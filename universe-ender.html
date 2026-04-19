@@ -76,74 +76,168 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    perspective: 1400px;
   }
   .magazine {
-    background: #efe4c8;
-    color: #241a08;
-    width: min(520px, 92%);
-    aspect-ratio: 3 / 4;
-    border-radius: 4px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 1px #a08050;
-    padding: 22px 26px;
-    font-family: 'Crimson Text', Georgia, serif;
-    font-size: 15px;
-    line-height: 1.55;
-    overflow: hidden;
+    width: min(360px, 92vw);
+    aspect-ratio: 2.2 / 3;
     position: relative;
     transform: rotate(-2deg);
     transition: transform 0.5s, opacity 0.5s;
+    cursor: pointer;
+    filter: drop-shadow(0 16px 28px rgba(0,0,0,0.75));
   }
-  .magazine.turned { transform: rotate(-2deg) translateY(-30px); opacity: 0.2; }
-  .magazine .masthead {
-    font-family: 'Bungee', sans-serif;
-    font-size: 18px;
-    letter-spacing: 2px;
+  .magazine.turned { transform: rotate(-2deg) translateY(-20px); opacity: 0; pointer-events: none; }
+  .mag-cover, .mag-inside {
+    position: absolute;
+    inset: 0;
+    background: #efe4c8;
+    color: #241a08;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #8a6040, inset 0 0 20px rgba(120,60,20,0.12);
+    backface-visibility: hidden;
+  }
+  .mag-cover {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.55s ease, opacity 0.4s;
+    transform-origin: left center;
+    z-index: 2;
+  }
+  .mag-cover.flipped { transform: rotateY(-165deg); opacity: 0; pointer-events: none; }
+  .mag-cover .mast {
+    background: #a81818;
+    color: #fff5d8;
     text-align: center;
-    border-bottom: 2px solid #241a08;
-    padding-bottom: 6px;
-    margin-bottom: 14px;
-    color: #7a1818;
+    font-family: 'Bungee', sans-serif;
+    letter-spacing: 3px;
+    padding: 6px 4px 4px;
+    font-size: 22px;
+    box-shadow: 0 2px 0 #600;
   }
-  .magazine .section {
+  .mag-cover .strap {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #5a3818;
+    padding: 4px 10px;
+    border-bottom: 1px solid #a08050;
+  }
+  .cover-art {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(180deg, #0a0418 0%, #1a0638 40%, #3a1058 80%, #160420 100%);
+    overflow: hidden;
+  }
+  .cover-art svg { width: 100%; height: 100%; display: block; }
+  .cover-headline {
+    position: absolute;
+    bottom: 28%;
+    left: 8%; right: 8%;
+    text-align: center;
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    font-size: clamp(34px, 6.4vw, 44px);
+    letter-spacing: 3px;
+    line-height: 1;
+    text-shadow: 0 2px 0 #601018, 0 4px 12px #000;
+  }
+  .cover-subhead {
+    position: absolute;
+    bottom: 20%;
+    left: 6%; right: 6%;
+    text-align: center;
+    font-family: 'Russo One', sans-serif;
+    color: #fff5d8;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 4px #000;
+  }
+  .cover-lines {
+    position: absolute;
+    bottom: 6%;
+    left: 6%;
     font-family: 'Russo One', sans-serif;
     font-size: 10px;
-    letter-spacing: 3px;
-    color: #7a4818;
-    margin-bottom: 6px;
+    letter-spacing: 1px;
+    color: #ffd060;
+    line-height: 1.5;
+    text-shadow: 0 1px 2px #000;
   }
-  .magazine p { margin: 0 0 10px; }
-  .magazine em { color: #7a1818; font-style: italic; font-weight: 700; }
-  .intro-controls { text-align: center; }
-
-  /* Launch transition */
-  .launch-stage {
-    position: relative;
-    flex: 1;
-    min-height: 260px;
-    overflow: hidden;
-    background: radial-gradient(ellipse at 50% 70%, rgba(255,160,60,0.25), transparent 50%),
-                linear-gradient(180deg, #020108 0%, #060218 60%, #000 100%);
-    border: 1px solid #3a2068;
-    border-radius: 6px;
-  }
-  @keyframes launch { 0%{bottom:5%}100%{bottom:110%}}
-  .launch-stage .rocket {
+  .cover-lines b { color: #ff6060; }
+  .cover-lines .p { color: #fff5d8; }
+  .cover-prompt {
     position: absolute;
-    left: 50%;
-    bottom: 5%;
-    transform: translateX(-50%);
-    font-size: clamp(52px, 10vw, 82px);
-    animation: launch 3s ease-in forwards;
-    filter: drop-shadow(0 0 18px #ffa040);
+    bottom: 6%;
+    right: 6%;
+    font-family: 'Bungee', sans-serif;
+    color: #fff5d8;
+    font-size: 10px;
+    letter-spacing: 3px;
+    background: rgba(10,4,26,0.6);
+    padding: 4px 10px;
+    border: 1px solid #ffd060;
+    border-radius: 3px;
+    animation: coverBlink 1.3s ease-in-out infinite;
   }
-  .launch-stage .starfield {
-    position: absolute; inset: 0;
-    background-image: radial-gradient(circle, #fff 0.8px, transparent 1px);
-    background-size: 100px 100px;
-    animation: starStream 0.8s linear infinite;
-    opacity: 0.7;
+  @keyframes coverBlink {
+    0%, 100% { box-shadow: 0 0 8px rgba(255,210,80,0.3); }
+    50%      { box-shadow: 0 0 16px rgba(255,210,80,0.8); }
   }
-  @keyframes starStream { from { background-position-y: 0; } to { background-position-y: 300px; } }
+
+  .mag-inside {
+    padding: 18px 22px;
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 14px;
+    line-height: 1.55;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 1;
+  }
+  .mag-inside .page-header {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #8a4818;
+    border-bottom: 1px solid #241a08;
+    padding-bottom: 4px;
+  }
+  .mag-inside h1 {
+    font-family: 'Bungee', sans-serif;
+    color: #7a1818;
+    font-size: 22px;
+    letter-spacing: 2px;
+    margin: 10px 0 4px;
+    line-height: 1.1;
+  }
+  .mag-inside .deck {
+    font-style: italic;
+    color: #4a2a0a;
+    margin: 0 0 8px;
+    font-size: 14px;
+  }
+  .mag-inside p { margin: 0 0 8px; color: #241a08; font-size: 13px; }
+  .mag-inside em { color: #7a1818; font-style: italic; font-weight: 700; font-size: 16px; }
+  .mag-inside .stamp {
+    font-family: 'Bungee', sans-serif;
+    color: #a81818;
+    font-size: 16px;
+    letter-spacing: 4px;
+    text-align: center;
+    margin-top: 10px;
+    transform: rotate(-3deg);
+    border: 2px solid #a81818;
+    padding: 4px 10px;
+    align-self: center;
+    background: rgba(168,24,24,0.1);
+  }
+  .intro-controls { text-align: center; display: flex; gap: 8px; justify-content: center; }
 
   /* Space battle */
   .battle-stage {
@@ -369,6 +463,61 @@
   button.fire:active:not(:disabled) { transform: scale(0.96); }
   button.fire.ready { box-shadow: 0 0 18px rgba(255,100,160,0.6); }
 
+  /* Tutorial */
+  .tutorial {
+    position: fixed; inset: 0;
+    background: rgba(3,2,8,0.78);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 350;
+    padding: 18px;
+    backdrop-filter: blur(2px);
+  }
+  .tutorial.on { display: flex; }
+  .tutorial-box {
+    background: linear-gradient(180deg, #1a083a, #06021a);
+    border: 2px solid #a070ff;
+    border-radius: 6px;
+    padding: 18px 20px 16px;
+    max-width: 380px;
+    box-shadow: 0 0 34px rgba(160,112,255,0.5);
+    color: #dcc8ff;
+  }
+  .tutorial-box h3 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 8px;
+    letter-spacing: 3px;
+    font-size: 18px;
+    text-align: center;
+  }
+  .tutorial-box ul {
+    list-style: none;
+    padding: 0; margin: 0 0 12px;
+  }
+  .tutorial-box li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .tutorial-box li .icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    line-height: 1;
+    width: 28px;
+    text-align: center;
+    filter: drop-shadow(0 0 6px rgba(160,112,255,0.6));
+  }
+  .tutorial-box li b { color: #ffd060; font-family: 'Russo One', sans-serif; letter-spacing: 1px; }
+  .tutorial-box .got-it {
+    display: block;
+    margin: 10px auto 0;
+    min-width: 140px;
+  }
+
   .overlay {
     position: fixed; inset: 0;
     background: rgba(3,2,8,0.94);
@@ -446,29 +595,81 @@
 <div class="scene" id="scene-intro">
   <div class="magazine-wrap">
     <div class="magazine" id="magazine">
-      <div class="masthead">ATLAS WEEKLY</div>
-      <div class="section">DISPATCH · APRIL 29</div>
-      <p id="mag-p1">You're flipping through a magazine.</p>
-      <p id="mag-p2">Tuesday afternoon. The light is doing that thing through the kitchen window.</p>
-      <p id="mag-p3">Recipes. A crossword you already did. A horoscope.</p>
-      <p id="mag-p4">You turn to the last page. Then you see the headline at the bottom.</p>
-      <p id="mag-p5" style="font-weight:700"><em>A BLACK HOLE THE SIZE OF THE SUN HAS APPEARED IN OUR SOLAR SYSTEM.</em></p>
-      <p id="mag-p6">"It is consuming everything. The Earth has days left."</p>
-      <p id="mag-p7">"Three volunteers — scientists — will fly up to try to stop it."</p>
-      <p id="mag-p8">You read the last word: <em>you.</em></p>
+      <div class="mag-inside">
+        <div class="page-header"><span>ATLAS WEEKLY · P.72</span><span>DISPATCH</span></div>
+        <h1>A SHADOW ON THE SUN</h1>
+        <div class="deck">Astronomers confirm a solar-mass singularity has entered the orbit of Mercury. Days, not weeks, remain.</div>
+        <p>It was Tuesday afternoon. The light was doing that thing through the kitchen window. You had turned past the recipes, past a crossword you'd already done, past the horoscope — to the last page.</p>
+        <p><em>A black hole the size of the sun has appeared in our solar system.</em> It is consuming everything. The Earth has days left.</p>
+        <p>Three volunteers — scientists — will fly up to try to stop it. They are carrying a device that reshapes their ship's emissions into tuned gravitational waves. Match the hole's resonant frequency, and the mass bleeds out as Hawking radiation faster than it can accrete.</p>
+        <p>The last line of the article names the third volunteer.</p>
+        <p style="text-align:center;font-size:17px;"><em>you.</em></p>
+        <div class="stamp">YOU VOLUNTEERED</div>
+      </div>
+      <div class="mag-cover" id="magCover">
+        <div class="mast">ATLAS WEEKLY</div>
+        <div class="strap"><span>APRIL 29</span><span>$6.95 · ISSUE 1204</span></div>
+        <div class="cover-art">
+          <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="bhCoverGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#000"/>
+                <stop offset="55%" stop-color="#180818"/>
+                <stop offset="90%" stop-color="#8040d0" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#c060ff" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="diskCoverGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="45%" stop-color="transparent"/>
+                <stop offset="52%" stop-color="#ff8040" stop-opacity="0.9"/>
+                <stop offset="58%" stop-color="#ffd060" stop-opacity="0.6"/>
+                <stop offset="66%" stop-color="#6040ff" stop-opacity="0.5"/>
+                <stop offset="78%" stop-color="transparent"/>
+              </radialGradient>
+              <radialGradient id="earthCoverGrad" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#80d0ff"/>
+                <stop offset="60%" stop-color="#2060a0"/>
+                <stop offset="100%" stop-color="#081838"/>
+              </radialGradient>
+            </defs>
+            <!-- starfield -->
+            <g fill="#fff">
+              <circle cx="30" cy="40" r="0.9"/>
+              <circle cx="70" cy="80" r="0.6"/>
+              <circle cx="260" cy="30" r="0.8"/>
+              <circle cx="220" cy="110" r="0.5"/>
+              <circle cx="20" cy="200" r="0.7"/>
+              <circle cx="280" cy="220" r="0.9"/>
+              <circle cx="150" cy="20" r="0.6"/>
+              <circle cx="100" cy="330" r="0.7"/>
+              <circle cx="250" cy="360" r="0.5"/>
+              <circle cx="40" cy="320" r="0.5"/>
+            </g>
+            <!-- lensing halo -->
+            <ellipse cx="170" cy="150" rx="120" ry="115" fill="url(#diskCoverGrad)"/>
+            <!-- black hole -->
+            <circle cx="170" cy="150" r="55" fill="url(#bhCoverGrad)"/>
+            <circle cx="170" cy="150" r="26" fill="#000"/>
+            <!-- warped light ring -->
+            <ellipse cx="170" cy="150" rx="88" ry="14" fill="none" stroke="#ffd060" stroke-width="1.6" opacity="0.85"/>
+            <ellipse cx="170" cy="150" rx="100" ry="8" fill="none" stroke="#ff6040" stroke-width="1" opacity="0.65"/>
+            <!-- tiny Earth in foreground -->
+            <circle cx="60" cy="320" r="22" fill="url(#earthCoverGrad)"/>
+            <path d="M44 318 q8 -6 16 -2 q10 6 18 -2 q4 4 -2 10 q-8 6 -18 2 q-8 -2 -14 -8 z" fill="#4a9050" opacity="0.75"/>
+          </svg>
+        </div>
+        <div class="cover-headline">SOLAR<br>FATE</div>
+        <div class="cover-subhead">THE OBJECT EATING OUR SYSTEM</div>
+        <div class="cover-lines">
+          <b>p.72</b> <span class="p">· Days not weeks</span><br>
+          <b>p.48</b> <span class="p">· Three volunteers</span><br>
+          <b>p.21</b> <span class="p">· The tuning weapon</span>
+        </div>
+        <div class="cover-prompt">TAP TO OPEN</div>
+      </div>
     </div>
   </div>
   <div class="intro-controls">
     <button id="boardBtn" class="primary" disabled>Board the Ship</button>
-    <button id="skipBtn">Skip intro</button>
-  </div>
-</div>
-
-<!-- SCENE: Launch transition -->
-<div class="scene hidden" id="scene-launch">
-  <div class="launch-stage">
-    <div class="starfield"></div>
-    <div class="rocket">🚀</div>
   </div>
 </div>
 
@@ -520,6 +721,19 @@
   </div>
 </div>
 
+<div class="tutorial" id="tutorial">
+  <div class="tutorial-box">
+    <h3>HOW TO FIGHT A BLACK HOLE</h3>
+    <ul>
+      <li><span class="icon">✋</span><span><b>DRAG ANYWHERE</b> on the star field to fly your ship. Keep a safe distance from the event horizon.</span></li>
+      <li><span class="icon">🎚️</span><span><b>TUNE THE WAVE BAR</b> — drag the white needle onto the glowing green marker to match the hole's resonant frequency.</span></li>
+      <li><span class="icon">🌀</span><span><b>FIRE</b> when the bar reads <i>MATCH</i>. A matched wave bleeds mass as Hawking radiation. A mismatched wave feeds the hole.</span></li>
+      <li><span class="icon">⏳</span><span>The target frequency <b>drifts every few seconds</b> — re-tune and fire again.</span></li>
+    </ul>
+    <button class="primary got-it" id="tutorialClose">GOT IT — ENGAGE</button>
+  </div>
+</div>
+
 <div class="overlay" id="overlay">
   <div class="overlay-box">
     <h2 id="overTitle">—</h2>
@@ -536,38 +750,15 @@ function show(id) {
 }
 
 // ---------- Intro ----------
-const magParas = ['mag-p1','mag-p2','mag-p3','mag-p4','mag-p5','mag-p6','mag-p7','mag-p8'];
-magParas.forEach(id => document.getElementById(id).style.opacity = '0');
+const magCover = document.getElementById('magCover');
+magCover.addEventListener('click', () => {
+  magCover.classList.add('flipped');
+  document.getElementById('boardBtn').disabled = false;
+});
 
-function runIntro(withAnimation = true) {
-  if (!withAnimation) {
-    magParas.forEach(id => document.getElementById(id).style.opacity = '1');
-    document.getElementById('boardBtn').disabled = false;
-    return;
-  }
-  let i = 0;
-  function reveal() {
-    if (i >= magParas.length) {
-      document.getElementById('boardBtn').disabled = false;
-      return;
-    }
-    const el = document.getElementById(magParas[i]);
-    el.style.transition = 'opacity 0.8s';
-    el.style.opacity = '1';
-    i++;
-    setTimeout(reveal, 900);
-  }
-  reveal();
-}
-runIntro();
-
-document.getElementById('skipBtn').addEventListener('click', () => runIntro(false));
 document.getElementById('boardBtn').addEventListener('click', () => {
   document.getElementById('magazine').classList.add('turned');
-  setTimeout(() => {
-    show('launch');
-    setTimeout(startBattle, 2900);
-  }, 500);
+  setTimeout(() => { startBattle(); }, 550);
 });
 
 // ---------- Battle ----------
@@ -579,13 +770,14 @@ const MATCH_TOLERANCE = 70;  // Hz within which damage applies
 
 let bh, ship, waves = [];
 let bfState = null;   // battle state
+let tutorialShown = false;
 
 function startBattle() {
   show('battle');
-  bh = { hp: 100, maxHp: 100, targetFreq: 500, shiftAt: performance.now() + 9000, dying: false };
+  bh = { hp: 100, maxHp: 100, targetFreq: 520, shiftAt: performance.now() + 14000, dying: false, firstShift: true };
   ship = {
-    x: 30, y: 50,       // % positions within stage
-    tx: 30, ty: 50,
+    x: 15, y: 82,       // % positions within stage (far from hole at 50,48)
+    tx: 15, ty: 82,
     hp: 5, maxHp: 5,
     freq: 500,
     lastFire: 0,
@@ -594,21 +786,31 @@ function startBattle() {
   bhEl.classList.remove('dying', 'hurt');
   bhEl.style.width = bhEl.style.height = '120px';
   shipEl.classList.remove('hurt');
-  pickNewTarget();
   updateHud();
-  bfState = 'running';
-  lastTime = performance.now();
-  requestAnimationFrame(battleTick);
+  if (!tutorialShown) {
+    document.getElementById('tutorial').classList.add('on');
+    bfState = 'tutorial';
+  } else {
+    bfState = 'running';
+    lastTime = performance.now();
+    requestAnimationFrame(battleTick);
+  }
 }
 
 function pickNewTarget() {
-  // Move target toward a new random value, avoiding staying in place
+  // Move target toward a new random value. First shift stays close to 500; later shifts can range further.
   let t;
-  do {
-    t = FREQ_MIN + Math.floor(Math.random() * (FREQ_MAX - FREQ_MIN) / 20) * 20;
-  } while (Math.abs(t - bh.targetFreq) < 120);
+  if (bh.firstShift) {
+    // Easy first target: 440-580 Hz
+    t = 440 + Math.floor(Math.random() * 8) * 20;
+    bh.firstShift = false;
+  } else {
+    do {
+      t = FREQ_MIN + Math.floor(Math.random() * (FREQ_MAX - FREQ_MIN) / 20) * 20;
+    } while (Math.abs(t - bh.targetFreq) < 120);
+  }
   bh.targetFreq = t;
-  bh.shiftAt = performance.now() + (7000 + Math.random() * 5000);
+  bh.shiftAt = performance.now() + (8000 + Math.random() * 5000);
 }
 
 function freqToPct(f) {
@@ -687,6 +889,16 @@ window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
 document.getElementById('fireBtn').addEventListener('click', tryFire);
 
+document.getElementById('tutorialClose').addEventListener('click', () => {
+  document.getElementById('tutorial').classList.remove('on');
+  tutorialShown = true;
+  if (bfState === 'tutorial') {
+    bfState = 'running';
+    lastTime = performance.now();
+    requestAnimationFrame(battleTick);
+  }
+});
+
 function tryFire() {
   if (!ship || bfState !== 'running') return;
   const now = performance.now();
@@ -728,10 +940,15 @@ function battleTick(now) {
   // Ship move (ease toward target)
   ship.x += (ship.tx - ship.x) * 0.12;
   ship.y += (ship.ty - ship.y) * 0.12;
-  // Gravitational pull toward center (mass-scaled)
-  const pullStrength = (bh.hp / bh.maxHp) * 0.04;
-  ship.tx += (50 - ship.tx) * pullStrength;
-  ship.ty += (48 - ship.ty) * pullStrength;
+  // Gravitational pull — only kicks in near the event horizon, and is modest
+  const dxPct = 50 - ship.x, dyPct = 48 - ship.y;
+  const distPct = Math.hypot(dxPct, dyPct);
+  if (distPct < 30) {
+    const proximity = 1 - (distPct / 30);
+    const pullStrength = proximity * proximity * 0.015 * (bh.hp / bh.maxHp);
+    ship.tx += dxPct * pullStrength;
+    ship.ty += dyPct * pullStrength;
+  }
   shipEl.style.left = ship.x + '%';
   shipEl.style.top  = ship.y + '%';
   // Point toward black hole
