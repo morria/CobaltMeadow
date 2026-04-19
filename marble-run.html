@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Marble Run">
+<meta name="theme-color" content="#0a0618">
+<title>Marble Run · 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #060418; color: #fff; font-family: 'Rajdhani', sans-serif; }
+  #game { position: fixed; inset: 0; touch-action: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hud {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    z-index: 10;
+    min-width: 200px;
+  }
+  .hud .row {
+    background: rgba(10,6,30,0.65);
+    border: 1px solid #5040a0;
+    padding: 6px 12px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+  }
+  .hud .row .v { color: #ffd060; }
+  .title {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    font-family: 'Bungee', sans-serif;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #ffd060;
+    background: rgba(10,6,30,0.65);
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #5040a0;
+    z-index: 10;
+    text-shadow: 0 0 8px rgba(255,210,80,0.6);
+  }
+  .controls {
+    position: fixed;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    font-family: 'Russo One', sans-serif;
+    padding: 10px 18px;
+    border: 1.5px solid #c080ff;
+    background: linear-gradient(180deg, #3a1a68, #1a0838);
+    color: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-size: 13px;
+    min-height: 44px;
+    text-transform: uppercase;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #5028a0, #241050); box-shadow: 0 0 12px rgba(180,120,255,0.5); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #a06020, #5a3010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #c88028, #6e4018); }
+  .finish-banner {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    letter-spacing: 6px;
+    font-size: 44px;
+    text-shadow: 0 0 18px rgba(255,210,80,0.9), 0 3px 6px #000;
+    padding: 12px 32px;
+    background: rgba(10,5,26,0.75);
+    border: 3px solid #ffd060;
+    border-radius: 8px;
+    display: none;
+    z-index: 50;
+    animation: bannerIn 0.6s ease-out;
+  }
+  @keyframes bannerIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  .finish-banner.on { display: block; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="title">MARBLE RUN · 3D</div>
+<div class="hud">
+  <div class="row">STEP · <span class="v" id="step">ready</span></div>
+  <div class="row">MARBLES · <span class="v" id="marbles">A, B, C</span></div>
+</div>
+<div class="controls">
+  <button id="playBtn" class="primary">▶ RELEASE MARBLE A</button>
+  <button id="resetBtn">RESET</button>
+</div>
+<div class="finish-banner" id="finishBanner">FINISH!</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- Scene ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060418);
+scene.fog = new THREE.Fog(0x10082a, 30, 80);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(0, 6, 22);
+camera.lookAt(0, 4, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('game').appendChild(renderer.domElement);
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ---------- Lights ----------
+scene.add(new THREE.HemisphereLight(0xc0a0ff, 0x201048, 0.5));
+const sun = new THREE.DirectionalLight(0xfff0c0, 1.3);
+sun.position.set(10, 30, 18);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -22; sun.shadow.camera.right = 22;
+sun.shadow.camera.top = 22; sun.shadow.camera.bottom = -22;
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 60;
+scene.add(sun);
+scene.add(new THREE.PointLight(0xff80c0, 0.7, 40).translateX(0).translateY(2).translateZ(5));
+
+// ---------- Ground ----------
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(60, 30),
+  new THREE.MeshStandardMaterial({ color: 0x1a1040, roughness: 0.9 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const grid = new THREE.GridHelper(60, 30, 0x8060d0, 0x3a1a6a);
+grid.position.y = 0.01;
+scene.add(grid);
+
+// ---------- Materials ----------
+const matWood = new THREE.MeshStandardMaterial({ color: 0x8a5a2a, roughness: 0.7 });
+const matWoodDark = new THREE.MeshStandardMaterial({ color: 0x5a3a1a, roughness: 0.8 });
+const matMetal = new THREE.MeshStandardMaterial({ color: 0x888898, metalness: 0.6, roughness: 0.4 });
+const matRed   = new THREE.MeshStandardMaterial({ color: 0xff4060, emissive: 0x300010, emissiveIntensity: 0.3, metalness: 0.5, roughness: 0.25 });
+const matBlue  = new THREE.MeshStandardMaterial({ color: 0x4080ff, emissive: 0x102060, emissiveIntensity: 0.3, metalness: 0.5, roughness: 0.25 });
+const matGreen = new THREE.MeshStandardMaterial({ color: 0x40ff80, emissive: 0x104030, emissiveIntensity: 0.3, metalness: 0.5, roughness: 0.25 });
+const matGold  = new THREE.MeshStandardMaterial({ color: 0xffd060, emissive: 0x604010, emissiveIntensity: 0.3, metalness: 0.7, roughness: 0.3 });
+
+// ---------- Helpers ----------
+function makeRampFromTo(x1, y1, x2, y2, thickness, width, mat) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  const geom = new THREE.BoxGeometry(len, thickness, width);
+  const mesh = new THREE.Mesh(geom, mat || matWood);
+  mesh.position.set((x1+x2)/2, (y1+y2)/2, 0);
+  mesh.rotation.z = Math.atan2(dy, dx);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  scene.add(mesh);
+  return { mesh, x1, y1, x2, y2, len };
+}
+function makeSphere(r, mat) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 24), mat);
+  m.castShadow = true;
+  scene.add(m);
+  return m;
+}
+function makeBox(w, h, d, mat) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.castShadow = true; m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+function makeCylinder(r, h, mat) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), mat);
+  m.castShadow = true;
+  scene.add(m);
+  return m;
+}
+function makeText3dTexture(text, color = '#ffd060') {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 96;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1a0a40';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(4, 4, c.width - 8, c.height - 8);
+  ctx.fillStyle = color;
+  ctx.font = 'bold 54px Bungee, Russo One, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, c.width / 2, c.height / 2);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 8;
+  return tex;
+}
+
+// =====================================================
+// BUILD THE CONTRAPTION
+// =====================================================
+
+// Ramp 1: starts upper-left, slopes down-right to see-saw
+const ramp1 = makeRampFromTo(-14, 8.2, -7, 5.2, 0.3, 1.2, matWood);
+// Ramp 1 rails
+[ -0.55, 0.55 ].forEach(zoff => {
+  const rail = makeBox(ramp1.len, 0.2, 0.1, matWoodDark);
+  rail.position.copy(ramp1.mesh.position);
+  rail.position.z = zoff;
+  rail.rotation.z = ramp1.mesh.rotation.z;
+});
+
+// See-saw 1: horizontal plank on pivot
+const seesawPivotX = -6.2, seesawY = 5.0;
+const seesawPivotStand = makeBox(0.5, 1.2, 0.8, matWoodDark);
+seesawPivotStand.position.set(seesawPivotX, seesawY - 0.6, 0);
+
+const seesawGroup = new THREE.Group();
+seesawGroup.position.set(seesawPivotX, seesawY, 0);
+scene.add(seesawGroup);
+const seesawPlank = makeBox(3.6, 0.15, 1.0, matWood);
+seesawPlank.position.set(0.8, 0, 0);  // plank centered 0.8 right of pivot (more right side)
+seesawGroup.add(seesawPlank);
+// remove from scene root (makeBox added to scene), re-parent
+scene.remove(seesawPlank);
+seesawGroup.add(seesawPlank);
+// Tiny weight at right end of see-saw
+const seesawWeight = makeBox(0.4, 0.4, 0.4, matMetal);
+seesawWeight.position.set(2.3, 0.28, 0);
+scene.remove(seesawWeight);
+seesawGroup.add(seesawWeight);
+
+// Ramp 1b: after see-saw, marble A slides BACKWARDS (leftward) and down to ground
+const ramp1b = makeRampFromTo(-8.5, 4.2, -14, 0.6, 0.3, 1.2, matWood);
+
+// Lever (Vertical see-saw) at end of ramp 1b — catapult that launches Marble B
+const leverGroup = new THREE.Group();
+leverGroup.position.set(-13.5, 0.5, 0);
+scene.add(leverGroup);
+const leverPlank = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.15, 1.0), matWood);
+leverPlank.position.set(1.0, 0, 0);
+leverPlank.castShadow = true; leverPlank.receiveShadow = true;
+leverGroup.add(leverPlank);
+// Pivot stand
+const leverStand = makeBox(0.4, 0.5, 0.5, matWoodDark);
+leverStand.position.set(-13.5, 0.25, 0);
+
+// Ramp 2: where marble B lands, slopes right-down toward candle cart
+const ramp2 = makeRampFromTo(-1.5, 7.0, 4.5, 3.5, 0.3, 1.2, matWood);
+
+// Candle cart — small box with candle on top
+const cartGroup = new THREE.Group();
+cartGroup.position.set(5.2, 3.15, 0);
+scene.add(cartGroup);
+const cartBody = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.4, 0.9), matWoodDark);
+cartBody.castShadow = true;
+cartGroup.add(cartBody);
+const wheelGeom = new THREE.CylinderGeometry(0.2, 0.2, 0.15, 16);
+const wheelMat = new THREE.MeshStandardMaterial({ color: 0x202030, roughness: 0.6 });
+[[-0.3,-0.25,-0.35],[0.3,-0.25,-0.35],[-0.3,-0.25,0.35],[0.3,-0.25,0.35]].forEach(p => {
+  const w = new THREE.Mesh(wheelGeom, wheelMat);
+  w.rotation.x = Math.PI / 2;
+  w.position.set(p[0], p[1], p[2]);
+  w.castShadow = true;
+  cartGroup.add(w);
+});
+// Candle cylinder on top
+const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.6, 12), new THREE.MeshStandardMaterial({ color: 0xf8e8c0 }));
+candle.position.set(0, 0.5, 0);
+candle.castShadow = true;
+cartGroup.add(candle);
+// Flame
+const flame = new THREE.Mesh(
+  new THREE.ConeGeometry(0.1, 0.28, 10),
+  new THREE.MeshStandardMaterial({ color: 0xffb040, emissive: 0xff8020, emissiveIntensity: 1.6 })
+);
+flame.position.set(0, 0.94, 0);
+cartGroup.add(flame);
+const flameLight = new THREE.PointLight(0xffb040, 0.7, 4);
+flameLight.position.set(0, 1.0, 0);
+cartGroup.add(flameLight);
+
+// Cart ramp: from cart start position down-right to ground
+const cartRamp = makeRampFromTo(4.8, 3.1, 10.8, 0.6, 0.3, 1.3, matWood);
+
+// String: horizontal cord over the cart's path. Candle cuts it as cart passes under.
+const stringMat = new THREE.MeshStandardMaterial({ color: 0xe8d890 });
+const stringMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 6, 6), stringMat);
+stringMesh.position.set(8.5, 3.2, 0);
+stringMesh.rotation.z = Math.PI / 2;
+stringMesh.castShadow = true;
+scene.add(stringMesh);
+// String anchors (poles holding each end)
+const leftAnchor = makeCylinder(0.08, 3.5, matWoodDark);
+leftAnchor.position.set(5.5, 1.8, 0);
+const rightAnchor = makeCylinder(0.08, 3.5, matWoodDark);
+rightAnchor.position.set(11.5, 1.8, 0);
+// Pole pendulum — hangs initially suspended by the string's right end.
+// When string is cut we swing it down via a pivot near the top of the right anchor.
+const poleGroup = new THREE.Group();
+poleGroup.position.set(11.5, 3.5, 0);   // pivot at top of right anchor
+scene.add(poleGroup);
+const poleRod = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3.2, 12), matMetal);
+poleRod.position.set(0, -1.6, 0); // hang down from pivot (local y negative)
+poleRod.castShadow = true;
+poleGroup.add(poleRod);
+const poleWeight = new THREE.Mesh(new THREE.SphereGeometry(0.3, 18, 18), matMetal);
+poleWeight.position.set(0, -3.1, 0);
+poleWeight.castShadow = true;
+poleGroup.add(poleWeight);
+// Start the pole rotated right (horizontal) so the string holds it up like a trebuchet arm.
+poleGroup.rotation.z = -Math.PI / 2;  // rod pointing right (+x)
+
+// Marble C launcher — another lever, near where pole will swing into
+const cLeverGroup = new THREE.Group();
+cLeverGroup.position.set(13.8, 0.55, 0);
+scene.add(cLeverGroup);
+const cLeverPlank = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.15, 1.0), matWood);
+cLeverPlank.position.set(-1.0, 0, 0); // extends LEFT of pivot
+cLeverPlank.castShadow = true;
+cLeverGroup.add(cLeverPlank);
+const cLeverStand = makeBox(0.4, 0.5, 0.5, matWoodDark);
+cLeverStand.position.set(13.8, 0.28, 0);
+
+// Finish ramp: marble C arcs and lands here, rolls to the finish flag
+const finishRamp = makeRampFromTo(0.5, 9.0, -6.5, 6.0, 0.3, 1.2, matGold);
+
+// Finish flag/banner
+const flagTex = makeText3dTexture('FINISH', '#ffd060');
+const flagMat = new THREE.MeshBasicMaterial({ map: flagTex, transparent: false });
+const flag = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.3), flagMat);
+flag.position.set(-7.6, 6.8, 0);
+flag.castShadow = false;
+scene.add(flag);
+const flagPole = makeCylinder(0.1, 2.4, matWoodDark);
+flagPole.position.set(-7.6, 5.4, 0);
+
+// =====================================================
+// MARBLES
+// =====================================================
+const marbleA = makeSphere(0.35, matRed);
+marbleA.position.set(-14, 8.6, 0);
+
+const marbleB = makeSphere(0.32, matBlue);
+marbleB.position.set(-12.3, 0.95, 0);  // resting on right end of lever (initial)
+
+const marbleC = makeSphere(0.3, matGreen);
+marbleC.position.set(12.65, 1.0, 0);   // resting on left end of c-lever
+
+// =====================================================
+// PHASE ENGINE
+// =====================================================
+const stepEl = document.getElementById('step');
+let running = false;
+function setStep(s) { stepEl.textContent = s; }
+
+function tween(duration, onUpdate, onComplete) {
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - start) / duration);
+    onUpdate(t);
+    if (t < 1) requestAnimationFrame(step);
+    else onComplete && onComplete();
+  }
+  requestAnimationFrame(step);
+}
+function arcPath(a, b, arcH, t) {
+  const x = a.x + (b.x - a.x) * t;
+  const y = a.y + (b.y - a.y) * t + arcH * Math.sin(Math.PI * t);
+  const z = a.z + (b.z - a.z) * t;
+  return new THREE.Vector3(x, y, z);
+}
+function v3(x, y, z = 0) { return new THREE.Vector3(x, y, z); }
+
+// ---------- Phases ----------
+const phases = [
+  // 1. Marble A rolls down Ramp 1
+  (next) => {
+    setStep('1 · marble A rolls');
+    const a = v3(-14, 8.6);
+    const b = v3(-7.0, 5.6);
+    tween(1800, (t) => {
+      const e = t * t;
+      marbleA.position.lerpVectors(a, b, e);
+      marbleA.rotation.z -= 0.25;
+    }, next);
+  },
+
+  // 2. Marble A onto see-saw. See-saw tilts; marble A rolls back (leftward) onto ramp 1b and down to the lever.
+  (next) => {
+    setStep('2 · see-saw tilts, marble A goes back');
+    const a = marbleA.position.clone();
+    const b = v3(-5.5, 5.25);
+    tween(600, (t) => { marbleA.position.lerpVectors(a, b, t); marbleA.rotation.z -= 0.15; },
+    () => {
+      // Tilt see-saw: marble side goes down (rotate CCW viewed from +Z, marble on right half)
+      // Wait, marble A is on left side of see-saw after rolling from left. Marble side (left) should dip.
+      // seesawGroup.rotation.z: negative = left side down. Let's rotate to -0.22 rad.
+      tween(500, (t) => { seesawGroup.rotation.z = -0.22 * t; },
+      () => {
+        // Marble A slides off left end of see-saw toward (-8.5, 4.2) then down ramp 1b
+        const start = marbleA.position.clone();
+        const midSeesawEnd = v3(-7.8, 4.6);
+        const bottomLever = v3(-12.8, 0.95);
+        tween(500, (t) => {
+          marbleA.position.lerpVectors(start, midSeesawEnd, t);
+          marbleA.rotation.z += 0.15;
+        }, () => {
+          tween(1400, (t) => {
+            const e = t * t;
+            marbleA.position.lerpVectors(midSeesawEnd, bottomLever, e);
+            marbleA.rotation.z += 0.22;
+          }, next);
+        });
+      });
+    });
+  },
+
+  // 3. Marble A hits lever (left end of plank). Lever flips, launching marble B upward.
+  (next) => {
+    setStep('3 · lever flips · marble B launches');
+    // Marble A pushes down left end. Lever rotates CCW slightly, but for "catapult" feel we flip it such that RIGHT end goes up dramatically.
+    // Our lever's plank is centered at x=1 (right of pivot), so rotating CCW raises that end.
+    // Marble A rests at pivot. Marble B on right end rockets up.
+    const liftDur = 380;
+    tween(liftDur, (t) => {
+      const e = 1 - Math.pow(1 - t, 3); // easeOut
+      leverGroup.rotation.z = 0.85 * e;
+      marbleB.position.y = 0.95 + 1.6 * e; // lift a little as the plank rotates
+    }, () => {
+      // Launch marble B along an arc to (0, 7) (landing on ramp 2)
+      const a = marbleB.position.clone();
+      const b = v3(-1.0, 7.2);
+      const arcH = 5.5;
+      tween(1100, (t) => {
+        const p = arcPath(a, b, arcH, t);
+        marbleB.position.copy(p);
+        marbleB.rotation.z -= 0.25;
+      }, () => {
+        // Reset lever slowly
+        tween(700, (t) => { leverGroup.rotation.z = 0.85 * (1 - t); }, () => {});
+        next();
+      });
+    });
+  },
+
+  // 4. Marble B rolls down Ramp 2 and bumps the candle cart.
+  (next) => {
+    setStep('4 · marble B rolls to cart');
+    const a = marbleB.position.clone();
+    const b = v3(4.6, 3.85);
+    tween(1800, (t) => {
+      const e = t * t;
+      marbleB.position.lerpVectors(a, b, e);
+      marbleB.rotation.z -= 0.2;
+    }, next);
+  },
+
+  // 5. Marble B nudges the cart. Cart rolls down cart-ramp. Candle flame cuts the string as it passes under.
+  (next) => {
+    setStep('5 · cart rolls · candle cuts string');
+    const cartStart = cartGroup.position.clone();
+    const cartEnd = v3(10.6, 0.95);
+    tween(2200, (t) => {
+      const e = t * t;
+      cartGroup.position.lerpVectors(cartStart, cartEnd, e);
+      // wheel spin
+      cartGroup.rotation.z = -0.4 * e;  // slight tilt following ramp
+      cartGroup.children.forEach(ch => {
+        if (ch.geometry && ch.geometry.type === 'CylinderGeometry' && ch.rotation.x !== 0) {
+          ch.rotation.y -= 0.3;
+        }
+      });
+      // Marble B rides slightly on cart
+      marbleB.position.set(cartGroup.position.x, cartGroup.position.y + 0.6, 0);
+      // When cart reaches string area, cut string
+      if (t > 0.48 && stringMesh.scale.x > 0.01) {
+        stringMesh.scale.x = 0.0001;
+        // Drop two small severed rope stubs as visual
+        const stubL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.4, 6), stringMat);
+        stubL.position.set(6.9, 3.0, 0);
+        stubL.rotation.z = Math.PI / 2 + 0.15;
+        scene.add(stubL);
+        const stubR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.4, 6), stringMat);
+        stubR.position.set(10.1, 3.0, 0);
+        stubR.rotation.z = Math.PI / 2 - 0.15;
+        scene.add(stubR);
+        // Fall the severed stubs over time
+        tween(600, (tt) => {
+          stubL.rotation.z = Math.PI / 2 + 0.15 + tt * 0.6;
+          stubR.rotation.z = Math.PI / 2 - 0.15 - tt * 0.6;
+          stubL.position.y = 3.0 - tt * 1.3;
+          stubR.position.y = 3.0 - tt * 1.3;
+        });
+      }
+    }, next);
+  },
+
+  // 6. Pole swings down from the string anchor. Tip hits the c-lever → marble C launches.
+  (next) => {
+    setStep('6 · pole swings · marble C launches');
+    // Current pole rotation z is -π/2 (pointing +x). Target is 0 (hanging straight down).
+    const startRot = poleGroup.rotation.z;
+    const endRot = 0;
+    tween(900, (t) => {
+      // easeIn then slight overshoot
+      const e = 1 - Math.pow(1 - t, 2.5);
+      poleGroup.rotation.z = startRot + (endRot - startRot) * e;
+    }, () => {
+      // Impact the c-lever and launch marble C
+      tween(350, (t) => {
+        const e = 1 - Math.pow(1 - t, 3);
+        cLeverGroup.rotation.z = -0.75 * e;  // left end dips, but plank extends left so rotation lifts marble side? Let's flip.
+      }, () => {
+        // Launch marble C
+        const a = marbleC.position.clone();
+        const b = v3(1.5, 9.2);
+        const arcH = 6.5;
+        tween(1300, (t) => {
+          const p = arcPath(a, b, arcH, t);
+          marbleC.position.copy(p);
+          marbleC.rotation.z += 0.3;
+        }, () => {
+          // Reset c-lever
+          tween(600, (t) => { cLeverGroup.rotation.z = -0.75 * (1 - t); }, () => {});
+          next();
+        });
+      });
+    });
+  },
+
+  // 7. Marble C rolls down finish ramp to finish flag.
+  (next) => {
+    setStep('7 · marble C heads for the finish');
+    const a = marbleC.position.clone();
+    const b = v3(-6.6, 6.4);
+    tween(2000, (t) => {
+      const e = t * t;
+      marbleC.position.lerpVectors(a, b, e);
+      marbleC.rotation.z += 0.25;
+    }, () => {
+      setStep('done — FINISH');
+      document.getElementById('finishBanner').classList.add('on');
+      running = false;
+      document.getElementById('playBtn').disabled = false;
+      document.getElementById('playBtn').textContent = '▶ PLAY AGAIN';
+      next();
+    });
+  },
+];
+
+let currentPhase = 0;
+function runNextPhase() {
+  if (currentPhase < phases.length) {
+    phases[currentPhase++](runNextPhase);
+  }
+}
+
+function play() {
+  if (running) return;
+  reset();
+  running = true;
+  currentPhase = 0;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('finishBanner').classList.remove('on');
+  setTimeout(runNextPhase, 100);
+}
+
+function reset() {
+  marbleA.position.set(-14, 8.6, 0);    marbleA.rotation.set(0, 0, 0);
+  marbleB.position.set(-12.3, 0.95, 0); marbleB.rotation.set(0, 0, 0);
+  marbleC.position.set(12.65, 1.0, 0);  marbleC.rotation.set(0, 0, 0);
+  seesawGroup.rotation.z = 0;
+  leverGroup.rotation.z = 0;
+  cLeverGroup.rotation.z = 0;
+  poleGroup.rotation.z = -Math.PI / 2;
+  cartGroup.position.set(5.2, 3.15, 0);
+  cartGroup.rotation.z = 0;
+  stringMesh.scale.x = 1;
+  scene.children.filter(c => c.userData && c.userData.stub).forEach(c => scene.remove(c));
+  document.getElementById('finishBanner').classList.remove('on');
+  setStep('ready');
+  running = false;
+}
+
+document.getElementById('playBtn').addEventListener('click', play);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  reset();
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('playBtn').textContent = '▶ RELEASE MARBLE A';
+});
+
+// ---------- Render loop ----------
+function render() {
+  renderer.render(scene, camera);
+  requestAnimationFrame(render);
+}
+render();
+
+// Subtle camera drift for a bit of parallax
+let camT = 0;
+(function drift() {
+  camT += 0.003;
+  camera.position.x = Math.sin(camT) * 1.5;
+  camera.position.y = 6 + Math.sin(camT * 0.7) * 0.4;
+  camera.lookAt(0, 4, 0);
+  requestAnimationFrame(drift);
+})();
+</script>
+</body>
+</html>

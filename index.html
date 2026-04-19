@@ -177,7 +177,7 @@
   }
   .tile.orb3d:hover { border-color: #c080ff; box-shadow: 0 0 22px rgba(180,120,255,0.55); }
   .tile.orb3d h2 { font-family: 'Bungee', sans-serif; color: #d0a0ff; letter-spacing: 3px; font-size: 20px; }
-  .tile.orb3d .badge {
+  .tile.orb3d .badge, .tile.marble3d .badge {
     position: absolute;
     top: 8px; right: 8px;
     font-family: 'Bungee', sans-serif;
@@ -189,6 +189,15 @@
     padding: 2px 8px;
     border-radius: 3px;
   }
+
+  /* Marble Run — 3D Rube Goldberg */
+  .tile.marble3d {
+    border-color: #8a6028;
+    background: linear-gradient(180deg, rgba(38,22,8,0.9), rgba(14,8,4,0.95));
+    position: relative;
+  }
+  .tile.marble3d:hover { border-color: #ffd060; box-shadow: 0 0 22px rgba(255,210,80,0.5); }
+  .tile.marble3d h2 { font-family: 'Bungee', sans-serif; color: #ffd080; letter-spacing: 3px; font-size: 20px; }
 
 
   footer {
@@ -474,6 +483,36 @@
     </div>
     <h2>ORB RUSH</h2>
     <p>Experimental 3D demo · roll a ball, collect the orbs.</p>
+  </a>
+
+  <a class="tile marble3d" href="marble-run.html">
+    <div class="badge">3D DEMO</div>
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="gM1" cx="35%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#ffbaba"/>
+            <stop offset="100%" stop-color="#a01030"/>
+          </radialGradient>
+        </defs>
+        <!-- upper ramp -->
+        <rect x="6" y="16" width="30" height="3" fill="#8a5a2a" transform="rotate(18 6 16)"/>
+        <!-- see-saw pivot -->
+        <polygon points="40,34 36,40 44,40" fill="#5a3a1a"/>
+        <rect x="34" y="32" width="16" height="2" fill="#8a5a2a"/>
+        <!-- marble A -->
+        <circle cx="14" cy="14" r="3.5" fill="url(#gM1)"/>
+        <!-- flag -->
+        <rect x="64" y="10" width="2" height="20" fill="#5a3a1a"/>
+        <rect x="66" y="10" width="10" height="7" fill="#ffd060"/>
+        <text x="71" y="16" text-anchor="middle" font-family="Bungee, sans-serif" font-size="5" fill="#5a3010">END</text>
+        <!-- candle -->
+        <rect x="50" y="38" width="2" height="5" fill="#f8e8c0"/>
+        <polygon points="51,36 49,39 53,39" fill="#ffa040"/>
+      </svg>
+    </div>
+    <h2>MARBLE RUN</h2>
+    <p>3D Rube Goldberg · see-saws, candle cart, pendulum, finish.</p>
   </a>
 </div>
 
