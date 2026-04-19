@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Universe Ender">
+<meta name="theme-color" content="#030208">
+<title>The Universe Ender</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&family=Crimson+Text:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(80,40,160,0.2), transparent 55%),
+      linear-gradient(180deg, #040210 0%, #020108 60%, #010105 100%);
+    color: #d8c8ff;
+    margin: 0;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: hidden;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 560px;
+    width: 100%;
+    max-height: 84px;
+    filter: drop-shadow(0 4px 12px rgba(120,80,220,0.4));
+  }
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    border-radius: 3px;
+    border: 1px solid #4838a0;
+    background: linear-gradient(180deg, #120838, #060216);
+    color: #b098ff;
+    cursor: pointer;
+  }
+  .music-toggle.on {
+    border-color: #a070ff;
+    background: linear-gradient(180deg, #281068, #10062a);
+    color: #dcc8ff;
+    box-shadow: 0 0 12px rgba(160,112,240,0.55);
+  }
+
+  .scene { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+  .scene.hidden { display: none; }
+
+  /* Magazine intro */
+  .magazine-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .magazine {
+    background: #efe4c8;
+    color: #241a08;
+    width: min(520px, 92%);
+    aspect-ratio: 3 / 4;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 1px #a08050;
+    padding: 22px 26px;
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.55;
+    overflow: hidden;
+    position: relative;
+    transform: rotate(-2deg);
+    transition: transform 0.5s, opacity 0.5s;
+  }
+  .magazine.turned { transform: rotate(-2deg) translateY(-30px); opacity: 0.2; }
+  .magazine .masthead {
+    font-family: 'Bungee', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    text-align: center;
+    border-bottom: 2px solid #241a08;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+    color: #7a1818;
+  }
+  .magazine .section {
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #7a4818;
+    margin-bottom: 6px;
+  }
+  .magazine p { margin: 0 0 10px; }
+  .magazine em { color: #7a1818; font-style: italic; font-weight: 700; }
+  .intro-controls { text-align: center; }
+
+  /* Launch transition */
+  .launch-stage {
+    position: relative;
+    flex: 1;
+    min-height: 260px;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 70%, rgba(255,160,60,0.25), transparent 50%),
+                linear-gradient(180deg, #020108 0%, #060218 60%, #000 100%);
+    border: 1px solid #3a2068;
+    border-radius: 6px;
+  }
+  @keyframes launch { 0%{bottom:5%}100%{bottom:110%}}
+  .launch-stage .rocket {
+    position: absolute;
+    left: 50%;
+    bottom: 5%;
+    transform: translateX(-50%);
+    font-size: clamp(52px, 10vw, 82px);
+    animation: launch 3s ease-in forwards;
+    filter: drop-shadow(0 0 18px #ffa040);
+  }
+  .launch-stage .starfield {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, #fff 0.8px, transparent 1px);
+    background-size: 100px 100px;
+    animation: starStream 0.8s linear infinite;
+    opacity: 0.7;
+  }
+  @keyframes starStream { from { background-position-y: 0; } to { background-position-y: 300px; } }
+
+  /* Space battle */
+  .battle-stage {
+    position: relative;
+    flex: 1;
+    min-height: 340px;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 50%, #120830, #020108 75%);
+    border: 1px solid #3a2068;
+    border-radius: 6px;
+    touch-action: none;
+    user-select: none;
+  }
+  .battle-stage .stars {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle, #fff 0.8px, transparent 1px),
+      radial-gradient(circle, #fff 0.6px, transparent 1px);
+    background-size: 140px 140px, 90px 90px;
+    background-position: 0 0, 30px 50px;
+    opacity: 0.7;
+    animation: starDrift 90s linear infinite;
+  }
+  @keyframes starDrift { from { background-position-y: 0, 50px; } to { background-position-y: 500px, 700px; } }
+
+  .black-hole {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    transition: width 0.25s, height 0.25s, filter 0.25s;
+    pointer-events: none;
+  }
+  .black-hole .disk {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      conic-gradient(from 0deg,
+        #ff6040 0deg, #ffa040 40deg, #6030ff 120deg,
+        #4070ff 200deg, #ff4080 280deg, #ff6040 360deg);
+    filter: blur(4px) brightness(1.1);
+    animation: spinDisk 3.5s linear infinite;
+  }
+  @keyframes spinDisk { to { transform: rotate(360deg); } }
+  .black-hole .disk.inner {
+    inset: 12%;
+    filter: blur(2px) brightness(1.4);
+    animation: spinDisk 2s linear infinite reverse;
+  }
+  .black-hole .event-horizon {
+    position: absolute;
+    inset: 28%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #151025 0%, #000 60%);
+    box-shadow: 0 0 28px #000 inset;
+  }
+  .black-hole .warp-ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(180,120,255,0.35);
+    animation: warpPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes warpPulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50%      { transform: scale(1.12); opacity: 0.2; }
+  }
+  .black-hole.hurt { filter: brightness(1.8); }
+  .black-hole.dying { animation: bhEvaporate 3s ease-out forwards; }
+  @keyframes bhEvaporate {
+    0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    70%  { transform: translate(-50%, -50%) scale(0.3); opacity: 0.8; filter: brightness(3); }
+    100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  }
+
+  .ship {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    pointer-events: none;
+    filter: drop-shadow(0 0 6px #80c0ff);
+    transition: filter 0.2s;
+  }
+  .ship svg { width: 100%; height: auto; display: block; }
+  .ship.hurt { filter: drop-shadow(0 0 12px #ff4060); }
+
+  .wave {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    transition: transform 0.05s linear;
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
+  }
+
+  .hud-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .hud-box {
+    background: rgba(12,6,32,0.78);
+    border: 1px solid #4838a0;
+    border-radius: 4px;
+    padding: 5px 10px;
+  }
+  .hud-box .lbl {
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #a088d0;
+  }
+  .hud-bar {
+    height: 12px;
+    background: #0a0420;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 3px;
+    border: 1px solid #3a2068;
+  }
+  .hud-bar .fill { height: 100%; transition: width 0.25s; }
+  .hud-bar.bh .fill { background: linear-gradient(90deg, #1a1030, #6030ff, #ff60a0); }
+
+  /* Frequency dial */
+  .freq-panel {
+    background: rgba(12,6,32,0.78);
+    border: 1px solid #4838a0;
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+  .freq-panel .title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #a088d0;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .freq-panel .nums { font-family: 'Russo One', sans-serif; color: #ffd060; font-size: 11px; letter-spacing: 2px; }
+  .freq-panel .nums .target { color: #a0ffc0; }
+  .freq-bar {
+    position: relative;
+    height: 26px;
+    background: linear-gradient(90deg,
+      #ff3060 0%, #ff8030 20%, #ffd060 35%,
+      #80ff80 50%, #60d0ff 65%, #6060ff 80%, #c060ff 100%);
+    border-radius: 4px;
+    border: 1px solid #4838a0;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
+  }
+  .freq-bar .needle {
+    position: absolute;
+    top: -4px; bottom: -4px;
+    width: 4px;
+    background: #fff;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 10px rgba(255,255,255,0.9);
+    pointer-events: none;
+  }
+  .freq-bar .target-marker {
+    position: absolute;
+    top: -8px; bottom: -8px;
+    width: 8px;
+    background: linear-gradient(180deg, #a0ffc0 0%, transparent 100%);
+    border: 2px solid #60ff90;
+    border-radius: 3px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    box-shadow: 0 0 14px rgba(100,255,140,0.8);
+    transition: left 0.3s;
+  }
+  .freq-hint {
+    font-size: 10px;
+    color: #a088d0;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+  .freq-hint .match { color: #a0ffb0; font-family: 'Russo One', sans-serif; letter-spacing: 2px; }
+
+  .controls-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  button {
+    font-family: 'Russo One', sans-serif;
+    padding: 10px 16px;
+    border: 1.5px solid #a070ff;
+    background: linear-gradient(180deg, #30186a, #100630);
+    color: #e8d8ff;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-size: 13px;
+    min-height: 44px;
+    text-transform: uppercase;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #402088, #1a0a40); box-shadow: 0 0 12px rgba(160,112,255,0.5); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { border-color: #ffd060; background: linear-gradient(180deg, #804018, #402010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #a05830, #5a2a14); }
+  button.fire {
+    border-color: #ff60a0;
+    background: linear-gradient(180deg, #a02040, #501020);
+    color: #fff;
+    padding: 14px 26px;
+    font-size: 15px;
+    min-width: 160px;
+  }
+  button.fire:active:not(:disabled) { transform: scale(0.96); }
+  button.fire.ready { box-shadow: 0 0 18px rgba(255,100,160,0.6); }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,2,8,0.94);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #20083a, #06021a);
+    border: 2px solid #c080ff;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 0 40px rgba(180,100,255,0.55);
+  }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 14px; color: #d8c8ff; line-height: 1.5; }
+
+  @media (max-width: 720px) {
+    .logo { max-height: 60px; }
+    .magazine { font-size: 13px; padding: 18px 20px; }
+    .black-hole { width: 100px; height: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="music" class="music-toggle">🔇 Music</button>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="The Universe Ender">
+  <defs>
+    <radialGradient id="ueHole" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000"/>
+      <stop offset="70%" stop-color="#180818"/>
+      <stop offset="100%" stop-color="#c040ff" stop-opacity="0.5"/>
+    </radialGradient>
+    <linearGradient id="ueGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#ffd8a0"/>
+      <stop offset="45%" stop-color="#ff60a0"/>
+      <stop offset="100%" stop-color="#6030c0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="400" cy="78" rx="330" ry="40" fill="#2a1060" opacity="0.22"/>
+  <!-- black hole graphic left -->
+  <g transform="translate(110, 72)">
+    <circle r="22" fill="url(#ueHole)" stroke="#a060ff" stroke-width="1.5"/>
+    <circle r="10" fill="#000"/>
+  </g>
+  <!-- stars -->
+  <g fill="#fff">
+    <circle cx="170" cy="30" r="0.9"/>
+    <circle cx="250" cy="24" r="0.6"/>
+    <circle cx="560" cy="30" r="0.9"/>
+    <circle cx="640" cy="42" r="0.6"/>
+    <circle cx="740" cy="26" r="0.8"/>
+  </g>
+  <text x="400" y="72" text-anchor="middle"
+        font-family="'Bungee', sans-serif"
+        font-size="40"
+        fill="url(#ueGrad)"
+        letter-spacing="4"
+        style="paint-order: stroke; stroke: #02010a; stroke-width: 2.5;">THE UNIVERSE ENDER</text>
+  <text x="400" y="102" text-anchor="middle"
+        font-family="'Russo One', sans-serif"
+        font-size="11" fill="#b898ff" letter-spacing="6">evaporate it before it eats the sun</text>
+</svg>
+
+<!-- SCENE: Magazine intro -->
+<div class="scene" id="scene-intro">
+  <div class="magazine-wrap">
+    <div class="magazine" id="magazine">
+      <div class="masthead">ATLAS WEEKLY</div>
+      <div class="section">DISPATCH · APRIL 29</div>
+      <p id="mag-p1">You're flipping through a magazine.</p>
+      <p id="mag-p2">Tuesday afternoon. The light is doing that thing through the kitchen window.</p>
+      <p id="mag-p3">Recipes. A crossword you already did. A horoscope.</p>
+      <p id="mag-p4">You turn to the last page. Then you see the headline at the bottom.</p>
+      <p id="mag-p5" style="font-weight:700"><em>A BLACK HOLE THE SIZE OF THE SUN HAS APPEARED IN OUR SOLAR SYSTEM.</em></p>
+      <p id="mag-p6">"It is consuming everything. The Earth has days left."</p>
+      <p id="mag-p7">"Three volunteers — scientists — will fly up to try to stop it."</p>
+      <p id="mag-p8">You read the last word: <em>you.</em></p>
+    </div>
+  </div>
+  <div class="intro-controls">
+    <button id="boardBtn" class="primary" disabled>Board the Ship</button>
+    <button id="skipBtn">Skip intro</button>
+  </div>
+</div>
+
+<!-- SCENE: Launch transition -->
+<div class="scene hidden" id="scene-launch">
+  <div class="launch-stage">
+    <div class="starfield"></div>
+    <div class="rocket">🚀</div>
+  </div>
+</div>
+
+<!-- SCENE: Space battle -->
+<div class="scene hidden" id="scene-battle">
+  <div class="battle-stage" id="battleStage">
+    <div class="stars"></div>
+    <div class="black-hole" id="blackHole">
+      <div class="warp-ring"></div>
+      <div class="disk"></div>
+      <div class="disk inner"></div>
+      <div class="event-horizon"></div>
+    </div>
+    <div class="ship" id="ship">
+      <svg viewBox="0 0 60 60">
+        <polygon points="30,4 48,46 30,38 12,46" fill="#80c0ff" stroke="#fff" stroke-width="1.4"/>
+        <polygon points="30,4 30,38 48,46" fill="#4080d0" opacity="0.8"/>
+        <circle cx="30" cy="24" r="5" fill="#ffd060"/>
+        <ellipse cx="30" cy="50" rx="4" ry="7" fill="#ffa040" opacity="0.9"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hud-row">
+    <div class="hud-box">
+      <div class="lbl">Black Hole · Mass</div>
+      <div class="hud-bar bh"><div class="fill" id="bhHp"></div></div>
+    </div>
+    <div class="hud-box">
+      <div class="lbl">Your Ship · Hull</div>
+      <div class="hud-bar"><div class="fill" id="shipHp" style="background:linear-gradient(90deg,#60a0ff,#a0e0ff)"></div></div>
+    </div>
+  </div>
+
+  <div class="freq-panel">
+    <div class="title">
+      <span>Wave Frequency</span>
+      <span class="nums">YOU <span id="freqV">500</span> Hz · <span class="target">TARGET <span id="tgtV">500</span> Hz</span></span>
+    </div>
+    <div class="freq-bar" id="freqBar">
+      <div class="target-marker" id="tgtMarker"></div>
+      <div class="needle" id="freqNeedle"></div>
+    </div>
+    <div class="freq-hint"><span id="matchHint">Tune the needle to the green marker, then fire.</span></div>
+  </div>
+
+  <div class="controls-row">
+    <button id="fireBtn" class="fire">🌀 FIRE WAVE</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <button id="overClose" class="primary">Try Again</button>
+  </div>
+</div>
+
+<script>
+// ---------- Scene helpers ----------
+function show(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.add('hidden'));
+  document.getElementById('scene-' + id).classList.remove('hidden');
+}
+
+// ---------- Intro ----------
+const magParas = ['mag-p1','mag-p2','mag-p3','mag-p4','mag-p5','mag-p6','mag-p7','mag-p8'];
+magParas.forEach(id => document.getElementById(id).style.opacity = '0');
+
+function runIntro(withAnimation = true) {
+  if (!withAnimation) {
+    magParas.forEach(id => document.getElementById(id).style.opacity = '1');
+    document.getElementById('boardBtn').disabled = false;
+    return;
+  }
+  let i = 0;
+  function reveal() {
+    if (i >= magParas.length) {
+      document.getElementById('boardBtn').disabled = false;
+      return;
+    }
+    const el = document.getElementById(magParas[i]);
+    el.style.transition = 'opacity 0.8s';
+    el.style.opacity = '1';
+    i++;
+    setTimeout(reveal, 900);
+  }
+  reveal();
+}
+runIntro();
+
+document.getElementById('skipBtn').addEventListener('click', () => runIntro(false));
+document.getElementById('boardBtn').addEventListener('click', () => {
+  document.getElementById('magazine').classList.add('turned');
+  setTimeout(() => {
+    show('launch');
+    setTimeout(startBattle, 2900);
+  }, 500);
+});
+
+// ---------- Battle ----------
+const stage = document.getElementById('battleStage');
+const bhEl  = document.getElementById('blackHole');
+const shipEl = document.getElementById('ship');
+const FREQ_MIN = 200, FREQ_MAX = 800;
+const MATCH_TOLERANCE = 70;  // Hz within which damage applies
+
+let bh, ship, waves = [];
+let bfState = null;   // battle state
+
+function startBattle() {
+  show('battle');
+  bh = { hp: 100, maxHp: 100, targetFreq: 500, shiftAt: performance.now() + 9000, dying: false };
+  ship = {
+    x: 30, y: 50,       // % positions within stage
+    tx: 30, ty: 50,
+    hp: 5, maxHp: 5,
+    freq: 500,
+    lastFire: 0,
+  };
+  waves = [];
+  bhEl.classList.remove('dying', 'hurt');
+  bhEl.style.width = bhEl.style.height = '120px';
+  shipEl.classList.remove('hurt');
+  pickNewTarget();
+  updateHud();
+  bfState = 'running';
+  lastTime = performance.now();
+  requestAnimationFrame(battleTick);
+}
+
+function pickNewTarget() {
+  // Move target toward a new random value, avoiding staying in place
+  let t;
+  do {
+    t = FREQ_MIN + Math.floor(Math.random() * (FREQ_MAX - FREQ_MIN) / 20) * 20;
+  } while (Math.abs(t - bh.targetFreq) < 120);
+  bh.targetFreq = t;
+  bh.shiftAt = performance.now() + (7000 + Math.random() * 5000);
+}
+
+function freqToPct(f) {
+  return ((f - FREQ_MIN) / (FREQ_MAX - FREQ_MIN)) * 100;
+}
+
+function updateHud() {
+  document.getElementById('bhHp').style.width = (bh.hp / bh.maxHp * 100) + '%';
+  document.getElementById('shipHp').style.width = (ship.hp / ship.maxHp * 100) + '%';
+  document.getElementById('freqV').textContent = Math.round(ship.freq);
+  document.getElementById('tgtV').textContent = Math.round(bh.targetFreq);
+  document.getElementById('freqNeedle').style.left = freqToPct(ship.freq) + '%';
+  document.getElementById('tgtMarker').style.left = freqToPct(bh.targetFreq) + '%';
+  const diff = Math.abs(ship.freq - bh.targetFreq);
+  const hint = document.getElementById('matchHint');
+  if (diff <= MATCH_TOLERANCE) {
+    hint.innerHTML = `<span class="match">MATCH · wave will hit for ${Math.round(damageFor(diff))} damage</span>`;
+    document.getElementById('fireBtn').classList.add('ready');
+  } else {
+    hint.textContent = `Off by ${Math.round(diff)} Hz — slide the needle toward the green marker.`;
+    document.getElementById('fireBtn').classList.remove('ready');
+  }
+  // Black hole size scales with mass
+  const scale = 0.35 + (bh.hp / bh.maxHp) * 0.95;
+  const px = 120 * scale;
+  bhEl.style.width = bhEl.style.height = px + 'px';
+}
+
+function damageFor(diff) {
+  if (diff > MATCH_TOLERANCE) return 0;
+  const pct = 1 - (diff / MATCH_TOLERANCE);
+  return 6 + pct * 12; // 6 .. 18
+}
+
+// ---------- Ship control ----------
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.code === 'Space') { e.preventDefault(); tryFire(); }
+  if (e.key === ',' || e.key === '[') ship && (ship.freq = Math.max(FREQ_MIN, ship.freq - 10));
+  if (e.key === '.' || e.key === ']') ship && (ship.freq = Math.min(FREQ_MAX, ship.freq + 10));
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+(function wireShip() {
+  let dragging = false;
+  function setTarget(e) {
+    if (!ship) return;
+    const r = stage.getBoundingClientRect();
+    ship.tx = Math.max(5, Math.min(95, (e.clientX - r.left) / r.width * 100));
+    ship.ty = Math.max(5, Math.min(95, (e.clientY - r.top) / r.height * 100));
+  }
+  stage.addEventListener('pointerdown', e => {
+    dragging = true;
+    try { stage.setPointerCapture(e.pointerId); } catch(_) {}
+    setTarget(e);
+  });
+  stage.addEventListener('pointermove', e => { if (dragging) setTarget(e); });
+  stage.addEventListener('pointerup', e => { dragging = false; try { stage.releasePointerCapture(e.pointerId); } catch(_) {} });
+})();
+
+(function wireFreq() {
+  const bar = document.getElementById('freqBar');
+  let dragging = false;
+  function setFreq(e) {
+    if (!ship) return;
+    const r = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    ship.freq = Math.round(FREQ_MIN + pct * (FREQ_MAX - FREQ_MIN));
+    updateHud();
+  }
+  bar.addEventListener('pointerdown', e => { dragging = true; try { bar.setPointerCapture(e.pointerId); } catch(_) {} setFreq(e); });
+  bar.addEventListener('pointermove', e => { if (dragging) setFreq(e); });
+  bar.addEventListener('pointerup', e => { dragging = false; try { bar.releasePointerCapture(e.pointerId); } catch(_) {} });
+})();
+
+document.getElementById('fireBtn').addEventListener('click', tryFire);
+
+function tryFire() {
+  if (!ship || bfState !== 'running') return;
+  const now = performance.now();
+  if (now - ship.lastFire < 600) return;
+  ship.lastFire = now;
+  const r = stage.getBoundingClientRect();
+  const shipX = r.width * ship.x / 100;
+  const shipY = r.height * ship.y / 100;
+  const bhX = r.width * 0.5;
+  const bhY = r.height * 0.48;
+  // Spawn wave
+  const el = document.createElement('div');
+  el.className = 'wave';
+  const hue = ((ship.freq - FREQ_MIN) / (FREQ_MAX - FREQ_MIN)) * 300;
+  const color = `hsl(${hue}, 90%, 65%)`;
+  el.style.background = `radial-gradient(circle, ${color}44, ${color}cc 60%, transparent 80%)`;
+  el.style.border = `2px solid ${color}`;
+  el.style.left = shipX + 'px';
+  el.style.top  = shipY + 'px';
+  el.style.width = '16px'; el.style.height = '16px';
+  stage.appendChild(el);
+  waves.push({
+    el, x: shipX, y: shipY,
+    dx: bhX - shipX, dy: bhY - shipY,
+    size: 16, maxSize: 140,
+    freq: ship.freq,
+    life: 1000,
+    born: now,
+  });
+}
+
+// ---------- Battle tick ----------
+let lastTime = performance.now();
+
+function battleTick(now) {
+  if (bfState !== 'running') return;
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  // Ship move (ease toward target)
+  ship.x += (ship.tx - ship.x) * 0.12;
+  ship.y += (ship.ty - ship.y) * 0.12;
+  // Gravitational pull toward center (mass-scaled)
+  const pullStrength = (bh.hp / bh.maxHp) * 0.04;
+  ship.tx += (50 - ship.tx) * pullStrength;
+  ship.ty += (48 - ship.ty) * pullStrength;
+  shipEl.style.left = ship.x + '%';
+  shipEl.style.top  = ship.y + '%';
+  // Point toward black hole
+  const rStage = stage.getBoundingClientRect();
+  const angle = Math.atan2((48 - ship.y) * rStage.height / 100, (50 - ship.x) * rStage.width / 100);
+  shipEl.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI + 90}deg)`;
+
+  // Target frequency shift
+  if (now >= bh.shiftAt) {
+    pickNewTarget();
+  }
+
+  // Move waves
+  for (let i = waves.length - 1; i >= 0; i--) {
+    const w = waves[i];
+    const t = Math.min(1, (now - w.born) / w.life);
+    const cx = (rStage.width * ship.x / 100) + (w.dx * t);
+    const cy = (rStage.height * ship.y / 100) + (w.dy * t);
+    // Actually let wave travel from its spawn point; simpler:
+    // Use stored initial x/y and interpolate toward bh center.
+    const curSize = 16 + (w.maxSize - 16) * t;
+    w.el.style.left = (w.x + w.dx * t) + 'px';
+    w.el.style.top  = (w.y + w.dy * t) + 'px';
+    w.el.style.width  = curSize + 'px';
+    w.el.style.height = curSize + 'px';
+    w.el.style.opacity = (1 - t * 0.35).toString();
+    if (t >= 1) {
+      // Wave reaches BH — apply damage based on frequency match
+      const diff = Math.abs(w.freq - bh.targetFreq);
+      const dmg = damageFor(diff);
+      if (dmg > 0) {
+        bh.hp = Math.max(0, bh.hp - dmg);
+        bhEl.classList.add('hurt');
+        setTimeout(() => bhEl.classList.remove('hurt'), 160);
+      } else {
+        // Wrong frequency — wave absorbed; black hole gains a tiny bit
+        bh.hp = Math.min(bh.maxHp, bh.hp + 1);
+      }
+      w.el.remove();
+      waves.splice(i, 1);
+      updateHud();
+      if (bh.hp <= 0) evaporate();
+    }
+  }
+
+  // Black hole pulls and damages if ship gets too close to event horizon
+  const shipXPx = rStage.width * ship.x / 100;
+  const shipYPx = rStage.height * ship.y / 100;
+  const bhXPx = rStage.width * 0.5, bhYPx = rStage.height * 0.48;
+  const dist = Math.hypot(shipXPx - bhXPx, shipYPx - bhYPx);
+  const bhRadius = parseFloat(bhEl.style.width) / 2;
+  if (dist < bhRadius * 0.55) {
+    // Caught in gravity well
+    ship.hp = Math.max(0, ship.hp - 0.06);
+    shipEl.classList.add('hurt');
+    updateHud();
+    if (ship.hp <= 0) { endBattle(false, 'The gravity well took you.'); return; }
+  } else {
+    shipEl.classList.remove('hurt');
+  }
+
+  requestAnimationFrame(battleTick);
+}
+
+function evaporate() {
+  if (bfState !== 'running') return;
+  bfState = 'dying';
+  bh.dying = true;
+  bhEl.classList.add('dying');
+  setTimeout(() => endBattle(true, 'Hawking radiation cascaded across the event horizon. The black hole evaporated — the solar system is safe.'), 2800);
+}
+
+function endBattle(won, msg) {
+  bfState = 'ended';
+  document.getElementById('overTitle').textContent = won ? 'UNIVERSE SAVED' : 'SWALLOWED';
+  document.getElementById('overBody').textContent = msg;
+  document.getElementById('overlay').classList.add('on');
+}
+
+document.getElementById('overClose').addEventListener('click', () => {
+  location.reload();
+});
+
+// ---------- Music (ominous + ethereal) ----------
+let uCtx = null, uMaster = null;
+function uStart() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  uCtx = new Ctx();
+  uMaster = uCtx.createGain();
+  uMaster.gain.value = 0;
+  uMaster.connect(uCtx.destination);
+  uMaster.gain.linearRampToValueAtTime(0.17, uCtx.currentTime + 3);
+  const drone = uCtx.createOscillator();
+  drone.type = 'sine'; drone.frequency.value = 41.2; // E1
+  const dG = uCtx.createGain(); dG.gain.value = 0.36;
+  drone.connect(dG); dG.connect(uMaster);
+  const dim = uCtx.createOscillator();
+  dim.type = 'sine'; dim.frequency.value = 58.3; // Bb1 (tritone-ish)
+  const dim2G = uCtx.createGain(); dim2G.gain.value = 0.18;
+  dim.connect(dim2G); dim2G.connect(uMaster);
+  const lfo = uCtx.createOscillator(); lfo.frequency.value = 0.05;
+  const lfoG = uCtx.createGain(); lfoG.gain.value = 0.9;
+  lfo.connect(lfoG); lfoG.connect(drone.frequency); lfoG.connect(dim.frequency);
+  drone.start(); dim.start(); lfo.start();
+  // Ethereal voices
+  [523.25, 659.25, 880].forEach((f, i) => {
+    const o = uCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+    const filt = uCtx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 1100;
+    const g = uCtx.createGain(); g.gain.value = 0.018;
+    const lf = uCtx.createOscillator(); lf.frequency.value = 0.04 + i * 0.015;
+    const lfG = uCtx.createGain(); lfG.gain.value = 0.016;
+    lf.connect(lfG); lfG.connect(g.gain);
+    o.connect(filt); filt.connect(g); g.connect(uMaster);
+    o.start(); lf.start();
+  });
+  return true;
+}
+function uToggle() {
+  const btn = document.getElementById('music');
+  if (!uCtx) { if (!uStart()) return; btn.textContent = '🔊 Music'; btn.classList.add('on'); return; }
+  if (uCtx.state === 'running') { uCtx.suspend(); btn.textContent = '🔇 Music'; btn.classList.remove('on'); }
+  else                          { uCtx.resume();  btn.textContent = '🔊 Music'; btn.classList.add('on'); }
+}
+document.getElementById('music').addEventListener('click', uToggle);
+</script>
+</body>
+</html>
