@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lost in the Forest">
+<meta name="theme-color" content="#0a160a">
+<title>Lost in The Forest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Russo+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(50,90,50,0.28), transparent 55%),
+      linear-gradient(180deg, #0a180a 0%, #040c04 60%, #02060a 100%);
+    color: #d8e8c0;
+    margin: 0;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: hidden;
+  }
+  .logo {
+    display: block;
+    margin: 0 auto;
+    max-width: 540px;
+    width: 100%;
+    max-height: 82px;
+    filter: drop-shadow(0 4px 12px rgba(60,120,50,0.4));
+  }
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    border-radius: 3px;
+    border: 1px solid #5a8030;
+    background: linear-gradient(180deg, #142414, #0a0c04);
+    color: #a8c080;
+    cursor: pointer;
+  }
+  .music-toggle.on {
+    border-color: #a0d060;
+    background: linear-gradient(180deg, #1e3a1a, #0e1c0a);
+    color: #d0f0a0;
+    box-shadow: 0 0 12px rgba(140,200,60,0.45);
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .hud-box {
+    background: rgba(12,18,10,0.75);
+    border: 1px solid #4a6028;
+    border-radius: 4px;
+    padding: 5px 10px;
+  }
+  .hud-box .lbl { font-family: 'Russo One', sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #8ea060; }
+  .hud-box .v   { font-family: 'Russo One', sans-serif; font-size: 14px; letter-spacing: 2px; color: #ffd080; }
+  .hud-box.signal { border-color: #a06020; }
+  .hud-box.signal .v { color: #ffb070; }
+  .hud-box.morale { border-color: #6090c0; }
+  .hud-box.morale .v { color: #a0d0ff; }
+
+  .resources {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .res {
+    background: rgba(12,18,10,0.75);
+    border: 1px solid #4a6028;
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .res .ico { font-size: 18px; }
+  .res .name { font-family: 'Russo One', sans-serif; font-size: 9px; letter-spacing: 1px; color: #8ea060; text-transform: uppercase; }
+  .res .num  { font-family: 'Russo One', sans-serif; font-size: 13px; color: #ffe890; margin-left: auto; }
+
+  .main-area {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+  @media (min-width: 720px) {
+    .main-area { grid-template-columns: 1fr 1fr; }
+  }
+
+  .click-section {
+    background:
+      radial-gradient(circle at 50% 40%, rgba(120,180,80,0.15), transparent 70%),
+      linear-gradient(180deg, #0e1a0a, #050a04);
+    border: 1.5px solid #5a8030;
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tree-area {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .tree-svg {
+    width: min(180px, 60%);
+    height: auto;
+    cursor: pointer;
+    user-select: none;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.7));
+    transform-origin: 50% 100%;
+    transition: transform 0.15s;
+  }
+  .tree-svg:active { transform: translateY(-2px); }
+  .tree-svg.shake { animation: treeShake 0.28s; }
+  @keyframes treeShake {
+    0%, 100% { transform: rotate(0); }
+    25%      { transform: rotate(-5deg); }
+    75%      { transform: rotate(5deg); }
+  }
+  .tree-svg.falling { animation: treeFall 0.6s ease-in forwards; }
+  @keyframes treeFall {
+    to { transform: rotate(85deg) translateY(20px); opacity: 0.15; }
+  }
+  .tree-hp-wrap {
+    position: absolute;
+    top: 6px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,16,6,0.85);
+    border: 1px solid #5a8030;
+    border-radius: 3px;
+    padding: 3px 10px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #c0d080;
+    pointer-events: none;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .tree-hp-wrap .bar {
+    width: 60px; height: 6px;
+    background: #0a0a04;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .tree-hp-wrap .bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #80ff80, #30a020);
+    transition: width 0.15s;
+  }
+  .chip-float {
+    position: absolute;
+    pointer-events: none;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    color: #ffd080;
+    text-shadow: 0 0 6px #000, 0 2px 3px #000;
+    animation: chipFloat 0.9s ease-out forwards;
+  }
+  @keyframes chipFloat {
+    0%   { opacity: 1; transform: translate(var(--dx, 0), 0) scale(0.8); }
+    100% { opacity: 0; transform: translate(var(--dx, 0), -40px) scale(1.2); }
+  }
+
+  .house-row {
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+    justify-content: center;
+    height: 42px;
+    width: 100%;
+  }
+  .house-row .house-tile {
+    width: 40px;
+    height: 40px;
+  }
+  .house-row .more {
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: #ffd080;
+    align-self: center;
+    margin-left: 4px;
+  }
+
+  .saw-level {
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: #ffd080;
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+
+  .manual-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+  .manual-actions button {
+    font-size: 11px;
+    padding: 8px;
+    letter-spacing: 1px;
+  }
+
+  .upgrades-panel {
+    background: rgba(12,18,10,0.7);
+    border: 1.5px solid #5a8030;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .upgrades-panel h3 {
+    margin: 0 0 4px;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #a0c060;
+    text-align: center;
+  }
+  .upgrade {
+    background: linear-gradient(180deg, #1a2a14, #0a120a);
+    border: 1.5px solid #4a6028;
+    border-radius: 4px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, filter 0.15s;
+  }
+  .upgrade:hover:not(.locked) { border-color: #ffd080; box-shadow: 0 0 10px rgba(255,200,80,0.3); }
+  .upgrade.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.4); }
+  .upgrade .ico { font-size: 22px; }
+  .upgrade .info { flex: 1; min-width: 0; }
+  .upgrade .uname { font-family: 'Russo One', sans-serif; font-size: 12px; letter-spacing: 1px; color: #c0d080; }
+  .upgrade .udesc { font-size: 11px; color: #90a070; line-height: 1.25; }
+  .upgrade .cost {
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: #ffc080;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .upgrade .lvl { font-size: 10px; color: #90a070; }
+
+  .log {
+    background: rgba(10,14,6,0.7);
+    border: 1px solid #4a6028;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    max-height: 100px;
+    overflow-y: auto;
+    line-height: 1.35;
+  }
+  .log .entry { margin: 2px 0; color: #c0d080; }
+  .log .entry.good { color: #a0ffa0; }
+  .log .entry.bad  { color: #ff9a7a; }
+  .log .entry.big  { color: #ffd080; font-weight: 700; }
+
+  button {
+    font-family: 'Russo One', sans-serif;
+    padding: 9px 14px;
+    border: 1.5px solid #6a8040;
+    background: linear-gradient(180deg, #2a4020, #0e1a0a);
+    color: #d0e0a0;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-size: 12px;
+    min-height: 40px;
+    text-transform: uppercase;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #3a5828, #162414); box-shadow: 0 0 10px rgba(180,220,100,0.4); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { border-color: #ffd080; background: linear-gradient(180deg, #8a5020, #402010); color: #fff; }
+  button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #a06828, #5a2c14); }
+
+  /* Rogue-like expedition */
+  .map-overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,8,3,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 300;
+    padding: 14px;
+  }
+  .map-overlay.on { display: flex; }
+  .map-box {
+    background: linear-gradient(180deg, #14240c, #05100a);
+    border: 2px solid #a0d060;
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 0 40px rgba(140,200,60,0.35);
+  }
+  .map-box h2 {
+    font-family: 'Cinzel Decorative', serif;
+    color: #ffd080;
+    letter-spacing: 4px;
+    text-align: center;
+    margin: 0 0 8px;
+    font-size: 18px;
+  }
+  .map-info {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #90b060;
+    margin-bottom: 8px;
+  }
+  .map-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3px;
+    margin: 0 auto;
+    max-width: 420px;
+  }
+  .cell {
+    aspect-ratio: 1;
+    background: #0a1806;
+    border: 1px solid #2a4018;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(16px, 3.2vw, 24px);
+    cursor: pointer;
+    transition: border-color 0.1s, background 0.1s, filter 0.1s;
+    user-select: none;
+    position: relative;
+  }
+  .cell.unknown { background: #050a04; border-color: #1a2a10; }
+  .cell.unknown::after {
+    content: '?';
+    font-family: 'Russo One', sans-serif;
+    color: #3a5a24;
+    font-size: 20px;
+  }
+  .cell.visited { background: #10260c; border-color: #3a5820; }
+  .cell.player  { border-color: #ffd080 !important; box-shadow: inset 0 0 10px rgba(255,210,80,0.6); filter: brightness(1.2); }
+  .cell.adj     { border-color: #a0d060; background: #183c12; cursor: pointer; }
+  .cell:hover.adj { filter: brightness(1.3); }
+
+  .haul {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #ffd080;
+  }
+  .map-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    justify-content: center;
+  }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,8,3,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 400;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #18301a, #05100a);
+    border: 2px solid #a0d060;
+    border-radius: 8px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 0 40px rgba(140,200,60,0.5);
+  }
+  .overlay-box h2 {
+    font-family: 'Cinzel Decorative', serif;
+    color: #ffd080;
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+  }
+  .overlay-box p { margin: 6px 0 16px; color: #d0e0a0; }
+
+  @media (max-width: 720px) {
+    .logo { max-height: 64px; }
+    .resources { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<button id="music" class="music-toggle">🔇 Music</button>
+
+<svg class="logo" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" aria-label="Lost in the Forest">
+  <defs>
+    <linearGradient id="lifGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#c8f090"/>
+      <stop offset="45%" stop-color="#60a830"/>
+      <stop offset="100%" stop-color="#1e4818"/>
+    </linearGradient>
+    <filter id="leafGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <ellipse cx="400" cy="84" rx="290" ry="36" fill="#2a5020" opacity="0.25"/>
+  <!-- pine silhouettes -->
+  <g fill="#12301a">
+    <polygon points="80,118 100,70 120,118"/>
+    <polygon points="110,118 130,56 150,118"/>
+    <polygon points="680,118 700,64 720,118"/>
+    <polygon points="650,118 670,80 690,118"/>
+  </g>
+  <!-- saw icon -->
+  <g transform="translate(60, 80) rotate(-15)" fill="#b8b8c0" stroke="#303038" stroke-width="1.2">
+    <rect x="-24" y="-4" width="48" height="8"/>
+    <polygon points="-24,4 -20,10 -16,4 -12,10 -8,4 -4,10 0,4 4,10 8,4 12,10 16,4 20,10 24,4"/>
+    <rect x="-34" y="-4" width="10" height="8" fill="#6a4028" stroke="#300a00"/>
+  </g>
+  <text x="400" y="80" text-anchor="middle"
+        font-family="'Cinzel Decorative', serif"
+        font-size="38" font-weight="900"
+        fill="url(#lifGrad)"
+        letter-spacing="4"
+        filter="url(#leafGlow)"
+        style="paint-order: stroke; stroke: #04080a; stroke-width: 2.5;">LOST IN THE FOREST</text>
+  <text x="400" y="108" text-anchor="middle"
+        font-family="'Russo One', sans-serif"
+        font-size="11" fill="#9ac060" letter-spacing="6">saw · survive · signal rescue</text>
+</svg>
+
+<div class="hud">
+  <div class="hud-box"><div class="lbl">Day</div><div class="v" id="dayV">1</div></div>
+  <div class="hud-box signal"><div class="lbl">Rescue Signal</div><div class="v" id="signalV">0 / 100</div></div>
+  <div class="hud-box morale"><div class="lbl">Morale</div><div class="v" id="moraleV">60 / 100</div></div>
+</div>
+
+<div class="resources">
+  <div class="res"><div class="ico">🪵</div><div class="name">Wood</div><div class="num" id="woodN">0</div></div>
+  <div class="res"><div class="ico">🍖</div><div class="name">Food</div><div class="num" id="foodN">0</div></div>
+  <div class="res"><div class="ico">🫐</div><div class="name">Berries</div><div class="num" id="berryN">0</div></div>
+  <div class="res"><div class="ico">🔥</div><div class="name">Firewood</div><div class="num" id="fireN">0</div></div>
+</div>
+
+<div class="main-area">
+  <div class="click-section">
+    <div class="tree-area" id="treeArea">
+      <div class="tree-hp-wrap"><span id="treeHpTxt">5 / 5</span><div class="bar"><div class="fill" id="treeHpFill"></div></div></div>
+      <svg class="tree-svg" id="tree" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg">
+        <!-- shadow -->
+        <ellipse cx="60" cy="176" rx="40" ry="4" fill="#000" opacity="0.4"/>
+        <!-- trunk -->
+        <rect x="52" y="125" width="16" height="50" fill="#6a3a18" stroke="#240800" stroke-width="1.5"/>
+        <!-- bark lines -->
+        <line x1="56" y1="135" x2="56" y2="168" stroke="#3a1808" stroke-width="1"/>
+        <line x1="64" y1="140" x2="64" y2="170" stroke="#3a1808" stroke-width="1"/>
+        <!-- foliage layers (pine) -->
+        <polygon points="60,12 22,78 98,78" fill="#2a6028" stroke="#0c1c08" stroke-width="1.5"/>
+        <polygon points="60,50 16,106 104,106" fill="#308040" stroke="#0c1c08" stroke-width="1.5"/>
+        <polygon points="60,82 10,138 110,138" fill="#3a9048" stroke="#0c1c08" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="saw-level" id="sawLevelV">Saw Level 1 · +1 wood / click</div>
+    <div class="house-row" id="houseRow"></div>
+    <div class="manual-actions">
+      <button id="buildFireBtn">🔥 Feed Signal Fire<br><span style="font-size:9px;color:#ffc080">-5 🪵 · +4 signal</span></button>
+      <button id="eatBtn">🍖 Cook & Eat<br><span style="font-size:9px;color:#ffc080">-2 🍖 · +10 morale</span></button>
+    </div>
+    <button id="exploreBtn" class="primary" style="margin-top:4px;width:100%">🗺 Go Exploring</button>
+  </div>
+
+  <div class="upgrades-panel" id="upgrades">
+    <h3>⚒ UPGRADES</h3>
+  </div>
+</div>
+
+<div class="log" id="log"></div>
+
+<!-- Rogue-like expedition map -->
+<div class="map-overlay" id="mapOverlay">
+  <div class="map-box">
+    <h2>EXPEDITION</h2>
+    <div class="map-info">
+      <div>MOVES · <span id="mapMoves">12</span></div>
+      <div>HEALTH · <span id="mapHealth">3</span></div>
+    </div>
+    <div class="map-grid" id="mapGrid"></div>
+    <div class="haul" id="mapHaul"></div>
+    <div class="map-actions">
+      <button id="mapLeaveBtn" class="primary">Return to Camp</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <button id="overClose" class="primary">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ---------- State ----------
+const state = {
+  wood: 0,
+  food: 0,
+  berries: 0,
+  fire: 0,        // firewood stockpile (unused here but displayed)
+  signal: 0,      // 0 - 100
+  morale: 60,     // 0 - 100
+  day: 1,
+  sawLevel: 1,
+  upgrades: {},   // id → count
+  gameOver: false,
+  exploreCooldown: 0,
+};
+
+// Log
+function addLog(msg, cls) {
+  const el = document.createElement('div');
+  el.className = 'entry' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+  const log = document.getElementById('log');
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+// Upgrades
+const UPGRADES = [
+  {
+    id: 'saw',    ico: '🗡', name: 'Sharper Saw',
+    desc: '+1 wood per click · saw level ↑',
+    baseCost: { wood: 10 },
+    costScale: 2.0,
+    apply: () => { state.sawLevel++; },
+  },
+  {
+    id: 'snare',  ico: '🪢', name: 'Snare Trap',
+    desc: '+1 food every 6s',
+    baseCost: { wood: 40 },
+    costScale: 1.8,
+    apply: () => {},
+  },
+  {
+    id: 'shelter', ico: '⛺', name: 'Shelter',
+    desc: '+1 morale every 4s',
+    baseCost: { wood: 90 },
+    costScale: 1.9,
+    apply: () => {},
+  },
+  {
+    id: 'fishing', ico: '🎣', name: 'Fishing Line',
+    desc: '+1 food every 3s',
+    baseCost: { wood: 180 },
+    costScale: 1.8,
+    apply: () => {},
+  },
+  {
+    id: 'signalFire', ico: '🔥', name: 'Signal Pyre',
+    desc: '+1 signal every 7s',
+    baseCost: { wood: 260, food: 20 },
+    costScale: 1.8,
+    apply: () => {},
+  },
+  {
+    id: 'compass', ico: '🧭', name: 'Compass',
+    desc: '+3 expedition moves (one-time)',
+    baseCost: { wood: 400 },
+    costScale: 999,  // one-time
+    apply: () => {},
+  },
+  {
+    id: 'house', ico: '🏠', name: 'Log Cabin',
+    desc: 'Build a cabin from your logs · +1 morale every 3s',
+    baseCost: { wood: 120 },
+    costScale: 1.8,
+    apply: () => renderHouses(),
+  },
+];
+
+function costFor(u) {
+  const lvl = state.upgrades[u.id] || 0;
+  const mul = Math.pow(u.costScale, lvl);
+  const c = {};
+  for (const k in u.baseCost) c[k] = Math.ceil(u.baseCost[k] * mul);
+  return c;
+}
+
+function canAfford(cost) {
+  return Object.entries(cost).every(([k, v]) => state[k] >= v);
+}
+function spend(cost) {
+  for (const k in cost) state[k] -= cost[k];
+}
+function costString(cost) {
+  return Object.entries(cost).map(([k, v]) => {
+    const ico = k === 'wood' ? '🪵' : k === 'food' ? '🍖' : k === 'berries' ? '🫐' : k;
+    return `${v} ${ico}`;
+  }).join(' · ');
+}
+function isCompassMaxed(u) { return u.id === 'compass' && (state.upgrades.compass || 0) >= 1; }
+
+function renderUpgrades() {
+  const container = document.getElementById('upgrades');
+  container.innerHTML = '<h3>⚒ UPGRADES</h3>';
+  for (const u of UPGRADES) {
+    const owned = state.upgrades[u.id] || 0;
+    const cost = costFor(u);
+    const afford = canAfford(cost);
+    const maxed = isCompassMaxed(u);
+    const el = document.createElement('div');
+    el.className = 'upgrade' + (afford && !maxed ? '' : ' locked');
+    el.innerHTML = `
+      <div class="ico">${u.ico}</div>
+      <div class="info">
+        <div class="uname">${u.name}</div>
+        <div class="udesc">${u.desc}</div>
+        <div class="lvl">Owned · ${owned}${maxed ? ' (max)' : ''}</div>
+      </div>
+      <div class="cost">${maxed ? '—' : costString(cost)}</div>`;
+    el.addEventListener('click', () => {
+      if (maxed) return;
+      if (!canAfford(cost)) { addLog(`Not enough for ${u.name}.`, 'bad'); return; }
+      spend(cost);
+      state.upgrades[u.id] = owned + 1;
+      u.apply();
+      addLog(`Built ${u.name} (x${owned + 1}).`, 'good');
+      renderAll();
+    });
+    container.appendChild(el);
+  }
+}
+
+function renderHud() {
+  document.getElementById('dayV').textContent = state.day;
+  document.getElementById('signalV').textContent = `${Math.floor(state.signal)} / 100`;
+  document.getElementById('moraleV').textContent = `${Math.floor(state.morale)} / 100`;
+  document.getElementById('woodN').textContent = Math.floor(state.wood);
+  document.getElementById('foodN').textContent = Math.floor(state.food);
+  document.getElementById('berryN').textContent = Math.floor(state.berries);
+  document.getElementById('fireN').textContent = Math.floor(state.fire);
+  document.getElementById('sawLevelV').textContent =
+    `Saw Level ${state.sawLevel} · +${state.sawLevel} per click`;
+  const cd = Math.max(0, state.exploreCooldown);
+  const ex = document.getElementById('exploreBtn');
+  if (cd > 0) { ex.disabled = true; ex.textContent = `🗺 Go Exploring (${Math.ceil(cd)}s)`; }
+  else        { ex.disabled = false; ex.textContent = '🗺 Go Exploring'; }
+}
+
+function renderAll() {
+  renderHud();
+  renderUpgrades();
+}
+
+// ---------- Tree clicker ----------
+const TREE_MAX_HP = 5;
+state.treeHP = TREE_MAX_HP;
+
+function renderTreeHp() {
+  document.getElementById('treeHpTxt').textContent = `${state.treeHP} / ${TREE_MAX_HP}`;
+  document.getElementById('treeHpFill').style.width = (state.treeHP / TREE_MAX_HP * 100) + '%';
+}
+
+function spawnChip(x, y, text) {
+  const area = document.getElementById('treeArea');
+  const chip = document.createElement('div');
+  chip.className = 'chip-float';
+  chip.textContent = text;
+  chip.style.left = (x - area.getBoundingClientRect().left) + 'px';
+  chip.style.top  = (y - area.getBoundingClientRect().top) + 'px';
+  chip.style.setProperty('--dx', ((Math.random() - 0.5) * 30) + 'px');
+  area.appendChild(chip);
+  setTimeout(() => chip.remove(), 900);
+}
+
+document.getElementById('tree').addEventListener('click', (e) => {
+  if (state.gameOver) return;
+  const tree = document.getElementById('tree');
+  if (tree.classList.contains('falling')) return;
+  const dmg = state.sawLevel;
+  const wd  = state.sawLevel;
+  state.wood += wd;
+  state.treeHP = Math.max(0, state.treeHP - dmg);
+  tree.classList.remove('shake');
+  void tree.offsetWidth;
+  tree.classList.add('shake');
+  spawnChip(e.clientX, e.clientY, `+${wd} 🪵`);
+  if (state.treeHP <= 0) {
+    tree.classList.add('falling');
+    setTimeout(() => {
+      const bonus = 10 + state.sawLevel * 3;
+      state.wood += bonus;
+      addLog(`TIMBER! The pine falls · +${bonus} 🪵 bonus.`, 'good');
+      state.treeHP = TREE_MAX_HP;
+      tree.classList.remove('falling', 'shake');
+      void tree.offsetWidth;
+      renderTreeHp();
+      renderHud();
+    }, 620);
+  }
+  renderTreeHp();
+  renderHud();
+});
+
+// ---------- House display ----------
+function renderHouses() {
+  const cnt = state.upgrades.house || 0;
+  const holder = document.getElementById('houseRow');
+  holder.innerHTML = '';
+  const show = Math.min(cnt, 5);
+  for (let i = 0; i < show; i++) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    el.setAttribute('viewBox', '0 0 60 60');
+    el.setAttribute('class', 'house-tile');
+    el.innerHTML = `
+      <polygon points="30,8 8,30 52,30" fill="#6a3a18" stroke="#240800" stroke-width="1.2"/>
+      <rect x="12" y="30" width="36" height="24" fill="#8a5a2a" stroke="#240800" stroke-width="1.2"/>
+      <rect x="25" y="40" width="10" height="14" fill="#3a1808"/>
+      <rect x="16" y="36" width="6" height="6" fill="#ffd060"/>
+      <rect x="38" y="36" width="6" height="6" fill="#ffd060"/>`;
+    holder.appendChild(el);
+  }
+  if (cnt > show) {
+    const more = document.createElement('div');
+    more.className = 'more';
+    more.textContent = `+${cnt - show}`;
+    holder.appendChild(more);
+  }
+}
+
+// Manual actions
+document.getElementById('buildFireBtn').addEventListener('click', () => {
+  if (state.gameOver) return;
+  if (state.wood < 5) { addLog('Need 5 wood to feed the signal fire.', 'bad'); return; }
+  state.wood -= 5;
+  state.signal = Math.min(100, state.signal + 4);
+  addLog('You feed the signal fire (+4 signal).', 'good');
+  renderAll();
+  checkWin();
+});
+document.getElementById('eatBtn').addEventListener('click', () => {
+  if (state.gameOver) return;
+  if (state.food < 2) { addLog('Not enough food.', 'bad'); return; }
+  state.food -= 2;
+  state.morale = Math.min(100, state.morale + 10);
+  addLog('You cook and eat. +10 morale.', 'good');
+  renderAll();
+});
+
+// Explore button
+document.getElementById('exploreBtn').addEventListener('click', () => {
+  if (state.gameOver) return;
+  if (state.exploreCooldown > 0) return;
+  startExpedition();
+});
+
+// ---------- Tick ----------
+let lastTick = performance.now();
+let timeAcc = { snare: 0, shelter: 0, fishing: 0, signalFire: 0, house: 0, day: 0, decay: 0 };
+
+function tick(now) {
+  const dt = Math.min(0.1, (now - lastTick) / 1000);
+  lastTick = now;
+  if (!state.gameOver) {
+    const snare = state.upgrades.snare || 0;
+    const shelter = state.upgrades.shelter || 0;
+    const fishing = state.upgrades.fishing || 0;
+    const signalFire = state.upgrades.signalFire || 0;
+    timeAcc.snare += dt;
+    timeAcc.shelter += dt;
+    timeAcc.fishing += dt;
+    timeAcc.signalFire += dt;
+    timeAcc.day += dt;
+    timeAcc.decay += dt;
+    // Snare: +1 food per 6s per level
+    if (snare > 0 && timeAcc.snare >= 6) {
+      state.food += snare;
+      timeAcc.snare = 0;
+    }
+    // Shelter: +1 morale per 4s per level (cap 100)
+    if (shelter > 0 && timeAcc.shelter >= 4) {
+      state.morale = Math.min(100, state.morale + shelter);
+      timeAcc.shelter = 0;
+    }
+    // Fishing: +1 food per 3s per level
+    if (fishing > 0 && timeAcc.fishing >= 3) {
+      state.food += fishing;
+      timeAcc.fishing = 0;
+    }
+    // Signal pyre: +1 signal per 7s per level
+    if (signalFire > 0 && timeAcc.signalFire >= 7) {
+      state.signal = Math.min(100, state.signal + signalFire);
+      timeAcc.signalFire = 0;
+    }
+    // Log cabin: +1 morale per 3s per cabin
+    const houseCount = state.upgrades.house || 0;
+    if (houseCount > 0 && timeAcc.house >= 3) {
+      state.morale = Math.min(100, state.morale + houseCount);
+      timeAcc.house = 0;
+    }
+    // Morale decay (1 per 12s)
+    if (timeAcc.decay >= 12) {
+      state.morale = Math.max(0, state.morale - 1);
+      timeAcc.decay = 0;
+      if (state.morale <= 0) { gameOver(false, 'morale'); }
+    }
+    // Day progression: advance every 60s
+    if (timeAcc.day >= 60) {
+      state.day++;
+      timeAcc.day = 0;
+      addLog(`Day ${state.day} breaks over the pines.`, 'big');
+    }
+    // Explore cooldown
+    if (state.exploreCooldown > 0) {
+      state.exploreCooldown = Math.max(0, state.exploreCooldown - dt);
+    }
+    renderHud();
+    checkWin();
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+function checkWin() {
+  if (state.gameOver) return;
+  if (state.signal >= 100) gameOver(true);
+}
+
+function gameOver(won, reason) {
+  state.gameOver = true;
+  document.getElementById('overTitle').textContent = won ? 'RESCUED' : 'LOST TO THE WILDERNESS';
+  document.getElementById('overBody').textContent = won
+    ? `On day ${state.day}, a float-plane followed the smoke. You're going home.`
+    : reason === 'morale'
+      ? `Day ${state.day} · your spirit gave out before the smoke reached anyone.`
+      : `Day ${state.day} · the forest won.`;
+  document.getElementById('overlay').classList.add('on');
+}
+
+// ---------- Expedition (rogue-like) ----------
+const MAP_COLS = 6, MAP_ROWS = 5;
+let exp = null;
+
+function startExpedition() {
+  const extraMoves = (state.upgrades.compass || 0) * 3;
+  exp = {
+    cols: MAP_COLS, rows: MAP_ROWS,
+    cells: [],
+    pc: { x: Math.floor(MAP_COLS / 2), y: Math.floor(MAP_ROWS / 2) },
+    moves: 12 + extraMoves,
+    health: 3,
+    haul: { wood: 0, food: 0, berries: 0, signal: 0 },
+    visited: new Set(),
+  };
+  for (let y = 0; y < MAP_ROWS; y++) {
+    for (let x = 0; x < MAP_COLS; x++) {
+      exp.cells.push({ x, y, kind: rollTile(), used: false });
+    }
+  }
+  const startCell = exp.cells[exp.pc.y * MAP_COLS + exp.pc.x];
+  startCell.kind = 'start';
+  startCell.used = true;
+  exp.visited.add(`${exp.pc.x},${exp.pc.y}`);
+  renderMap();
+  document.getElementById('mapOverlay').classList.add('on');
+}
+
+function rollTile() {
+  const r = Math.random();
+  if (r < 0.40) return 'grass';
+  if (r < 0.60) return 'tree';
+  if (r < 0.75) return 'berry';
+  if (r < 0.82) return 'fish';
+  if (r < 0.95) return 'bear';
+  return 'chest';
+}
+
+function tileGlyph(kind) {
+  switch (kind) {
+    case 'grass':  return '·';
+    case 'tree':   return '🌲';
+    case 'berry':  return '🫐';
+    case 'fish':   return '🐟';
+    case 'bear':   return '🐻';
+    case 'chest':  return '🎁';
+    case 'start':  return '🏕';
+    default:       return '';
+  }
+}
+
+function renderMap() {
+  document.getElementById('mapMoves').textContent = exp.moves;
+  document.getElementById('mapHealth').textContent = exp.health;
+  const grid = document.getElementById('mapGrid');
+  grid.innerHTML = '';
+  for (const c of exp.cells) {
+    const el = document.createElement('div');
+    const visited = exp.visited.has(`${c.x},${c.y}`);
+    const isPc = c.x === exp.pc.x && c.y === exp.pc.y;
+    const adj = !isPc && !visited && Math.abs(c.x - exp.pc.x) + Math.abs(c.y - exp.pc.y) === 1;
+    el.className = 'cell ' + (visited ? 'visited' : 'unknown') + (isPc ? ' player' : '') + (adj ? ' adj' : '');
+    if (isPc) el.textContent = '🧒';
+    else if (visited) el.textContent = tileGlyph(c.kind);
+    if (adj) {
+      el.addEventListener('click', () => moveTo(c.x, c.y));
+    }
+    grid.appendChild(el);
+  }
+  // Haul
+  const h = exp.haul;
+  document.getElementById('mapHaul').innerHTML =
+    `🪵 ${h.wood} · 🍖 ${h.food} · 🫐 ${h.berries} · 🔥 ${h.signal}`;
+}
+
+function moveTo(x, y) {
+  if (!exp) return;
+  if (exp.moves <= 0 || exp.health <= 0) return;
+  exp.pc.x = x; exp.pc.y = y;
+  exp.moves--;
+  const key = `${x},${y}`;
+  const cell = exp.cells[y * MAP_COLS + x];
+  if (!exp.visited.has(key)) {
+    exp.visited.add(key);
+    resolveEncounter(cell);
+  }
+  if (exp.health <= 0) {
+    endExpedition(true);
+    return;
+  }
+  if (exp.moves <= 0) {
+    endExpedition(false);
+    return;
+  }
+  renderMap();
+}
+
+function resolveEncounter(cell) {
+  switch (cell.kind) {
+    case 'grass':
+      break;
+    case 'tree':
+      exp.haul.wood += 8;
+      break;
+    case 'berry':
+      exp.haul.berries += 4;
+      break;
+    case 'fish':
+      exp.haul.food += 6;
+      break;
+    case 'bear':
+      exp.health -= 1;
+      exp.moves = Math.max(0, exp.moves - 1);
+      break;
+    case 'chest':
+      exp.haul.signal += 6;
+      break;
+  }
+}
+
+function endExpedition(wounded) {
+  const h = exp.haul;
+  state.wood += h.wood;
+  state.food += h.food;
+  state.berries += h.berries;
+  state.signal = Math.min(100, state.signal + h.signal);
+  if (h.berries > 0) {
+    // Berries count as food too (simplified)
+    state.food += Math.floor(h.berries * 0.5);
+  }
+  state.exploreCooldown = 25;
+  const summary = `Returned with 🪵${h.wood} 🍖${h.food} 🫐${h.berries} 🔥+${h.signal} signal`;
+  addLog(wounded ? `Bruised and scared. ${summary}` : summary, wounded ? 'bad' : 'good');
+  if (wounded) state.morale = Math.max(0, state.morale - 8);
+  document.getElementById('mapOverlay').classList.remove('on');
+  exp = null;
+  renderAll();
+  checkWin();
+}
+
+document.getElementById('mapLeaveBtn').addEventListener('click', () => {
+  if (!exp) return;
+  endExpedition(false);
+});
+
+window.addEventListener('keydown', (e) => {
+  if (!exp || !document.getElementById('mapOverlay').classList.contains('on')) return;
+  const dx = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+  const dy = e.key === 'ArrowUp'   ? -1 : e.key === 'ArrowDown'  ? 1 : 0;
+  if (!dx && !dy) return;
+  const nx = exp.pc.x + dx, ny = exp.pc.y + dy;
+  if (nx < 0 || nx >= MAP_COLS || ny < 0 || ny >= MAP_ROWS) return;
+  moveTo(nx, ny);
+});
+
+// ---------- Overlay close ----------
+document.getElementById('overClose').addEventListener('click', () => {
+  location.reload();
+});
+
+// ---------- Music (forest ambient) ----------
+let fCtx = null, fMaster = null;
+function fStart() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  fCtx = new Ctx();
+  fMaster = fCtx.createGain();
+  fMaster.gain.value = 0;
+  fMaster.connect(fCtx.destination);
+  fMaster.gain.linearRampToValueAtTime(0.14, fCtx.currentTime + 2.5);
+  // Low woody drone
+  const drone = fCtx.createOscillator();
+  drone.type = 'triangle'; drone.frequency.value = 65.4; // C2
+  const dG = fCtx.createGain(); dG.gain.value = 0.22;
+  drone.connect(dG); dG.connect(fMaster);
+  const fifth = fCtx.createOscillator();
+  fifth.type = 'sine'; fifth.frequency.value = 98; // G2
+  const fG = fCtx.createGain(); fG.gain.value = 0.14;
+  fifth.connect(fG); fG.connect(fMaster);
+  const lfo = fCtx.createOscillator(); lfo.frequency.value = 0.05;
+  const lfoG = fCtx.createGain(); lfoG.gain.value = 0.9;
+  lfo.connect(lfoG); lfoG.connect(drone.frequency); lfoG.connect(fifth.frequency);
+  drone.start(); fifth.start(); lfo.start();
+  scheduleChirp();
+  return true;
+}
+function scheduleChirp() {
+  setTimeout(() => {
+    if (fCtx && fCtx.state === 'running') chirp();
+    scheduleChirp();
+  }, 4000 + Math.random() * 6000);
+}
+function chirp() {
+  const now = fCtx.currentTime;
+  const base = [659, 784, 880, 988, 1318][Math.floor(Math.random() * 5)];
+  for (let i = 0; i < 3; i++) {
+    const o = fCtx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(base + i * 60, now + i * 0.12);
+    const g = fCtx.createGain();
+    g.gain.setValueAtTime(0, now + i * 0.12);
+    g.gain.linearRampToValueAtTime(0.05, now + i * 0.12 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.18);
+    o.connect(g); g.connect(fMaster);
+    o.start(now + i * 0.12); o.stop(now + i * 0.12 + 0.2);
+  }
+}
+function fToggle() {
+  const btn = document.getElementById('music');
+  if (!fCtx) { if (!fStart()) return; btn.textContent = '🔊 Music'; btn.classList.add('on'); return; }
+  if (fCtx.state === 'running') { fCtx.suspend(); btn.textContent = '🔇 Music'; btn.classList.remove('on'); }
+  else                          { fCtx.resume();  btn.textContent = '🔊 Music'; btn.classList.add('on'); }
+}
+document.getElementById('music').addEventListener('click', fToggle);
+
+// ---------- Boot ----------
+addLog('Day 1 — the plane is gone. You have a saw, your wits, and the pines.', 'big');
+addLog('Click a pine to saw it down. Build cabins, feed the signal fire, or head into the rogue forest for rare loot.');
+renderAll();
+renderTreeHp();
+renderHouses();
+</script>
+</body>
+</html>

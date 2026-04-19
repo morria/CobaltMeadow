@@ -198,6 +198,14 @@
   .tile.stranded:hover { border-color: #80b0ff; box-shadow: 0 0 22px rgba(120,170,240,0.5); }
   .tile.stranded h2 { font-family: 'Bungee', sans-serif; color: #a0c8ff; letter-spacing: 3px; font-size: 22px; }
 
+  /* Lost in the Forest — pine green */
+  .tile.lostforest {
+    border-color: #4a7028;
+    background: linear-gradient(180deg, rgba(14,28,10,0.92), rgba(4,8,4,0.95));
+  }
+  .tile.lostforest:hover { border-color: #a0d060; box-shadow: 0 0 22px rgba(140,200,60,0.45); }
+  .tile.lostforest h2 { font-family: 'Cinzel Decorative', serif; color: #a0d060; letter-spacing: 3px; font-size: 20px; }
+
 
   footer {
     margin-top: 6px;
@@ -525,6 +533,31 @@
     </div>
     <h2>STRANDED</h2>
     <p>Two crew, dying ship · manage resources until rescue reaches you.</p>
+  </a>
+
+  <a class="tile lostforest" href="lost-in-forest.html">
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <!-- pine tree -->
+        <rect x="36" y="36" width="6" height="14" fill="#6a3a18"/>
+        <polygon points="39,8 22,32 56,32" fill="#2a6028"/>
+        <polygon points="39,20 18,40 60,40" fill="#308040"/>
+        <!-- saw -->
+        <g transform="translate(58, 26) rotate(-20)">
+          <rect x="-10" y="-2" width="20" height="4" fill="#cacad0" stroke="#202028" stroke-width="0.6"/>
+          <polygon points="-10,2 -8,5 -6,2 -4,5 -2,2 0,5 2,2 4,5 6,2 8,5 10,2" fill="#cacad0"/>
+          <rect x="10" y="-3" width="6" height="6" fill="#7a4418"/>
+        </g>
+        <!-- cabin -->
+        <g>
+          <polygon points="14,32 8,40 20,40" fill="#6a3a18"/>
+          <rect x="10" y="40" width="10" height="10" fill="#8a5a2a"/>
+          <rect x="14" y="44" width="3" height="6" fill="#3a1808"/>
+        </g>
+      </svg>
+    </div>
+    <h2>LOST IN THE FOREST</h2>
+    <p>Hatchet vibes · click the pines, build cabins, signal for rescue.</p>
   </a>
 </div>
 
