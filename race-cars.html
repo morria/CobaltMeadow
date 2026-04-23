@@ -78,18 +78,23 @@
     border-color: #ffd060;
     box-shadow: 0 0 30px rgba(255,200,80,0.55);
   }
-  .car-card .car-canvas {
+  .car-card .car-art {
     width: 100%;
     flex: 1;
-    min-height: 160px;
-    position: relative;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
   }
-  .car-card canvas {
-    position: absolute;
-    inset: 0;
-    width: 100% !important;
-    height: 100% !important;
+  .car-card .car-art svg {
+    width: 100%;
+    max-height: 170px;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7));
+    transition: transform 0.3s;
   }
+  .car-card:hover .car-art svg { transform: translateY(-2px) scale(1.04); }
+  .car-card.selected .car-art svg { transform: translateY(-2px) scale(1.06); }
   .car-card .name {
     font-family: 'Bungee', sans-serif;
     letter-spacing: 3px;
@@ -537,63 +542,88 @@ function buildCarMesh(def, opts) {
   return car;
 }
 
-// ---------- Car-select mini viewers ----------
+// ---------- Car-select card (SVG illustration) ----------
+function hex(n) { return '#' + n.toString(16).padStart(6, '0'); }
+
+function carSvg(def) {
+  const wrap = document.createElement('div');
+  wrap.className = 'car-art';
+  const body = hex(def.body);
+  const trim = hex(def.trim);
+  wrap.innerHTML = `
+    <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="gBody-${def.id}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="${body}" stop-opacity="1"/>
+          <stop offset="100%" stop-color="${body}" stop-opacity="0.55"/>
+        </linearGradient>
+        <radialGradient id="gShine-${def.id}" cx="30%" cy="25%" r="70%">
+          <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gGlass-${def.id}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#a0d8ff"/>
+          <stop offset="100%" stop-color="#204070"/>
+        </linearGradient>
+      </defs>
+      <!-- ground shadow -->
+      <ellipse cx="110" cy="128" rx="80" ry="10" fill="#000" opacity="0.55"/>
+      <g transform="translate(110, 82)">
+        <!-- rear wheel wells (dark halos) -->
+        <ellipse cx="-56" cy="18" rx="20" ry="12" fill="#0a0a0a"/>
+        <ellipse cx="56"  cy="18" rx="20" ry="12" fill="#0a0a0a"/>
+        <!-- tires -->
+        <ellipse cx="-56" cy="18" rx="16" ry="9" fill="#161616"/>
+        <ellipse cx="56"  cy="18" rx="16" ry="9" fill="#161616"/>
+        <!-- rims -->
+        <ellipse cx="-56" cy="18" rx="9" ry="5" fill="#8890a0"/>
+        <ellipse cx="56"  cy="18" rx="9" ry="5" fill="#8890a0"/>
+        <!-- hub caps -->
+        <circle cx="-56" cy="18" r="2.2" fill="${trim}"/>
+        <circle cx="56"  cy="18" r="2.2" fill="${trim}"/>
+        <!-- lower body -->
+        <path d="M -78 10 L -64 -10 L -44 -18 L 44 -18 L 64 -10 L 78 10 L 72 22 L -72 22 Z"
+              fill="url(#gBody-${def.id})" stroke="#0a0a10" stroke-width="2"/>
+        <!-- side stripe -->
+        <rect x="-72" y="6" width="144" height="4" fill="${trim}"/>
+        <!-- cabin / roof -->
+        <path d="M -42 -18 L -26 -36 L 26 -36 L 42 -18 Z"
+              fill="#1b1840" stroke="#0a0a10" stroke-width="2"/>
+        <!-- windshield glass -->
+        <path d="M -33 -18 L -21 -32 L 21 -32 L 33 -18 Z"
+              fill="url(#gGlass-${def.id})" opacity="0.9"/>
+        <!-- hood shine -->
+        <path d="M -40 -18 L 40 -18 L 30 -10 L -30 -10 Z" fill="url(#gShine-${def.id})"/>
+        <!-- headlights -->
+        <rect x="-68" y="-4" width="12" height="6" fill="#fff4b8" rx="1.5"/>
+        <rect x="56"  y="-4" width="12" height="6" fill="#fff4b8" rx="1.5"/>
+        <!-- centre racing stripe -->
+        <rect x="-4" y="-36" width="8" height="58" fill="${trim}" opacity="0.85"/>
+      </g>
+    </svg>
+  `;
+  return wrap;
+}
+
 function buildSelectCard(def) {
   const card = document.createElement('div');
   card.className = 'car-card';
   card.style.setProperty('--accent', def.accent);
   card.dataset.carId = def.id;
-  const cv = document.createElement('div'); cv.className = 'car-canvas';
-  card.appendChild(cv);
-  const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = def.name;
+  card.appendChild(carSvg(def));
+  const nm = document.createElement('div');
+  nm.className = 'name';
+  nm.textContent = def.name;
   card.appendChild(nm);
-  const st = document.createElement('div'); st.className = 'stats';
+  const st = document.createElement('div');
+  st.className = 'stats';
   st.innerHTML = `<span>TOP · ${def.topSpeed}</span><span>GRIP · A</span>`;
   card.appendChild(st);
-
-  // Mini Three.js viewer
-  const scn = new THREE.Scene();
-  scn.background = null;
-  const mc = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
-  mc.position.set(3.8, 2.6, 4.4);
-  mc.lookAt(0, 0.8, 0);
-  const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  r.setPixelRatio(Math.min(devicePixelRatio, 2));
-  cv.appendChild(r.domElement);
-  scn.add(new THREE.HemisphereLight(0xffffff, 0x201030, 0.65));
-  const dl = new THREE.DirectionalLight(0xffe0c0, 1.1);
-  dl.position.set(5, 8, 6); scn.add(dl);
-  const car = buildCarMesh(def);
-  scn.add(car);
-  const pad = new THREE.Mesh(
-    new THREE.CircleGeometry(2.8, 32),
-    new THREE.MeshBasicMaterial({ color: 0x1a1030, transparent: true, opacity: 0.55 })
-  );
-  pad.rotation.x = -Math.PI / 2;
-  scn.add(pad);
-
-  function resize() {
-    const w = cv.clientWidth, h = cv.clientHeight;
-    r.setSize(w, h, false);
-    mc.aspect = w / h;
-    mc.updateProjectionMatrix();
-  }
-  const ro = new ResizeObserver(resize);
-  ro.observe(cv);
-  // keep spinning
-  let t0 = performance.now();
-  function loop() {
-    const t = (performance.now() - t0) / 1000;
-    car.rotation.y = t * 0.6;
-    resize();
-    r.render(scn, mc);
-    requestAnimationFrame(loop);
-  }
-  loop();
-
   card.addEventListener('click', () => {
     selectedCarId = def.id;
-    document.querySelectorAll('.car-card').forEach(c => c.classList.toggle('selected', c.dataset.carId === def.id));
+    document.querySelectorAll('.car-card').forEach(c =>
+      c.classList.toggle('selected', c.dataset.carId === def.id)
+    );
   });
   return card;
 }
