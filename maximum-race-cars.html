@@ -195,6 +195,35 @@
   }
   .lobby-banner.on { display:block; }
 
+  .lobby-advanced {
+    width: min(460px, 94vw);
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid #402010;
+    border-radius: 4px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #c0a080;
+  }
+  .lobby-advanced summary {
+    cursor: pointer;
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 2px;
+    color: #d0a060;
+    outline: none;
+  }
+  .lobby-advanced label {
+    display: flex; align-items: center; gap: 8px;
+    margin: 8px 0 4px;
+    padding: 8px 0;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .lobby-advanced input[type=checkbox] { width: 18px; height: 18px; accent-color: #ffd060; }
+  .lobby-advanced .note { color: #907040; font-size: 10px; line-height: 1.4; margin-top: 6px; }
+  .lobby-advanced code { background: rgba(0,0,0,0.4); padding: 2px 5px; border-radius: 3px; font-family: monospace; color: #ffd060; }
+
   /* --------- Network status pill --------- */
   .net-pill {
     position: fixed;
@@ -533,6 +562,15 @@
   </div>
 
   <div class="lobby-banner" id="lobbyBanner"></div>
+
+  <details class="lobby-advanced" id="advancedPanel">
+    <summary>Having trouble connecting?</summary>
+    <label>
+      <input type="checkbox" id="relayToggle">
+      <span>Force <b>relay</b> mode — routes through a TURN server instead of direct peer-to-peer. Slightly more latency but works on networks that block direct traffic (client-isolated WiFi, strict corporate/carrier NATs).</span>
+    </label>
+    <div class="note">Advanced: add <code>?turn=user:pass@host:port</code> to the URL to supply your own TURN server.</div>
+  </details>
 </div>
 
 <!-- Race HUD -->
@@ -792,6 +830,74 @@ function refreshCarPicker() {
 }
 
 // ========== PeerJS pairing ==========
+// ICE config: STUN for discovery + public TURN relay so the connection still
+// works on networks that block direct peer-to-peer traffic (client-isolated
+// wifi, strict corporate/carrier NATs, mDNS-filtered routers, UDP-blocked
+// networks). TURN over TCP 443 is the firewall-friendliest option.
+//
+// openrelay.metered.ca is a public free relay (credentials are hard-coded
+// and published by Metered Inc). If it ever dies, callers can override via
+// `?turn=user:pass@host:port` URL param, or force relay-only with `?relay=1`.
+const DEFAULT_ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  { urls: 'turn:openrelay.metered.ca:80',              username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',             username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+];
+
+function buildIceConfig() {
+  const servers = DEFAULT_ICE_SERVERS.slice();
+  const params = new URLSearchParams(location.search);
+  const turnArg = params.get('turn');
+  if (turnArg) {
+    // Format: user:pass@host:port[?transport=tcp]
+    const m = /^([^:]+):([^@]+)@(.+)$/.exec(turnArg);
+    if (m) {
+      servers.push({ urls: 'turn:' + m[3], username: m[1], credential: m[2] });
+    }
+  }
+  const relay = params.get('relay') === '1' || G.forceRelay;
+  return { iceServers: servers, iceTransportPolicy: relay ? 'relay' : 'all' };
+}
+
+// After a DataChannel opens, inspect the selected ICE candidate pair so we can
+// tell the player whether the connection is direct or relayed. Pure diagnostic.
+async function reportIcePath(conn) {
+  try {
+    const pc = conn.peerConnection;
+    if (!pc || !pc.getStats) return;
+    const stats = await pc.getStats();
+    let selected = null, local = null, remote = null;
+    stats.forEach(s => {
+      if (s.type === 'transport' && s.selectedCandidatePairId) {
+        const pair = stats.get(s.selectedCandidatePairId);
+        if (pair) selected = pair;
+      }
+    });
+    if (!selected) {
+      stats.forEach(s => { if (s.type === 'candidate-pair' && s.selected) selected = s; });
+    }
+    if (selected) {
+      local = stats.get(selected.localCandidateId);
+      remote = stats.get(selected.remoteCandidateId);
+      const lt = local && local.candidateType;
+      const rt = remote && remote.candidateType;
+      const via = (lt === 'relay' || rt === 'relay') ? 'RELAY' :
+                  (lt === 'host'  && rt === 'host')  ? 'DIRECT (LAN)' :
+                                                       'NAT (STUN)';
+      console.log('[ICE] selected pair:', lt, '<->', rt, '→', via);
+      netPill('CONNECTED · ' + via, 'ok');
+    } else {
+      console.log('[ICE] no selected pair found');
+    }
+  } catch (e) {
+    console.warn('getStats failed', e);
+  }
+}
+
 function send(msg) {
   if (G.conn && G.conn.open) {
     try { G.conn.send(JSON.stringify(msg)); } catch(e) {}
@@ -800,9 +906,18 @@ function send(msg) {
 
 function attachConn(conn) {
   G.conn = conn;
+  // Log underlying PeerConnection ICE state for diagnostics.
+  setTimeout(() => {
+    const pc = conn.peerConnection;
+    if (pc) {
+      pc.addEventListener('iceconnectionstatechange', () => console.log('[ICE] state:', pc.iceConnectionState));
+      pc.addEventListener('connectionstatechange',    () => console.log('[ICE] conn :', pc.connectionState));
+    }
+  }, 0);
   conn.on('open', () => {
     G.lastRecvAt = performance.now();
     netPill('CONNECTED', 'ok');
+    reportIcePath(conn);
     // Send hello + current carpick
     send({ t: 'hello', version: VERSION, role: G.role });
     send({ t: 'carpick', carIdx: G.myCarIdx });
@@ -859,7 +974,9 @@ function initPeer(onReady) {
     myPeerId = undefined; // let PeerServer assign
   }
   netPill('CONTACTING BROKER…', 'warn');
-  G.peer = new Peer(myPeerId, { debug: 0 });
+  const peerOpts = { debug: 0, config: buildIceConfig() };
+  console.log('[PEERJS] config:', peerOpts.config);
+  G.peer = new Peer(myPeerId, peerOpts);
   let opened = false;
   const to = setTimeout(() => {
     if (!opened) {
@@ -935,7 +1052,11 @@ function initJoin(code) {
     setTimeout(() => {
       if (!conn.open) {
         netPill('P2P BLOCKED', 'bad');
-        banner('Could not establish a peer-to-peer connection. Your network may be blocking it — try a different network.', true);
+        const msg = G.forceRelay
+          ? 'Still could not connect even via relay. The TURN server may be down — try again later.'
+          : 'Could not establish a peer-to-peer connection. Try the “Having trouble?” toggle below to force relay mode.';
+        banner(msg, true);
+        $('advancedPanel').open = true;
         try { conn.close(); } catch(e) {}
       }
     }, 15000);
@@ -1009,6 +1130,21 @@ function handleMsg(m) {
 
 // ========== Lobby interactions ==========
 function wireLobby() {
+  // Initialize relay toggle from URL
+  const params = new URLSearchParams(location.search);
+  if (params.get('relay') === '1') {
+    G.forceRelay = true;
+    $('relayToggle').checked = true;
+    $('advancedPanel').open = true;
+  }
+  $('relayToggle').addEventListener('change', e => {
+    G.forceRelay = e.target.checked;
+    const p = new URLSearchParams(location.search);
+    if (G.forceRelay) p.set('relay', '1'); else p.delete('relay');
+    const q = p.toString();
+    try { history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } catch(_) {}
+  });
+
   $('createBtn').addEventListener('click', () => { banner(''); initHost(); });
   $('joinBtn').addEventListener('click', () => { banner(''); showPanel('panelJoin'); setTimeout(() => $('codeInput').focus(), 50); });
   $('joinGoBtn').addEventListener('click', () => {
