@@ -569,6 +569,11 @@
       <input type="checkbox" id="relayToggle">
       <span>Force <b>relay</b> mode — routes through a TURN server instead of direct peer-to-peer. Slightly more latency but works on networks that block direct traffic (client-isolated WiFi, strict corporate/carrier NATs).</span>
     </label>
+    <div style="display:flex; gap:8px; margin-top:6px; align-items:center;">
+      <button id="diagBtn" class="small secondary">Run connection test</button>
+      <span id="diagStatus" style="font-size:11px; color:#a08060;">—</span>
+    </div>
+    <pre id="diagOutput" style="display:none; white-space:pre-wrap; font-family:monospace; font-size:10px; color:#c0a080; background:rgba(0,0,0,0.4); padding:8px; border-radius:3px; margin-top:6px; max-height:180px; overflow:auto;"></pre>
     <div class="note">Advanced: add <code>?turn=user:pass@host:port</code> to the URL to supply your own TURN server.</div>
   </details>
 </div>
@@ -863,6 +868,42 @@ function buildIceConfig() {
   return { iceServers: servers, iceTransportPolicy: relay ? 'relay' : 'all' };
 }
 
+// Run a local ICE candidate-gathering test against the current config. Reports
+// which candidate *types* can be gathered (host / srflx / relay). Diagnoses:
+//   - No `host`  → browser is hiding LAN IPs (mDNS) — normal these days.
+//   - No `srflx` → STUN unreachable or UDP blocked.
+//   - No `relay` → TURN unreachable or credentials invalid.
+//   - `relay` present → relay mode will work; if direct still fails, use it.
+async function testIceGathering(timeoutMs = 6000) {
+  const pc = new RTCPeerConnection(buildIceConfig());
+  pc.createDataChannel('probe');
+  const cands = [];
+  const errors = [];
+  pc.onicecandidate = e => { if (e.candidate) cands.push(e.candidate); };
+  pc.onicecandidateerror = e => { errors.push({ url: e.url, code: e.errorCode, text: e.errorText }); };
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await new Promise(res => {
+    const to = setTimeout(res, timeoutMs);
+    pc.addEventListener('icegatheringstatechange', () => {
+      if (pc.iceGatheringState === 'complete') { clearTimeout(to); res(); }
+    });
+  });
+  const types = new Set(cands.map(c => c.type));
+  const protos = new Set(cands.map(c => c.protocol));
+  // Relay candidates often have different relayProtocol (tcp/udp/tls)
+  const relayProtos = new Set(cands.filter(c => c.type === 'relay').map(c => c.relayProtocol || c.protocol));
+  pc.close();
+  return {
+    total: cands.length,
+    types: [...types],
+    protos: [...protos],
+    relayProtos: [...relayProtos],
+    candidates: cands.map(c => ({ type: c.type, protocol: c.protocol, address: c.address, port: c.port, relayProtocol: c.relayProtocol })),
+    errors,
+  };
+}
+
 // After a DataChannel opens, inspect the selected ICE candidate pair so we can
 // tell the player whether the connection is direct or relayed. Pure diagnostic.
 async function reportIcePath(conn) {
@@ -1143,6 +1184,49 @@ function wireLobby() {
     if (G.forceRelay) p.set('relay', '1'); else p.delete('relay');
     const q = p.toString();
     try { history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } catch(_) {}
+  });
+
+  $('diagBtn').addEventListener('click', async () => {
+    const btn = $('diagBtn');
+    const status = $('diagStatus');
+    const out = $('diagOutput');
+    btn.disabled = true;
+    status.textContent = 'Gathering candidates…';
+    out.style.display = 'block';
+    out.textContent = '';
+    try {
+      const r = await testIceGathering();
+      const hostOK  = r.types.includes('host');
+      const srflxOK = r.types.includes('srflx');
+      const relayOK = r.types.includes('relay');
+      const verdict =
+        !srflxOK && !relayOK ? 'NO OUTBOUND UDP / STUN + TURN BOTH UNREACHABLE' :
+        !relayOK             ? 'TURN UNREACHABLE — relay mode will not work' :
+        hostOK && srflxOK && relayOK ? 'ALL GOOD — try again; relay will work even if direct fails' :
+                                       'TURN works — force relay if direct fails';
+      status.textContent = verdict;
+      status.style.color = relayOK ? '#60ffa0' : '#ff8060';
+      const pretty = [
+        'Candidate types: ' + (r.types.join(', ') || '(none)'),
+        'Relay transports: ' + (r.relayProtos.join(', ') || '(none)'),
+        'Total candidates: ' + r.total,
+        'ICE errors: ' + (r.errors.length ? '' : 'none'),
+        ...r.errors.slice(0, 8).map(e => '  ' + e.url + ' → ' + e.code + ' ' + (e.text || '')),
+        '',
+        'Verdict: ' + verdict,
+        '',
+        '--- candidates ---',
+        ...r.candidates.map(c => '  ' + c.type.padEnd(6) + ' ' + (c.protocol || '?').padEnd(4) + ' ' + (c.relayProtocol ? '[' + c.relayProtocol + '] ' : '    ') + (c.address || '?') + ':' + (c.port || '?')),
+      ].join('\n');
+      out.textContent = pretty;
+      console.log('[DIAG]', r);
+    } catch (e) {
+      status.textContent = 'Test failed: ' + e.message;
+      status.style.color = '#ff8060';
+      out.textContent = String(e.stack || e);
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   $('createBtn').addEventListener('click', () => { banner(''); initHost(); });
