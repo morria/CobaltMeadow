@@ -222,6 +222,14 @@
   .tile.racecars:hover { border-color: #ff5040; box-shadow: 0 0 22px rgba(255,80,60,0.5); }
   .tile.racecars h2 { font-family: 'Bungee', sans-serif; color: #ff9070; letter-spacing: 3px; font-size: 20px; }
 
+  /* Maximum Race Cars — checker-flag gold with online blip */
+  .tile.racecarsmax {
+    border-color: #d8a030;
+    background: linear-gradient(180deg, rgba(50,22,6,0.95), rgba(4,4,10,0.95));
+  }
+  .tile.racecarsmax:hover { border-color: #ffd060; box-shadow: 0 0 22px rgba(255,200,80,0.6); }
+  .tile.racecarsmax h2 { font-family: 'Bungee', sans-serif; color: #ffd060; letter-spacing: 3px; font-size: 17px; }
+
 
   footer {
     margin-top: 6px;
@@ -657,6 +665,63 @@
     </div>
     <h2>RACE CARS</h2>
     <p>Pick your ride · steer around cones, rivals, tilting ramps.</p>
+  </a>
+
+  <a class="tile racecarsmax" href="maximum-race-cars.html">
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gMRCred" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff8060"/>
+            <stop offset="100%" stop-color="#a01818"/>
+          </linearGradient>
+          <linearGradient id="gMRCcyan" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#80e0ff"/>
+            <stop offset="100%" stop-color="#2060a0"/>
+          </linearGradient>
+        </defs>
+        <!-- checkered divider -->
+        <g>
+          <rect x="37" y="8" width="6" height="40" fill="#fff"/>
+          <rect x="37" y="8"  width="3" height="4" fill="#000"/>
+          <rect x="40" y="12" width="3" height="4" fill="#000"/>
+          <rect x="37" y="16" width="3" height="4" fill="#000"/>
+          <rect x="40" y="20" width="3" height="4" fill="#000"/>
+          <rect x="37" y="24" width="3" height="4" fill="#000"/>
+          <rect x="40" y="28" width="3" height="4" fill="#000"/>
+          <rect x="37" y="32" width="3" height="4" fill="#000"/>
+          <rect x="40" y="36" width="3" height="4" fill="#000"/>
+          <rect x="37" y="40" width="3" height="4" fill="#000"/>
+          <rect x="40" y="44" width="3" height="4" fill="#000"/>
+        </g>
+        <!-- left car (red) -->
+        <g transform="translate(20,34)">
+          <rect x="-10" y="-5" width="20" height="8" rx="1.5" fill="url(#gMRCred)" stroke="#300808" stroke-width="0.6"/>
+          <rect x="-6"  y="-9" width="12" height="5" rx="1"   fill="#2a1838" stroke="#300808" stroke-width="0.4"/>
+          <circle cx="-6" cy="4" r="2.2" fill="#151515"/>
+          <circle cx="6"  cy="4" r="2.2" fill="#151515"/>
+          <rect x="-10" y="-1" width="20" height="1.3" fill="#ffd060"/>
+          <circle cx="9" cy="-2" r="0.9" fill="#fff4b8"/>
+        </g>
+        <!-- right car (cyan), facing left -->
+        <g transform="translate(60,34) scale(-1,1)">
+          <rect x="-10" y="-5" width="20" height="8" rx="1.5" fill="url(#gMRCcyan)" stroke="#082030" stroke-width="0.6"/>
+          <rect x="-6"  y="-9" width="12" height="5" rx="1"   fill="#2a1838" stroke="#082030" stroke-width="0.4"/>
+          <circle cx="-6" cy="4" r="2.2" fill="#151515"/>
+          <circle cx="6"  cy="4" r="2.2" fill="#151515"/>
+          <rect x="-10" y="-1" width="20" height="1.3" fill="#60e0ff"/>
+          <circle cx="9" cy="-2" r="0.9" fill="#fff4b8"/>
+        </g>
+        <!-- wifi blip -->
+        <g transform="translate(66,8)" stroke="#60ffa0" fill="none" stroke-width="1.2" stroke-linecap="round">
+          <path d="M 0 6 Q 4 0 8 6"/>
+          <path d="M 2 7 Q 4 4 6 7"/>
+          <circle cx="4" cy="8" r="0.9" fill="#60ffa0" stroke="none"/>
+        </g>
+      </svg>
+    </div>
+    <h2>MAXIMUM RACE CARS</h2>
+    <p>Two players online · pickups, shells, and bumps at 60mph.</p>
   </a>
 </div>
 
