@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="X248">
+<meta name="theme-color" content="#040810">
+<title>X248</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0; padding: 0; min-height: 100%; background: #030608;
+    color: #cfeefa;
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+  }
+  body {
+    min-height: 100vh; min-height: 100dvh;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    box-sizing: border-box;
+    background:
+      radial-gradient(ellipse at 50% -20%, rgba(60,200,140,0.18), transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgba(60,140,255,0.12), transparent 55%),
+      linear-gradient(180deg, #03090c 0%, #020608 60%, #010305 100%);
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .logo {
+    margin-top: 4px;
+    font-family: 'Bungee', sans-serif;
+    color: #60ffa0;
+    letter-spacing: 8px;
+    font-size: clamp(38px, 9vw, 64px);
+    text-shadow:
+      0 0 14px rgba(96,255,160,0.6),
+      0 0 32px rgba(96,255,160,0.35),
+      0 4px 0 #082010;
+    line-height: 1;
+  }
+  .tagline {
+    font-family: 'Share Tech Mono', monospace;
+    color: #6090a0;
+    letter-spacing: 3px;
+    font-size: 11px;
+    margin: 6px 0 12px;
+    text-align: center;
+  }
+
+  /* Music toggle (decorative; modem hum + tap clicks) */
+  .music-toggle {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 200;
+    font-size: 10px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 2px;
+    font-family: 'Russo One', sans-serif;
+    border-radius: 3px;
+    border: 1px solid #2a604a;
+    background: linear-gradient(180deg, #061a14, #021008);
+    color: #60c890;
+    cursor: pointer;
+  }
+  .music-toggle.on {
+    border-color: #60ffa0;
+    background: linear-gradient(180deg, #082818, #04140c);
+    color: #a0ffc0;
+    box-shadow: 0 0 12px rgba(96,255,160,0.45);
+  }
+
+  /* Scenes */
+  .scene { width: 100%; max-width: 980px; }
+  .scene.hidden { display: none; }
+
+  /* ---------- Menu ---------- */
+  .menu-card {
+    background: linear-gradient(180deg, rgba(8,28,18,0.9), rgba(2,10,8,0.95));
+    border: 2px solid #1a604a;
+    border-radius: 12px;
+    padding: 22px 22px 26px;
+    text-align: center;
+    box-shadow: 0 0 36px rgba(60,200,140,0.18);
+    max-width: 580px;
+    margin: 0 auto 16px;
+  }
+  .menu-card h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 6px;
+    letter-spacing: 4px;
+    font-size: 20px;
+  }
+  .menu-card p {
+    color: #a0c8b8;
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 6px 0 16px;
+  }
+  .mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .mode-card {
+    background: linear-gradient(180deg, rgba(10,20,30,0.9), rgba(4,10,16,0.95));
+    border: 2px solid #2a4060;
+    border-radius: 10px;
+    padding: 18px 14px;
+    cursor: pointer;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  }
+  .mode-card:hover { transform: translateY(-3px); border-color: #60c0ff; box-shadow: 0 0 24px rgba(96,180,255,0.5); }
+  .mode-card svg { width: 100%; height: 100px; }
+  .mode-card .label {
+    font-family: 'Bungee', sans-serif;
+    color: #c0e8ff;
+    letter-spacing: 3px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .mode-card.house { border-color: #604028; }
+  .mode-card.house:hover { border-color: #ffa060; box-shadow: 0 0 24px rgba(255,160,80,0.5); }
+  .mode-card.house .label { color: #ffd0a0; }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 6px 0 12px;
+  }
+  .hud .chip {
+    background: rgba(8,18,14,0.8);
+    border: 1px solid #2a604a;
+    color: #a0e8c0;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+  .hud .chip .v { color: #60ffa0; }
+  .hud .chip.target { border-color: #ffd060; color: #ffd060; }
+  .hud .chip.target .v { color: #fff8c0; }
+  .hud .progress-bar {
+    flex-basis: 100%;
+    margin-top: 4px;
+    height: 14px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid #2a604a;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hud .progress-bar .fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2a604a, #60ffa0, #80ffd0);
+    transition: width 0.4s ease-out;
+    box-shadow: 0 0 16px rgba(96,255,160,0.6);
+  }
+  .hud .progress-bar .fill.minus {
+    background: linear-gradient(90deg, #604040, #ff6040);
+    box-shadow: 0 0 16px rgba(255,100,60,0.6);
+  }
+
+  /* ---------- Build viz ---------- */
+  .build-viz {
+    background: linear-gradient(180deg, rgba(0,8,12,0.7), rgba(0,2,4,0.9));
+    border: 1px solid #1a4030;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 0 auto 14px;
+    max-width: 640px;
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .build-viz svg { width: 100%; height: 100%; }
+  .build-viz .piece { transition: opacity 0.5s, transform 0.5s; transform-origin: center bottom; }
+  .build-viz .piece.off { opacity: 0; transform: translateY(30px) scale(0.7); }
+  .build-viz .piece.on  { opacity: 1; transform: translateY(0) scale(1); }
+  @keyframes shimmer {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.4); }
+  }
+  .build-viz.complete { animation: shimmer 1.2s ease-in-out infinite; }
+
+  /* ---------- Card grid ---------- */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  @media (max-width: 540px) {
+    .card-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  }
+  @media (max-width: 360px) {
+    .card-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  }
+  .card {
+    aspect-ratio: 3 / 4;
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(20,40,40,0.9), rgba(6,18,18,0.95));
+    border: 2px solid #2a6048;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    padding: 10px 6px 8px;
+    box-sizing: border-box;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: #60ffa0; box-shadow: 0 0 18px rgba(96,255,160,0.4); }
+  .card.locked, .card.revealed { cursor: default; }
+  .card.locked:hover, .card.revealed:hover { transform: none; }
+  .card .code {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(14px, 3.2vw, 22px);
+    letter-spacing: 4px;
+    color: #60ffa0;
+    text-shadow: 0 0 6px rgba(96,255,160,0.6);
+  }
+  .card .seal {
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #60c890;
+    border: 1px solid #2a6048;
+    border-radius: 3px;
+    padding: 3px 6px;
+    background: rgba(0,0,0,0.3);
+  }
+  .card .icon {
+    font-size: clamp(22px, 6vw, 30px);
+    margin: 6px 0;
+    filter: drop-shadow(0 0 6px rgba(96,255,160,0.5));
+  }
+  .card .desc {
+    font-size: 10px;
+    color: #c0e8d0;
+    text-align: center;
+    line-height: 1.25;
+    letter-spacing: 0.5px;
+    padding: 0 4px;
+  }
+  .card .delta {
+    font-family: 'Bungee', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .card.revealed { border-style: solid; cursor: default; }
+  .card.kind-fix.revealed     { border-color: #60ffa0; background: linear-gradient(180deg, rgba(20,60,40,0.92), rgba(6,18,12,0.95)); box-shadow: 0 0 18px rgba(96,255,160,0.35); }
+  .card.kind-fix.revealed .delta { color: #80ffb0; }
+  .card.kind-bigfix.revealed  { border-color: #ffd060; background: linear-gradient(180deg, rgba(80,60,12,0.92), rgba(20,12,4,0.95)); box-shadow: 0 0 22px rgba(255,200,80,0.45); }
+  .card.kind-bigfix.revealed .delta { color: #ffd060; }
+  .card.kind-space.revealed   { border-color: #80c0ff; background: linear-gradient(180deg, rgba(8,18,42,0.92), rgba(2,6,18,0.95)); box-shadow: 0 0 18px rgba(120,180,255,0.4); }
+  .card.kind-space.revealed .delta { color: #a0c8ff; }
+  .card.kind-back.revealed    { border-color: #ff5060; background: linear-gradient(180deg, rgba(60,16,18,0.92), rgba(18,4,6,0.95)); box-shadow: 0 0 18px rgba(255,80,80,0.4); }
+  .card.kind-back.revealed .delta { color: #ff8080; }
+
+  /* card flip animation */
+  .card.flipping { animation: flip 0.55s ease-out; }
+  @keyframes flip {
+    0%   { transform: rotateY(0deg); }
+    50%  { transform: rotateY(90deg) scale(1.04); }
+    100% { transform: rotateY(0deg); }
+  }
+
+  /* ---------- Typing modal ---------- */
+  .modal {
+    position: fixed; inset: 0;
+    background: rgba(0,4,2,0.85);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(2px);
+    padding: 20px;
+  }
+  .modal.on { display: flex; }
+  .modal-box {
+    background: linear-gradient(180deg, #06180e, #02080a);
+    border: 2px solid #60ffa0;
+    border-radius: 12px;
+    padding: 22px 22px 18px;
+    width: min(420px, 100%);
+    box-shadow: 0 0 40px rgba(96,255,160,0.45);
+  }
+  .modal-box .heading {
+    font-family: 'Russo One', sans-serif;
+    color: #60c890;
+    letter-spacing: 4px;
+    font-size: 11px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .modal-box .target-code {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(36px, 10vw, 56px);
+    letter-spacing: 12px;
+    text-align: center;
+    color: #60ffa0;
+    text-shadow: 0 0 18px rgba(96,255,160,0.6);
+    margin-bottom: 10px;
+    user-select: none;
+  }
+  .modal-box .input-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .input-cell {
+    width: clamp(40px, 12vw, 56px);
+    height: clamp(50px, 14vw, 70px);
+    border: 2px solid #2a6048;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(22px, 6vw, 32px);
+    color: #60ffa0;
+    text-shadow: 0 0 8px rgba(96,255,160,0.6);
+    transition: border-color 0.12s, transform 0.1s, background 0.12s;
+  }
+  .input-cell.matched { border-color: #60ffa0; background: rgba(60,255,160,0.12); }
+  .input-cell.cursor  { border-color: #ffd060; box-shadow: 0 0 12px rgba(255,200,80,0.6); }
+  .modal-box.shake { animation: shakeBox 0.3s ease-out; }
+  @keyframes shakeBox {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-9px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(5px); }
+  }
+  .input-row.shake { animation: shakeBox 0.3s ease-out; }
+  .modal-box .hint {
+    color: #608060;
+    font-size: 11px;
+    text-align: center;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .modal-actions {
+    display: flex; gap: 8px; justify-content: center; margin-top: 6px;
+  }
+
+  /* hidden input that captures keystrokes */
+  .ghost-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px; height: 1px;
+    pointer-events: none;
+  }
+
+  /* generic buttons */
+  button {
+    font-family: 'Russo One', sans-serif;
+    padding: 10px 18px;
+    border: 1.5px solid #60ffa0;
+    background: linear-gradient(180deg, #145838, #082812);
+    color: #d0ffe0;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-size: 12px;
+    min-height: 44px;
+    text-transform: uppercase;
+  }
+  button:hover:not(:disabled) { background: linear-gradient(180deg, #1c7048, #103820); box-shadow: 0 0 12px rgba(96,255,160,0.5); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secondary {
+    border-color: #60a0c0;
+    background: linear-gradient(180deg, #103048, #061826);
+    color: #c0e0ff;
+  }
+  button.secondary:hover:not(:disabled) { background: linear-gradient(180deg, #184868, #0a2438); box-shadow: 0 0 12px rgba(96,180,255,0.4); }
+
+  /* end overlay */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(2,4,8,0.94);
+    display: none; align-items: center; justify-content: center;
+    z-index: 120;
+    padding: 20px;
+  }
+  .overlay.on { display: flex; }
+  .overlay-box {
+    background: linear-gradient(180deg, #06180e, #02080a);
+    border: 2px solid #ffd060;
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    text-align: center;
+    max-width: 460px;
+    box-shadow: 0 0 44px rgba(255,200,80,0.5);
+  }
+  .overlay-box.win  { border-color: #60ffa0; box-shadow: 0 0 44px rgba(96,255,160,0.5); }
+  .overlay-box.fail { border-color: #ff6080; box-shadow: 0 0 44px rgba(255,100,128,0.5); }
+  .overlay-box h2 {
+    font-family: 'Bungee', sans-serif;
+    color: #ffd060;
+    margin: 0 0 8px;
+    letter-spacing: 4px;
+  }
+  .overlay-box.win h2  { color: #60ffa0; }
+  .overlay-box.fail h2 { color: #ff8090; }
+  .overlay-box p { color: #d0ecde; margin: 6px 0 12px; font-size: 13px; line-height: 1.5; }
+  .overlay-box .summary {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid #2a6048;
+    border-radius: 6px;
+    padding: 10px;
+    text-align: left;
+    font-family: 'Share Tech Mono', monospace;
+    color: #a0e8c0;
+    font-size: 12px;
+    margin: 10px 0 14px;
+  }
+  .overlay-box .summary div { display: flex; justify-content: space-between; margin: 2px 0; }
+  .overlay-box .btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+  /* tap effect */
+  @keyframes pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .reveal-anim { animation: pop 0.5s ease-out; }
+</style>
+</head>
+<body>
+
+<button id="music" class="music-toggle">🔇 Tone</button>
+
+<div class="logo">X248</div>
+<div class="tagline" id="tagline">SECURE PROCUREMENT TERMINAL · v0.9</div>
+
+<!-- Menu scene -->
+<div class="scene" id="sceneMenu">
+  <div class="menu-card">
+    <h2>PICK YOUR MISSION</h2>
+    <p>Your <span id="menuThing">place</span> is broken. The passcodes call up your computer's <em>secret procurement system</em>. Type one and see what part — or trip to space — you just bought.</p>
+    <div class="mode-grid">
+      <div class="mode-card house" data-mode="house">
+        <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <polygon points="60,8 22,38 98,38" fill="#a04020" stroke="#3a1408" stroke-width="1.5"/>
+          <rect x="28" y="38" width="64" height="32" fill="#c08858" stroke="#3a1408" stroke-width="1.5"/>
+          <rect x="50" y="50" width="14" height="20" fill="#3a1808"/>
+          <rect x="70" y="46" width="12" height="12" fill="#80c0ff" stroke="#3a1408" stroke-width="1"/>
+          <rect x="36" y="46" width="12" height="12" fill="#80c0ff" stroke="#3a1408" stroke-width="1"/>
+          <rect x="20" y="68" width="80" height="6" fill="#382418"/>
+        </svg>
+        <div class="label">FIX MY HOUSE</div>
+      </div>
+      <div class="mode-card ship" data-mode="ship">
+        <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <ellipse cx="60" cy="44" rx="40" ry="14" fill="#5078c0" stroke="#102040" stroke-width="1.5"/>
+          <ellipse cx="60" cy="44" rx="40" ry="6"  fill="#3050a0"/>
+          <circle cx="60" cy="34" r="10" fill="#a0e0ff" stroke="#102040" stroke-width="1.5"/>
+          <circle cx="56" cy="32" r="2.5" fill="#fff"/>
+          <rect x="34" y="40" width="6" height="4" fill="#ffd060"/>
+          <rect x="80" y="40" width="6" height="4" fill="#ffd060"/>
+          <polygon points="100,40 116,32 116,52" fill="#7090d8"/>
+          <polygon points="20,40 4,32 4,52" fill="#7090d8"/>
+        </svg>
+        <div class="label">FIX MY SHIP</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Game scene -->
+<div class="scene hidden" id="scenePlay">
+  <div class="hud">
+    <div class="chip">PROGRESS · <span class="v" id="hudProg">0</span> / <span id="hudTarget">5</span></div>
+    <div class="chip">CARDS · <span class="v" id="hudCards">16</span></div>
+    <div class="chip target" id="hudFlavor">HOUSE MODE</div>
+    <div class="progress-bar"><div class="fill" id="progFill"></div></div>
+  </div>
+  <div class="build-viz" id="buildViz"></div>
+  <div class="card-grid" id="cardGrid"></div>
+  <div style="text-align:center; margin: 14px 0 6px;">
+    <button id="quitBtn" class="secondary">Back to menu</button>
+  </div>
+</div>
+
+<!-- Typing modal -->
+<div class="modal" id="modal">
+  <div class="modal-box" id="modalBox">
+    <div class="heading">ENTER PASSCODE</div>
+    <div class="target-code" id="targetCode">X248</div>
+    <div class="input-row" id="inputRow"></div>
+    <div class="hint" id="modalHint">Tap the keys or use your keyboard</div>
+    <div class="modal-actions">
+      <button class="secondary" id="modalCancel">Cancel</button>
+    </div>
+  </div>
+  <input type="text" class="ghost-input" id="ghostInput" autocomplete="off" autocapitalize="characters" inputmode="text" maxlength="4">
+</div>
+
+<!-- End overlay -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box" id="overlayBox">
+    <h2 id="overTitle">—</h2>
+    <p id="overBody">—</p>
+    <div class="summary" id="overSummary"></div>
+    <div class="btns">
+      <button id="overReplay">Play again</button>
+      <button id="overMenu" class="secondary">Menu</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ========== Theme content ==========
+const HOUSE = {
+  thing: 'house',
+  fixDescs: [
+    'Patched the roof', 'Fixed the plumbing', 'Replaced windows', 'New paint job',
+    'Repaired siding', 'Fixed the foundation', 'Replaced front door', 'Mended the porch',
+    'Tuned the furnace', 'Sealed the chimney',
+  ],
+  bigFixDescs: [ 'Whole-home renovation!', 'Smart-home overhaul!' ],
+  spaceDescs: [
+    'Launched into orbit',
+    'Accidentally booked Mars',
+    'Got beamed up',
+    'Spaced out for an hour',
+  ],
+  backfireDescs: [
+    'Ordered the wrong drywall',
+    'Bought 100 toilets by mistake',
+    'Delivered the neighbour\'s house',
+  ],
+  vizPieces: [
+    // Layered components, drawn in order; index 0..n shown progressively.
+    { svg: '<rect x="20" y="76" width="80" height="6" fill="#382418"/>',                        label: 'foundation' },
+    { svg: '<rect x="28" y="46" width="64" height="32" fill="#c08858" stroke="#3a1408" stroke-width="1.5"/>', label: 'walls' },
+    { svg: '<polygon points="60,16 22,46 98,46" fill="#a04020" stroke="#3a1408" stroke-width="1.5"/>', label: 'roof' },
+    { svg: '<rect x="50" y="58" width="14" height="20" fill="#3a1808"/><circle cx="62" cy="68" r="0.9" fill="#ffd060"/>', label: 'door' },
+    { svg: '<rect x="36" y="54" width="12" height="12" fill="#a0d8ff" stroke="#3a1408" stroke-width="1"/><rect x="70" y="54" width="12" height="12" fill="#a0d8ff" stroke="#3a1408" stroke-width="1"/>', label: 'windows' },
+  ],
+  bg: 'linear-gradient(180deg, rgba(40,28,18,0.9), rgba(8,4,2,0.95))',
+};
+
+const SHIP = {
+  thing: 'ship',
+  fixDescs: [
+    'Repaired warp core',
+    'Patched hull breach',
+    'Restored life support',
+    'Aligned thrusters',
+    'Refilled oxygen',
+    'Calibrated shields',
+    'Cleaned solar panels',
+    'Mended antenna',
+    'Reset the AI',
+    'Fixed the airlock',
+  ],
+  bigFixDescs: [ 'Engine fully rebuilt!', 'Hull replaced top to bottom!' ],
+  spaceDescs: [
+    'Hyperjumped to wrong galaxy',
+    'Time-warped −10 minutes',
+    'Orbital decay started',
+    'Comet got too close',
+  ],
+  backfireDescs: [
+    'Replaced the wrong system',
+    'Mistyped fuel mix · vented oxygen',
+    'Deleted the navigation map',
+  ],
+  vizPieces: [
+    { svg: '<ellipse cx="60" cy="62" rx="40" ry="6" fill="#1a4060" opacity="0.6"/>', label: 'shield' },
+    { svg: '<ellipse cx="60" cy="56" rx="40" ry="14" fill="#5078c0" stroke="#102040" stroke-width="1.5"/><ellipse cx="60" cy="56" rx="40" ry="6" fill="#3050a0"/>', label: 'hull' },
+    { svg: '<circle cx="60" cy="44" r="10" fill="#a0e0ff" stroke="#102040" stroke-width="1.5"/><circle cx="56" cy="42" r="2.5" fill="#fff"/>', label: 'cockpit' },
+    { svg: '<rect x="34" y="50" width="6" height="6" fill="#ffd060"/><rect x="80" y="50" width="6" height="6" fill="#ffd060"/>', label: 'thrusters' },
+    { svg: '<polygon points="100,50 116,42 116,62" fill="#7090d8"/><polygon points="20,50 4,42 4,62" fill="#7090d8"/>', label: 'wings' },
+  ],
+  bg: 'linear-gradient(180deg, rgba(8,16,32,0.9), rgba(2,4,12,0.95))',
+};
+
+const TARGET_PROGRESS = 5;
+const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+const DIGITS = '23456789';
+
+function randCode() {
+  return ALPHA[Math.floor(Math.random() * ALPHA.length)] +
+         DIGITS[Math.floor(Math.random() * DIGITS.length)] +
+         DIGITS[Math.floor(Math.random() * DIGITS.length)] +
+         DIGITS[Math.floor(Math.random() * DIGITS.length)];
+}
+
+function uniqueCodes(n) {
+  const set = new Set();
+  while (set.size < n) set.add(randCode());
+  return [...set];
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ========== Game state ==========
+const $ = id => document.getElementById(id);
+
+const G = {
+  mode: null,        // 'house' | 'ship'
+  theme: null,       // HOUSE or SHIP
+  cards: [],         // [{ code, kind, desc, delta, revealed }]
+  progress: 0,
+  remaining: 0,
+  active: null,      // currently typing card index
+  typed: '',
+  phase: 'menu',
+};
+
+function buildDeck(theme) {
+  // 16 cards. 8 fix, 4 space, 2 bigfix, 2 backfire.
+  const codes = shuffle(uniqueCodes(16));
+  const fixD  = shuffle(theme.fixDescs.slice());
+  const spcD  = shuffle(theme.spaceDescs.slice());
+  const bigD  = shuffle(theme.bigFixDescs.slice());
+  const bckD  = shuffle(theme.backfireDescs.slice());
+  const out = [];
+  let idx = 0;
+  for (let i = 0; i < 8; i++) out.push({ code: codes[idx++], kind: 'fix',    desc: fixD[i % fixD.length], delta: +1 });
+  for (let i = 0; i < 2; i++) out.push({ code: codes[idx++], kind: 'bigfix', desc: bigD[i % bigD.length], delta: +2 });
+  for (let i = 0; i < 4; i++) out.push({ code: codes[idx++], kind: 'space',  desc: spcD[i % spcD.length], delta: -1 });
+  for (let i = 0; i < 2; i++) out.push({ code: codes[idx++], kind: 'back',   desc: bckD[i % bckD.length], delta: -2 });
+  return shuffle(out);
+}
+
+// ========== Build viz ==========
+function renderBuildViz() {
+  const viz = $('buildViz');
+  viz.style.background = G.theme.bg;
+  // Build SVG with all pieces, gated by progress.
+  const pieces = G.theme.vizPieces;
+  const stage = Math.max(0, Math.min(pieces.length, Math.floor(G.progress)));
+  const inner = pieces.map((p, i) => `<g class="piece ${i < stage ? 'on' : 'off'}">${p.svg}</g>`).join('');
+  viz.innerHTML = `<svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+  viz.classList.toggle('complete', G.progress >= TARGET_PROGRESS);
+}
+
+// ========== Render cards ==========
+function renderCards() {
+  const grid = $('cardGrid');
+  grid.innerHTML = '';
+  G.cards.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'card kind-' + c.kind + (c.revealed ? ' revealed' : '');
+    el.dataset.i = i;
+    if (!c.revealed) {
+      el.innerHTML = `
+        <div class="code">${c.code}</div>
+        <div class="icon">🔒</div>
+        <div class="seal">UNUSED</div>
+      `;
+    } else {
+      const icon = iconFor(c.kind);
+      const sign = c.delta > 0 ? '+' + c.delta : '' + c.delta;
+      el.innerHTML = `
+        <div class="code">${c.code}</div>
+        <div class="icon">${icon}</div>
+        <div class="desc">${c.desc}</div>
+        <div class="delta">${sign}</div>
+      `;
+    }
+    el.addEventListener('click', () => onCardClick(i));
+    grid.appendChild(el);
+  });
+}
+
+function iconFor(kind) {
+  switch (kind) {
+    case 'fix':    return '🔧';
+    case 'bigfix': return '🌟';
+    case 'space':  return '🚀';
+    case 'back':   return '💥';
+  }
+  return '·';
+}
+
+function updateHud() {
+  $('hudProg').textContent = G.progress;
+  $('hudTarget').textContent = TARGET_PROGRESS;
+  $('hudCards').textContent = G.cards.filter(c => !c.revealed).length;
+  $('hudFlavor').textContent = (G.mode === 'house' ? 'HOUSE' : 'SHIP') + ' MODE';
+  const bar = $('progFill');
+  const pct = Math.max(0, Math.min(100, (G.progress / TARGET_PROGRESS) * 100));
+  bar.style.width = pct + '%';
+  bar.classList.toggle('minus', G.progress < 0);
+  if (G.progress < 0) bar.style.width = Math.min(100, Math.abs(G.progress) / TARGET_PROGRESS * 100) + '%';
+}
+
+// ========== Typing modal ==========
+function onCardClick(i) {
+  const c = G.cards[i];
+  if (G.phase !== 'play' || c.revealed || G.active !== null) return;
+  G.active = i;
+  G.typed = '';
+  $('targetCode').textContent = c.code;
+  buildInputRow(c.code.length);
+  $('modal').classList.add('on');
+  // Focus the ghost input to capture keys + raise mobile keyboard.
+  setTimeout(() => $('ghostInput').focus(), 30);
+}
+
+function buildInputRow(len) {
+  const row = $('inputRow');
+  row.innerHTML = '';
+  for (let i = 0; i < len; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'input-cell' + (i === 0 ? ' cursor' : '');
+    row.appendChild(cell);
+  }
+}
+
+function refreshInputRow() {
+  const cells = $('inputRow').children;
+  const target = G.cards[G.active].code;
+  for (let i = 0; i < cells.length; i++) {
+    cells[i].textContent = i < G.typed.length ? G.typed[i] : '';
+    cells[i].classList.toggle('matched', i < G.typed.length);
+    cells[i].classList.toggle('cursor', i === G.typed.length);
+  }
+}
+
+function shakeBox() {
+  $('modalBox').classList.remove('shake');
+  void $('modalBox').offsetWidth;
+  $('modalBox').classList.add('shake');
+}
+
+function closeModal() {
+  $('modal').classList.remove('on');
+  G.active = null;
+  G.typed = '';
+  $('ghostInput').value = '';
+  $('ghostInput').blur();
+}
+
+// Map raw character against expected next; reject mismatches.
+function tryAcceptChar(rawCh) {
+  if (G.active === null) return;
+  const target = G.cards[G.active].code;
+  if (G.typed.length >= target.length) return;
+  const ch = (rawCh || '').toUpperCase();
+  if (!ch || ch.length !== 1) return;
+  const want = target[G.typed.length];
+  if (ch === want) {
+    G.typed += ch;
+    refreshInputRow();
+    blip(880 + (G.typed.length - 1) * 40, 0.05, 'square');
+    if (G.typed.length === target.length) onTypeComplete();
+  } else {
+    shakeBox();
+    blip(180, 0.1, 'sawtooth');
+  }
+}
+
+function onTypeComplete() {
+  const i = G.active;
+  const c = G.cards[i];
+  c.revealed = true;
+  G.progress = Math.max(-99, G.progress + c.delta);
+  closeModal();
+  // Card flip animation
+  renderCards();
+  const card = document.querySelector('.card[data-i="' + i + '"]');
+  if (card) {
+    card.classList.add('flipping');
+    setTimeout(() => card.classList.remove('flipping'), 600);
+  }
+  renderBuildViz();
+  updateHud();
+  playOutcomeSound(c.kind);
+  // Check end conditions
+  if (G.progress >= TARGET_PROGRESS) {
+    setTimeout(() => endGame(true), 700);
+  } else if (G.cards.every(x => x.revealed)) {
+    setTimeout(() => endGame(false), 700);
+  }
+}
+
+// ========== Input wiring ==========
+function wireInput() {
+  const ghost = $('ghostInput');
+  // On keystroke
+  ghost.addEventListener('keydown', e => {
+    if (G.active === null) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeModal(); return; }
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (G.typed.length > 0) {
+        G.typed = G.typed.slice(0, -1);
+        refreshInputRow();
+      }
+      return;
+    }
+    if (e.key.length === 1) {
+      e.preventDefault();
+      tryAcceptChar(e.key);
+    }
+  });
+  // Mobile keyboards may use 'input' rather than discrete keydowns.
+  ghost.addEventListener('input', e => {
+    if (G.active === null) return;
+    const v = ghost.value || '';
+    // Walk new chars from current typed length
+    if (v.length > G.typed.length) {
+      const newChar = v[v.length - 1];
+      // Reset value, run through validator
+      ghost.value = '';
+      tryAcceptChar(newChar);
+    } else {
+      // user used backspace via input event
+      if (v.length < G.typed.length) {
+        G.typed = v.toUpperCase().slice(0, G.typed.length - 1);
+        refreshInputRow();
+      }
+    }
+  });
+  // Tap on the modal-box should refocus input
+  $('modalBox').addEventListener('click', () => ghost.focus());
+  // Cancel button closes
+  $('modalCancel').addEventListener('click', closeModal);
+  // Tap outside the box closes
+  $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+}
+
+// ========== End state ==========
+function endGame(won) {
+  G.phase = 'ended';
+  const box = $('overlayBox');
+  box.classList.remove('win', 'fail');
+  box.classList.add(won ? 'win' : 'fail');
+  $('overTitle').textContent = won
+    ? (G.mode === 'house' ? 'NEW HOUSE!' : 'SHIP RESTORED!')
+    : 'OUT OF CARDS';
+  $('overBody').textContent = won
+    ? 'Your computer ordered every part. The ' + G.theme.thing + ' is back together.'
+    : 'You ran out of passcodes before the ' + G.theme.thing + ' was fixed. Try again?';
+  // Build summary
+  const tally = { fix:0, bigfix:0, space:0, back:0 };
+  G.cards.forEach(c => { if (c.revealed) tally[c.kind]++; });
+  const lines = [];
+  lines.push(['🔧 Fixes',         tally.fix]);
+  lines.push(['🌟 Big fixes',     tally.bigfix]);
+  lines.push(['🚀 Trips to space', tally.space]);
+  lines.push(['💥 Backfires',      tally.back]);
+  lines.push(['Net progress',     G.progress]);
+  $('overSummary').innerHTML = lines.map(([k, v]) => '<div><span>' + k + '</span><span>' + v + '</span></div>').join('');
+  $('overlay').classList.add('on');
+  if (won) playWinSound();
+  else playFailSound();
+}
+
+// ========== Game lifecycle ==========
+function startMode(mode) {
+  G.mode = mode;
+  G.theme = (mode === 'house') ? HOUSE : SHIP;
+  G.cards = buildDeck(G.theme);
+  G.progress = 0;
+  G.active = null;
+  G.typed = '';
+  G.phase = 'play';
+  renderBuildViz();
+  renderCards();
+  updateHud();
+  $('sceneMenu').classList.add('hidden');
+  $('scenePlay').classList.remove('hidden');
+  $('overlay').classList.remove('on');
+  $('menuThing').textContent = G.theme.thing;
+  $('tagline').textContent = mode === 'house'
+    ? 'SECURE PROCUREMENT TERMINAL · HOUSEHOLD'
+    : 'SECURE PROCUREMENT TERMINAL · SHIP REPAIR';
+}
+
+function backToMenu() {
+  G.phase = 'menu';
+  $('overlay').classList.remove('on');
+  $('scenePlay').classList.add('hidden');
+  $('sceneMenu').classList.remove('hidden');
+  $('tagline').textContent = 'SECURE PROCUREMENT TERMINAL · v0.9';
+}
+
+// ========== Wire UI ==========
+document.querySelectorAll('.mode-card').forEach(c => {
+  c.addEventListener('click', () => startMode(c.dataset.mode));
+});
+$('quitBtn').addEventListener('click', backToMenu);
+$('overReplay').addEventListener('click', () => startMode(G.mode || 'house'));
+$('overMenu').addEventListener('click', backToMenu);
+wireInput();
+
+// Update menu thing label on hover
+document.querySelectorAll('.mode-card').forEach(c => {
+  c.addEventListener('mouseenter', () => {
+    const t = c.dataset.mode === 'house' ? 'house' : 'ship';
+    $('menuThing').textContent = t;
+  });
+});
+
+// ========== Audio ==========
+let aCtx = null, aMaster = null, aHum = null, aOn = false;
+function ensureAudio() {
+  if (aCtx) return;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  aCtx = new Ctx();
+  aMaster = aCtx.createGain();
+  aMaster.gain.value = 0;
+  aMaster.connect(aCtx.destination);
+  // Modem-style hum: two slow detuned sines through a band-pass.
+  const lp = aCtx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = 1.2;
+  lp.connect(aMaster);
+  aHum = aCtx.createGain(); aHum.gain.value = 0;
+  aHum.connect(lp);
+  const o1 = aCtx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 80;
+  const o2 = aCtx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 81.6;
+  o1.connect(aHum); o2.connect(aHum);
+  o1.start(); o2.start();
+}
+function toggleAudio() {
+  ensureAudio();
+  if (!aCtx) return;
+  aOn = !aOn;
+  const b = $('music');
+  if (aOn) {
+    aCtx.resume();
+    aMaster.gain.cancelScheduledValues(aCtx.currentTime);
+    aMaster.gain.linearRampToValueAtTime(0.45, aCtx.currentTime + 0.4);
+    aHum.gain.linearRampToValueAtTime(0.1, aCtx.currentTime + 0.4);
+    b.textContent = '🔊 Tone';
+    b.classList.add('on');
+  } else {
+    aMaster.gain.linearRampToValueAtTime(0, aCtx.currentTime + 0.3);
+    b.textContent = '🔇 Tone';
+    b.classList.remove('on');
+  }
+}
+function blip(freq, dur, type) {
+  if (!aOn) return;
+  const o = aCtx.createOscillator(); o.type = type || 'square'; o.frequency.value = freq;
+  const g = aCtx.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(0.2, aCtx.currentTime + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.001, aCtx.currentTime + dur);
+  o.connect(g); g.connect(aMaster);
+  o.start(); o.stop(aCtx.currentTime + dur + 0.05);
+}
+function chord(freqs, dur) {
+  if (!aOn) return;
+  freqs.forEach((f, i) => setTimeout(() => blip(f, dur, 'triangle'), i * 60));
+}
+function noiseBurst(dur, lpFreq) {
+  if (!aOn) return;
+  const len = aCtx.sampleRate * dur;
+  const buf = aCtx.createBuffer(1, len, aCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() - 0.5) * (1 - i / len);
+  const src = aCtx.createBufferSource(); src.buffer = buf;
+  const lp = aCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = lpFreq || 1200;
+  const g = aCtx.createGain(); g.gain.value = 0.4;
+  src.connect(lp); lp.connect(g); g.connect(aMaster);
+  src.start();
+}
+function playOutcomeSound(kind) {
+  if (kind === 'fix')    chord([523, 659], 0.2);
+  if (kind === 'bigfix') chord([523, 659, 784, 1047], 0.25);
+  if (kind === 'space')  blip(220, 0.35, 'sawtooth');
+  if (kind === 'back')   noiseBurst(0.3, 800);
+}
+function playWinSound() {
+  if (!aOn) return;
+  chord([523, 659, 784, 1047, 1319], 0.4);
+}
+function playFailSound() {
+  if (!aOn) return;
+  chord([330, 247, 196], 0.4);
+}
+$('music').addEventListener('click', toggleAudio);
+</script>
+</body>
+</html>
