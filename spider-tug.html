@@ -126,7 +126,7 @@
 
   // ---------- tunable config ----------
   const CFG = {
-    enemyAccel:    1.30,  // rightward pull (toward Mawfang)
+    enemyAccel:    1.05,  // rightward pull (toward Mawfang)
     allyAccel:     0.50,  // leftward pull (toward Webb) while she's alive
     allyDeadBoost: 1.7,   // enemy pull multiplier once Webb dies
     tapKick:       0.28,  // instant leftward velocity per tap
@@ -265,11 +265,18 @@
   }
 
   canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); press(); }, { passive: false });
+  // Each physical key press counts once — holding the key down does nothing
+  // until it's released and pressed again (ignores OS key-repeat too).
+  const heldKeys = new Set();
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'Enter') {
-      e.preventDefault(); press();
+      e.preventDefault();
+      if (e.repeat || heldKeys.has(e.code)) return;
+      heldKeys.add(e.code);
+      press();
     }
   });
+  window.addEventListener('keyup', (e) => { heldKeys.delete(e.code); });
 
   // ---------- screen helpers ----------
   const startScreen = document.getElementById('startScreen');
