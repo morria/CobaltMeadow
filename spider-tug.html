@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spider Tug">
+<meta name="theme-color" content="#0a0a14">
+<title>Spider Tug</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #06060d; color: #fff;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    touch-action: none;
+  }
+  #game {
+    display: block;
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    touch-action: none;
+  }
+
+  /* overlay screens */
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding:
+      max(24px, env(safe-area-inset-top))
+      max(20px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(20px, env(safe-area-inset-left));
+    box-sizing: border-box;
+    background: radial-gradient(ellipse at 50% 40%, rgba(40,16,60,0.55), rgba(6,6,13,0.92) 70%);
+    z-index: 5;
+  }
+  .screen.hidden { display: none; }
+  .title {
+    font-size: clamp(34px, 11vw, 78px);
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 0;
+    line-height: 0.95;
+    background: linear-gradient(180deg, #ff7a7a, #c0392b 55%, #7a1f17);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 6px 30px rgba(255,60,60,0.3);
+  }
+  .title .web {
+    background: linear-gradient(180deg, #9af0e0, #3fb6a0 55%, #1f6a5e);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub {
+    color: #c9bcd8; max-width: 540px;
+    font-size: clamp(13px, 3.6vw, 16px);
+    line-height: 1.55; margin: 18px 0 26px;
+  }
+  .sub b.foe { color: #ff7a6a; }
+  .sub b.ally { color: #6fe6cf; }
+  .sub b.key { color: #ffe08a; }
+  .btn {
+    appearance: none; border: 2px solid #ff7a6a;
+    background: rgba(255,80,60,0.14); color: #ffd2c8;
+    font-family: inherit; font-weight: bold;
+    font-size: clamp(17px, 5vw, 22px);
+    letter-spacing: 3px; padding: 14px 34px; border-radius: 14px;
+    cursor: pointer; transition: background .12s, transform .08s;
+  }
+  .btn:active { background: rgba(255,80,60,0.32); transform: scale(0.96); }
+  .stat {
+    margin-top: 22px; color: #9a8fb0; font-size: 14px; letter-spacing: 1px;
+  }
+  .stat .big { color: #ffe08a; font-size: 30px; display: block; margin-top: 4px; }
+  .tips {
+    margin-top: 24px; color: #8a7fa0; font-size: 12.5px;
+    line-height: 1.7; max-width: 460px;
+  }
+  .tips span { color: #cdbfe0; }
+  #muteBtn {
+    position: fixed; top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right));
+    z-index: 6; width: 40px; height: 40px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06);
+    color: #cdbfe0; font-size: 18px; cursor: pointer; line-height: 1;
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<button id="muteBtn" title="Sound on/off">🔊</button>
+
+<div id="startScreen" class="screen">
+  <h1 class="title"><span class="web">SPIDER</span> TUG</h1>
+  <p class="sub">
+    You're a firefly caught on a web between two spiders.<br>
+    <b class="ally">Webb</b> is your friend — she tugs you toward safety but can't fight.
+    <b class="foe">Mawfang</b> wants to eat you and sucks <b class="foe">harder</b>.<br>
+    <b class="key">TAP the screen</b> (or press <b class="key">SPACE</b>) to scuttle away from Mawfang.
+    Survive as long as you can!
+  </p>
+  <button class="btn" id="startBtn">PLAY</button>
+  <div class="tips">
+    <span>WIND</span> gusts shove you — watch the warning arrow.<br>
+    When Mawfang <span>lunges at Webb</span>, his pull on you eases — use it to fight left and <span>nurse Webb back to health</span>.<br>
+    Sucked all the way in? <span>MASH to break free</span> before the timer empties.
+  </div>
+</div>
+
+<div id="overScreen" class="screen hidden">
+  <h1 class="title" id="overTitle">EATEN</h1>
+  <p class="sub" id="overMsg"></p>
+  <div class="stat">YOU SURVIVED<span class="big" id="finalScore">0s</span></div>
+  <button class="btn" id="againBtn" style="margin-top:26px">TRY AGAIN</button>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- tunable config ----------
+  const CFG = {
+    enemyAccel:    0.95,  // rightward pull (toward Mawfang)
+    allyAccel:     0.60,  // leftward pull (toward Webb) while she's alive
+    allyDeadBoost: 1.6,   // enemy pull multiplier once Webb dies
+    tapKick:       0.34,  // instant leftward velocity per tap
+    velCap:        1.4,   // |velocity| clamp
+    damping:       0.88,  // velocity friction per 60fps frame
+    rampPerSec:    0.016, // difficulty growth
+    gustEnemy:     2.4,   // accel during a bad (toward-enemy) gust
+    gustAlly:      2.0,   // accel during a good (toward-ally) gust
+    lungeDrain:    20,    // Webb HP lost per second during a lunge
+    nurseHeal:     11,    // Webb HP gained per second while you hug her side
+    catchMashFill: 0.085, // escape meter gained per tap
+    catchDecay:    0.22,  // escape meter lost per second
+    catchTime:     3.6,   // seconds to escape before losing a heart
+    hearts:        3,
+  };
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, DPR = 1;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- sound ----------
+  let actx = null, muted = false;
+  function ac() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+    if (actx && actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function blip(freq, dur, type, vol) {
+    if (muted) return;
+    const a = ac(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    g.gain.value = 0; o.connect(g); g.connect(a.destination);
+    const t = a.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol || 0.12, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.12));
+    o.start(t); o.stop(t + (dur || 0.12) + 0.02);
+  }
+  function noiseGust() {
+    if (muted) return;
+    const a = ac(); if (!a) return;
+    const dur = 0.5, buf = a.createBuffer(1, a.sampleRate * dur, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+    const src = a.createBufferSource(); src.buffer = buf;
+    const g = a.createGain(); g.gain.value = 0.18;
+    const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 700;
+    src.connect(f); f.connect(g); g.connect(a.destination);
+    src.start();
+  }
+  document.getElementById('muteBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    muted = !muted;
+    document.getElementById('muteBtn').textContent = muted ? '🔇' : '🔊';
+  });
+
+  // ---------- game state ----------
+  const STATE = { START: 0, PLAY: 1, CAUGHT: 2, OVER: 3 };
+  let state = STATE.START;
+  let g = null;
+
+  function newGame() {
+    g = {
+      pos: 0.42,        // 0 = Webb (left), 1 = Mawfang (right)
+      vel: 0,
+      time: 0,
+      hearts: CFG.hearts,
+      allyHP: 100,
+      allyDead: false,
+      bob: 0,
+      shake: 0,
+      flash: 0,         // white-ish flash alpha
+      flashColor: '255,80,60',
+      // wind
+      gust: { phase: 'idle', t: 0, dir: 1, next: 4 + Math.random()*3 },
+      // lunge (enemy attacks Webb)
+      lunge: { phase: 'idle', t: 0, next: 6 + Math.random()*3 },
+      // caught
+      mash: 0,
+      catchT: 0,
+      invuln: 0,
+      // fx
+      particles: [],
+      legPhase: 0,
+      mawAnger: 0,
+      eaten: 0,
+    };
+  }
+
+  function spawnParticles(x, y, n, color, spread, speed) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      g.particles.push({
+        x, y,
+        vx: Math.cos(a) * (Math.random()*speed) + spread,
+        vy: Math.sin(a) * (Math.random()*speed) - 0.4,
+        life: 0.5 + Math.random()*0.6, max: 1, color,
+        r: 1.5 + Math.random()*2.5,
+      });
+    }
+  }
+
+  // ---------- input ----------
+  function press() {
+    ac();
+    if (state === STATE.START) { startGame(); return; }
+    if (state === STATE.OVER) { startGame(); return; }
+    if (state === STATE.PLAY) {
+      g.vel -= CFG.tapKick;
+      if (g.vel < -CFG.velCap) g.vel = -CFG.velCap;
+      blip(420 + Math.random()*80, 0.05, 'square', 0.07);
+      spawnParticles(playerX(), playerY(), 3, '255,230,140', -2, 60);
+      return;
+    }
+    if (state === STATE.CAUGHT) {
+      g.mash += CFG.catchMashFill;
+      g.shake = Math.max(g.shake, 4);
+      blip(300 + g.mash*500, 0.05, 'square', 0.09);
+      spawnParticles(playerX(), playerY(), 4, '255,230,140', 0, 90);
+      if (g.mash >= 1) escape(true);
+      return;
+    }
+  }
+
+  canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); press(); }, { passive: false });
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'Enter') {
+      e.preventDefault(); press();
+    }
+  });
+
+  // ---------- screen helpers ----------
+  const startScreen = document.getElementById('startScreen');
+  const overScreen  = document.getElementById('overScreen');
+  document.getElementById('startBtn').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+  document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+
+  function startGame() {
+    newGame();
+    state = STATE.PLAY;
+    startScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+  }
+
+  function gameOver(eaten) {
+    state = STATE.OVER;
+    g.eaten = eaten ? 1 : 0;
+    blip(120, 0.5, 'sawtooth', 0.16);
+    setTimeout(() => blip(80, 0.6, 'sawtooth', 0.14), 120);
+    document.getElementById('overTitle').textContent = eaten ? 'GULP.' : 'SNAPPED.';
+    document.getElementById('overMsg').innerHTML = eaten
+      ? 'Mawfang reeled you in and had firefly for lunch.'
+      : (g.allyDead
+          ? "Webb fell, and then so did you. Spiders work better in pairs."
+          : "The web held you too long. Mash faster next time!");
+    document.getElementById('finalScore').textContent = Math.floor(g.time) + 's';
+    overScreen.classList.remove('hidden');
+  }
+
+  // ---------- geometry ----------
+  function midY()   { return H * 0.54; }
+  function allyX()  { return W * 0.14; }
+  function enemyX() { return W * 0.86; }
+  function playerX() { return allyX() + (enemyX() - allyX()) * g.pos; }
+  function playerY() { return midY() + Math.sin(g.bob) * 5; }
+
+  // ---------- update ----------
+  function escape(clean) {
+    state = STATE.PLAY;
+    g.pos = 0.5; g.vel = clean ? -0.2 : 0.05;
+    g.invuln = 1.4; g.mash = 0;
+    if (clean) {
+      blip(700, 0.18, 'triangle', 0.14);
+      spawnParticles(playerX(), playerY(), 24, '160,255,220', 0, 160);
+    }
+  }
+
+  function update(dt) {
+    g.time += dt;
+    g.bob += dt * 5;
+    g.legPhase += dt * 6;
+    if (g.shake > 0) g.shake = Math.max(0, g.shake - dt * 24);
+    if (g.flash > 0) g.flash = Math.max(0, g.flash - dt * 2.2);
+    if (g.invuln > 0) g.invuln -= dt;
+    g.mawAnger += (( (g.lunge.phase==='active') ? 0.2 : (1 - g.pos) ) - g.mawAnger) * dt * 2;
+
+    // particles
+    for (const p of g.particles) {
+      p.x += p.vx * dt * 60; p.y += p.vy * dt * 60;
+      p.vy += dt * 30; p.life -= dt;
+    }
+    g.particles = g.particles.filter(p => p.life > 0);
+
+    if (state === STATE.PLAY) {
+      const ramp = 1 + g.time * CFG.rampPerSec;
+
+      // ----- lunge cycle (enemy attacks Webb) -----
+      const L = g.lunge;
+      if (!g.allyDead) {
+        if (L.phase === 'idle') {
+          L.next -= dt;
+          if (L.next <= 0) { L.phase = 'warn'; L.t = 0.9; }
+        } else if (L.phase === 'warn') {
+          L.t -= dt; if (L.t <= 0) { L.phase = 'active'; L.t = 2.4; }
+        } else if (L.phase === 'active') {
+          L.t -= dt;
+          g.allyHP -= CFG.lungeDrain * dt;
+          if (Math.random() < dt * 8) spawnParticles(allyX(), midY(), 2, '120,255,210', 0, 50);
+          if (L.t <= 0) { L.phase = 'idle'; L.next = 6 + Math.random()*4; }
+        }
+        if (g.allyHP <= 0) {
+          g.allyHP = 0; g.allyDead = true;
+          L.phase = 'idle';
+          g.flash = 0.7; g.flashColor = '255,60,60';
+          g.shake = 14;
+          blip(90, 0.5, 'sawtooth', 0.16);
+        }
+      }
+      const lunging = (L.phase === 'active');
+
+      // ----- nurse Webb back when you hug her side -----
+      if (!g.allyDead && g.pos < 0.16) {
+        g.allyHP = Math.min(100, g.allyHP + CFG.nurseHeal * dt);
+        if (Math.random() < dt * 6) spawnParticles(allyX()+20, midY(), 1, '180,255,230', 0, 30);
+      }
+
+      // ----- forces -----
+      let accel = 0;
+      const enemyMul = (g.allyDead ? CFG.allyDeadBoost : 1) * (lunging ? 0.18 : 1);
+      accel += CFG.enemyAccel * ramp * enemyMul;            // toward enemy (+)
+      if (!g.allyDead) accel -= CFG.allyAccel;              // toward ally  (-)
+
+      // ----- wind gust cycle -----
+      const Gst = g.gust;
+      if (Gst.phase === 'idle') {
+        Gst.next -= dt;
+        if (Gst.next <= 0) {
+          Gst.phase = 'warn'; Gst.t = 1.0;
+          // bad gusts get more common over time; good gusts ~30%
+          Gst.dir = (Math.random() < 0.30) ? -1 : 1;
+        }
+      } else if (Gst.phase === 'warn') {
+        Gst.t -= dt; if (Gst.t <= 0) { Gst.phase = 'active'; Gst.t = 1.6; noiseGust(); g.shake = 8; }
+      } else if (Gst.phase === 'active') {
+        Gst.t -= dt;
+        accel += (Gst.dir > 0 ? CFG.gustEnemy : -CFG.gustAlly);
+        const px = playerX(), py = playerY();
+        if (Math.random() < dt * 30) spawnParticles(px - Gst.dir*30, py + (Math.random()*60-30), 1, '200,210,255', Gst.dir*4, 30);
+        if (Gst.t <= 0) { Gst.phase = 'idle'; Gst.next = Math.max(2.4, 5 - g.time*0.02) + Math.random()*2.5; }
+      }
+
+      // integrate
+      g.vel += accel * dt;
+      if (g.vel > CFG.velCap) g.vel = CFG.velCap;
+      if (g.vel < -CFG.velCap) g.vel = -CFG.velCap;
+      g.pos += g.vel * dt;
+      g.vel *= Math.pow(CFG.damping, dt * 60);
+
+      if (g.pos <= 0) { g.pos = 0; if (g.vel < 0) g.vel = 0; }
+      if (g.pos >= 1) {
+        g.pos = 1;
+        if (g.invuln > 0) { g.vel = -0.4; }   // grace window after an escape
+        else { caught(); }
+      }
+    }
+
+    else if (state === STATE.CAUGHT) {
+      g.catchT -= dt;
+      g.mash = Math.max(0, g.mash - CFG.catchDecay * dt);
+      g.pos = 1;
+      if (g.catchT <= 0) {
+        // timer ran out — lose a heart
+        g.hearts--;
+        g.flash = 0.8; g.flashColor = '255,60,60'; g.shake = 16;
+        blip(110, 0.4, 'sawtooth', 0.16);
+        if (g.hearts <= 0) { gameOver(true); }
+        else { escape(false); }
+      }
+    }
+  }
+
+  function caught() {
+    state = STATE.CAUGHT;
+    g.mash = 0; g.catchT = CFG.catchTime;
+    g.shake = 10; g.flash = 0.5; g.flashColor = '120,20,30';
+    blip(180, 0.3, 'sawtooth', 0.14);
+    spawnParticles(playerX(), playerY(), 16, '120,30,40', 0, 100);
+  }
+
+  // ---------- drawing ----------
+  function drawWebStrand() {
+    const ax = allyX(), ex = enemyX(), my = midY(), px = playerX(), py = playerY();
+    // main strand sagging toward player
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(200,210,235,0.35)';
+    ctx.beginPath();
+    ctx.moveTo(ax, my);
+    ctx.quadraticCurveTo((ax+px)/2, (my+py)/2 + 6, px, py);
+    ctx.quadraticCurveTo((ex+px)/2, (my+py)/2 + 6, ex, my);
+    ctx.stroke();
+    // faint cross threads
+    ctx.strokeStyle = 'rgba(200,210,235,0.10)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 10; i++) {
+      const t = i/10;
+      const x = ax + (ex-ax)*t;
+      ctx.beginPath();
+      ctx.moveTo(x, my - 70 - Math.sin(t*Math.PI)*30);
+      ctx.lineTo(x, my + 70 + Math.sin(t*Math.PI)*30);
+      ctx.stroke();
+    }
+  }
+
+  function drawRadialWeb(cx, cy, R, color, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    const spokes = 9;
+    for (let i = 0; i < spokes; i++) {
+      const a = (i/spokes) * Math.PI*2;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a)*R, cy + Math.sin(a)*R); ctx.stroke();
+    }
+    for (let r = 1; r <= 4; r++) {
+      ctx.beginPath();
+      for (let i = 0; i <= spokes; i++) {
+        const a = (i/spokes) * Math.PI*2;
+        const rr = R * r/4;
+        const x = cx + Math.cos(a)*rr, y = cy + Math.sin(a)*rr;
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawSpider(cx, cy, size, opts) {
+    // opts: { color, eye, legColor, anger(0..1), facing(-1 left/+1 right), dead, friendly, lunge }
+    const f = opts.facing;
+    const anger = opts.anger || 0;
+    ctx.save();
+    if (opts.dead) ctx.globalAlpha = 0.5;
+
+    // legs
+    ctx.strokeStyle = opts.legColor; ctx.lineWidth = Math.max(2, size*0.09);
+    ctx.lineCap = 'round';
+    const legSets = 4;
+    for (let side = -1; side <= 1; side += 2) {
+      for (let i = 0; i < legSets; i++) {
+        const baseA = (-0.5 + i*0.34) * 1.1;
+        const wig = Math.sin(g.legPhase + i*1.3 + side) * 0.12 * (1+anger);
+        const a1 = baseA + wig;
+        const len1 = size * 0.95, len2 = size * 1.05;
+        const sx = cx, sy = cy + size*0.1;
+        const kx = sx + Math.cos(a1) * len1 * f;
+        const ky = sy - Math.abs(Math.sin(a1)) * len1 * side - size*0.1;
+        const fx = kx + Math.cos(a1*0.3) * len2 * f;
+        const fy = ky + (size*0.7) * side + Math.sin(g.legPhase*1.5+i)*2;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy);
+        ctx.stroke();
+      }
+    }
+
+    // abdomen (back)
+    ctx.fillStyle = opts.color;
+    ctx.beginPath();
+    ctx.ellipse(cx - f*size*0.55, cy, size*0.85, size*0.7, 0, 0, Math.PI*2);
+    ctx.fill();
+    // pattern on abdomen
+    if (opts.friendly) {
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.beginPath(); ctx.ellipse(cx - f*size*0.55, cy, size*0.4, size*0.32, 0, 0, Math.PI*2); ctx.fill();
+    } else {
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx-f*size*0.9, cy-6); ctx.lineTo(cx-f*size*0.2, cy-6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-f*size*0.9, cy+6); ctx.lineTo(cx-f*size*0.2, cy+6); ctx.stroke();
+    }
+
+    // head (front, toward player)
+    ctx.fillStyle = opts.color;
+    ctx.beginPath();
+    ctx.ellipse(cx + f*size*0.45, cy, size*0.55, size*0.5, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // eyes
+    const eyX = cx + f*size*0.7, eyY = cy - size*0.12;
+    if (opts.dead) {
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 2.5;
+      for (const dy of [-size*0.18, size*0.18]) {
+        ctx.beginPath(); ctx.moveTo(eyX-5, eyY+dy-4); ctx.lineTo(eyX+5, eyY+dy+4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(eyX-5, eyY+dy+4); ctx.lineTo(eyX+5, eyY+dy-4); ctx.stroke();
+      }
+    } else {
+      for (const dy of [-size*0.2, size*0.2]) {
+        ctx.fillStyle = opts.eye;
+        ctx.beginPath(); ctx.arc(eyX, eyY+dy, size*0.16, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(eyX + f*1.5, eyY+dy, size*0.07, 0, Math.PI*2); ctx.fill();
+      }
+      if (opts.friendly) {
+        // smile
+        ctx.strokeStyle = '#0a3a30'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(cx + f*size*0.55, cy + size*0.18, size*0.18, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
+      } else if (anger > 0.4 || opts.lunge) {
+        // fangs
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(cx + f*size*0.9, cy + size*0.2);
+        ctx.lineTo(cx + f*size*0.78, cy + size*0.55);
+        ctx.lineTo(cx + f*size*1.0, cy + size*0.3);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawPlayer() {
+    const px = playerX(), py = playerY();
+    const flick = (state===STATE.PLAY && g.invuln>0 && Math.floor(g.time*16)%2===0);
+    ctx.save();
+    if (flick) ctx.globalAlpha = 0.4;
+    // glow
+    const glow = ctx.createRadialGradient(px, py, 2, px, py, 26);
+    glow.addColorStop(0, 'rgba(255,235,150,0.9)');
+    glow.addColorStop(1, 'rgba(255,235,150,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(px, py, 26, 0, Math.PI*2); ctx.fill();
+    // wings
+    ctx.fillStyle = 'rgba(220,235,255,0.5)';
+    const wf = Math.sin(g.time*40)*0.5;
+    ctx.beginPath(); ctx.ellipse(px-4, py-6, 7, 4, -0.6+wf, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(px+4, py-6, 7, 4, 0.6-wf, 0, Math.PI*2); ctx.fill();
+    // body
+    ctx.fillStyle = '#3a2c10';
+    ctx.beginPath(); ctx.ellipse(px, py, 6, 8, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#ffe066';
+    ctx.beginPath(); ctx.ellipse(px, py+3, 5, 5, 0, 0, Math.PI*2); ctx.fill();
+    // tiny eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(px-2, py-4, 1.6, 0, 7); ctx.arc(px+2, py-4, 1.6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(px-2, py-4, 0.8, 0, 7); ctx.arc(px+2, py-4, 0.8, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBar(x, y, w, h, frac, color, bg) {
+    ctx.fillStyle = bg || 'rgba(255,255,255,0.12)';
+    roundRect(x, y, w, h, h/2); ctx.fill();
+    if (frac > 0) {
+      ctx.fillStyle = color;
+      roundRect(x, y, w*Math.max(0,Math.min(1,frac)), h, h/2); ctx.fill();
+    }
+  }
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawHUD() {
+    // score (survival time)
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = '#ffe08a';
+    ctx.font = 'bold 30px "Courier New", monospace';
+    ctx.fillText(Math.floor(g.time) + 's', W/2, Math.max(14, 8));
+
+    // hearts (top right)
+    const hx = W - 24, hy = 20;
+    for (let i = 0; i < CFG.hearts; i++) {
+      const alive = i < g.hearts;
+      ctx.font = '20px sans-serif';
+      ctx.globalAlpha = alive ? 1 : 0.25;
+      ctx.fillText('🕸️', hx - i*26, hy);
+    }
+    ctx.globalAlpha = 1;
+
+    // Webb HP bar (top left)
+    const bx = 18, by = 22, bw = Math.min(150, W*0.34);
+    ctx.textAlign = 'left'; ctx.font = 'bold 12px "Courier New", monospace';
+    ctx.fillStyle = g.allyDead ? '#ff7a6a' : '#6fe6cf';
+    ctx.fillText(g.allyDead ? 'WEBB DOWN' : 'WEBB', bx, by - 16);
+    drawBar(bx, by, bw, 10, g.allyHP/100, g.allyDead ? '#7a2a2a' :
+      (g.allyHP < 30 ? '#ffb04a' : '#3fd6b6'));
+  }
+
+  function drawGustWarning() {
+    const Gst = g.gust;
+    if (Gst.phase === 'idle') return;
+    const toEnemy = Gst.dir > 0;
+    const arrow = toEnemy ? '➜' : '⬅';
+    const col = toEnemy ? '255,90,70' : '120,230,200';
+    const y = H * 0.26;
+    let pulse;
+    if (Gst.phase === 'warn') pulse = 0.4 + 0.4*Math.abs(Math.sin(g.time*14));
+    else pulse = 0.85;
+    ctx.save();
+    ctx.globalAlpha = pulse;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgb('+col+')';
+    ctx.font = 'bold ' + Math.min(34, W*0.07) + 'px "Courier New", monospace';
+    const label = toEnemy ? 'WIND  '+arrow+arrow+arrow : arrow+arrow+arrow+'  GUST!';
+    ctx.fillText(Gst.phase==='warn' ? '⚠ '+label : label, W/2, y);
+    if (Gst.phase === 'active') {
+      // streaks
+      ctx.strokeStyle = 'rgba('+col+',0.5)'; ctx.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        const yy = H*0.36 + i*((H*0.4)/8) + (Math.sin(g.time*20+i)*4);
+        const len = 40 + (i%3)*30;
+        const sx = (Math.sin(g.time*8+i*2)*0.5+0.5) * W;
+        ctx.beginPath();
+        ctx.moveTo(sx, yy); ctx.lineTo(sx + Gst.dir*len, yy); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawCaughtOverlay() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,4,10,0.55)';
+    ctx.fillRect(0,0,W,H);
+    // wrap player in web flash near enemy
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ff7a6a';
+    ctx.font = 'bold ' + Math.min(54, W*0.12) + 'px "Courier New", monospace';
+    ctx.fillText('CAUGHT!', W/2, H*0.3);
+    ctx.fillStyle = '#ffe08a';
+    ctx.font = 'bold ' + Math.min(26, W*0.06) + 'px "Courier New", monospace';
+    const beat = 1 + Math.abs(Math.sin(g.time*18))*0.12;
+    ctx.save(); ctx.translate(W/2, H*0.42); ctx.scale(beat,beat);
+    ctx.fillText('MASH!  MASH!  MASH!', 0, 0);
+    ctx.restore();
+
+    // escape meter
+    const bw = Math.min(360, W*0.7), bx = (W-bw)/2, by = H*0.52;
+    drawBar(bx, by, bw, 22, g.mash, '#ffd24a');
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2; roundRect(bx,by,bw,22,11); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px "Courier New", monospace';
+    ctx.fillText('ESCAPE', W/2, by+11);
+
+    // countdown
+    const frac = g.catchT / CFG.catchTime;
+    const cy2 = by + 56;
+    drawBar(bx, cy2, bw, 10, frac, frac < 0.3 ? '#ff5050' : '#ff9050');
+    ctx.fillStyle = '#caa'; ctx.font = '12px "Courier New", monospace';
+    ctx.fillText(g.catchT.toFixed(1)+'s', W/2, cy2 + 22);
+    ctx.restore();
+  }
+
+  // ---------- main loop ----------
+  let last = performance.now();
+  function frame(now) {
+    let dt = (now - last) / 1000; last = now;
+    if (dt > 0.05) dt = 0.05; // clamp big gaps
+
+    if (state === STATE.PLAY || state === STATE.CAUGHT) update(dt);
+
+    // ----- render -----
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0,0,W,H);
+
+    // background
+    const bg = ctx.createRadialGradient(W/2, H*0.45, 40, W/2, H*0.5, Math.max(W,H)*0.7);
+    bg.addColorStop(0, '#16121f');
+    bg.addColorStop(1, '#06060d');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+    // shake
+    let sx = 0, sy = 0;
+    if (g && g.shake > 0) { sx = (Math.random()-0.5)*g.shake; sy = (Math.random()-0.5)*g.shake; }
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    if (g) {
+      const my = midY();
+      // ally web + enemy web
+      drawRadialWeb(allyX(), my, W*0.16, 'rgba(120,230,200,0.5)', g.allyDead?0.15:0.5);
+      drawRadialWeb(enemyX(), my, W*0.2, 'rgba(255,90,70,0.5)', 0.55 + g.mawAnger*0.2);
+
+      drawWebStrand();
+
+      // particles (behind characters-ish)
+      for (const p of g.particles) {
+        ctx.globalAlpha = Math.max(0, p.life / p.max);
+        ctx.fillStyle = 'rgb('+p.color+')';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Webb (ally, left, facing right)
+      const webbLunged = (g.lunge.phase==='active');
+      drawSpider(allyX(), my + (webbLunged? Math.sin(g.time*30)*3 : 0), Math.min(46, W*0.085), {
+        color: '#2f9d86', eye: '#d6fff2', legColor: '#1f6f5e',
+        anger: 0, facing: 1, friendly: true, dead: g.allyDead,
+      });
+
+      // Mawfang (enemy, right, facing left)
+      const lungeLean = (g.lunge.phase==='active') ? -W*0.04 : 0; // leans toward Webb
+      drawSpider(enemyX() + lungeLean, my, Math.min(58, W*0.105), {
+        color: '#b0312a', eye: '#ffd23a', legColor: '#6e1812',
+        anger: g.mawAnger, facing: -1, friendly: false,
+        lunge: (g.lunge.phase==='active'),
+      });
+
+      drawPlayer();
+
+      // tension thread gripping player from enemy (taut, glowing when close)
+      if (state===STATE.PLAY || state===STATE.CAUGHT) {
+        ctx.strokeStyle = 'rgba(255,90,70,'+(0.2+g.pos*0.6)+')';
+        ctx.lineWidth = 1 + g.pos*2;
+        ctx.beginPath(); ctx.moveTo(enemyX(), my); ctx.lineTo(playerX(), playerY()); ctx.stroke();
+      }
+
+      drawHUD();
+      if (state===STATE.PLAY) drawGustWarning();
+      if (state===STATE.CAUGHT) drawCaughtOverlay();
+    }
+
+    ctx.restore();
+
+    // flash
+    if (g && g.flash > 0) {
+      ctx.fillStyle = 'rgba('+g.flashColor+','+(g.flash*0.5)+')';
+      ctx.fillRect(0,0,W,H);
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

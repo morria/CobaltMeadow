@@ -246,6 +246,14 @@
   .tile.barreldonkey:hover { border-color: #ffd680; box-shadow: 0 0 22px rgba(255,160,80,0.55); }
   .tile.barreldonkey h2 { font-family: 'Bungee', sans-serif; color: #ffd680; letter-spacing: 3px; font-size: 19px; }
 
+  /* Spider Tug — venom red vs friendly teal */
+  .tile.spidertug {
+    border-color: #7a2a26;
+    background: linear-gradient(180deg, rgba(40,10,16,0.95), rgba(8,6,12,0.95));
+  }
+  .tile.spidertug:hover { border-color: #ff7a6a; box-shadow: 0 0 22px rgba(255,90,70,0.55); }
+  .tile.spidertug h2 { font-family: 'Bungee', sans-serif; color: #ff8a78; letter-spacing: 3px; font-size: 19px; }
+
 
   footer {
     margin-top: 6px;
@@ -819,6 +827,60 @@
     </div>
     <h2>BARREL DONKEY</h2>
     <p>Climb the girders · jump the poop barrels · save the princess from a furious ass.</p>
+  </a>
+
+  <a class="tile spidertug" href="spider-tug.html">
+    <div class="glyph">
+      <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+        <!-- web strand -->
+        <path d="M10 28 Q40 38 70 28" fill="none" stroke="#c8d2eb" stroke-width="0.8" opacity="0.5"/>
+        <g stroke="#c8d2eb" stroke-width="0.4" opacity="0.25">
+          <line x1="24" y1="12" x2="24" y2="44"/>
+          <line x1="40" y1="10" x2="40" y2="46"/>
+          <line x1="56" y1="12" x2="56" y2="44"/>
+        </g>
+        <!-- ally radial web (left) -->
+        <g stroke="#3fd6b6" stroke-width="0.5" opacity="0.5" fill="none">
+          <circle cx="12" cy="28" r="5"/><circle cx="12" cy="28" r="9"/>
+          <line x1="12" y1="19" x2="12" y2="37"/><line x1="3" y1="28" x2="21" y2="28"/>
+        </g>
+        <!-- enemy radial web (right) -->
+        <g stroke="#ff5a46" stroke-width="0.5" opacity="0.5" fill="none">
+          <circle cx="68" cy="28" r="6"/><circle cx="68" cy="28" r="11"/>
+          <line x1="68" y1="17" x2="68" y2="39"/><line x1="57" y1="28" x2="79" y2="28"/>
+        </g>
+        <!-- ally spider (teal, friendly) -->
+        <g>
+          <g stroke="#1f6f5e" stroke-width="1" stroke-linecap="round">
+            <path d="M12 28 L18 22 M12 28 L19 27 M12 28 L18 33 M12 28 L17 37"/>
+            <path d="M12 28 L6 22 M12 28 L5 27 M12 28 L6 33 M12 28 L7 37"/>
+          </g>
+          <ellipse cx="10" cy="28" rx="5" ry="4" fill="#2f9d86"/>
+          <circle cx="14" cy="28" r="3" fill="#2f9d86"/>
+          <circle cx="15" cy="27" r="0.9" fill="#d6fff2"/>
+        </g>
+        <!-- enemy spider (red, fangs) -->
+        <g>
+          <g stroke="#6e1812" stroke-width="1.2" stroke-linecap="round">
+            <path d="M68 28 L62 21 M68 28 L61 27 M68 28 L62 35 M68 28 L63 39"/>
+            <path d="M68 28 L74 21 M68 28 L75 27 M68 28 L74 35 M68 28 L73 39"/>
+          </g>
+          <ellipse cx="71" cy="28" rx="6" ry="5" fill="#b0312a"/>
+          <circle cx="66" cy="28" r="3.5" fill="#b0312a"/>
+          <circle cx="65" cy="26.5" r="1" fill="#ffd23a"/>
+          <circle cx="65" cy="29.5" r="1" fill="#ffd23a"/>
+          <path d="M64 30 L63 33 L65 31 Z" fill="#fff"/>
+        </g>
+        <!-- firefly in the middle -->
+        <circle cx="40" cy="30" r="6" fill="#ffe066" opacity="0.25"/>
+        <ellipse cx="40" cy="30" rx="2.4" ry="3" fill="#3a2c10"/>
+        <circle cx="40" cy="31" r="2" fill="#ffe066"/>
+        <ellipse cx="37.5" cy="27.5" rx="2.6" ry="1.4" fill="#dcebff" opacity="0.55" transform="rotate(-30 37.5 27.5)"/>
+        <ellipse cx="42.5" cy="27.5" rx="2.6" ry="1.4" fill="#dcebff" opacity="0.55" transform="rotate(30 42.5 27.5)"/>
+      </svg>
+    </div>
+    <h2>SPIDER TUG</h2>
+    <p>Caught between two spiders · mash free of the web · keep your friend Webb alive.</p>
   </a>
 </div>
 
