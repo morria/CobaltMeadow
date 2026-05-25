@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Barrel Donkey">
+<meta name="theme-color" content="#1a0a05">
+<title>Barrel Donkey</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #000; color: #fff;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    touch-action: none;
+    padding:
+      env(safe-area-inset-top)
+      env(safe-area-inset-right)
+      env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+    box-sizing: border-box;
+  }
+  #wrap { position: relative; display: inline-block; }
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #1a0a05;
+    box-shadow: 0 0 40px rgba(232, 82, 48, 0.25);
+  }
+  .pad {
+    position: absolute;
+    pointer-events: auto;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,214,128,0.35);
+    display: flex; align-items: center; justify-content: center;
+    color: #ffd680;
+    font-size: 24px;
+    font-family: monospace;
+    touch-action: none;
+    user-select: none;
+  }
+  .pad:active, .pad.held {
+    background: rgba(255,214,128,0.25);
+    border-color: #ffd680;
+  }
+  #pleft  { left: 12px;  bottom: 14px; }
+  #pright { left: 84px;  bottom: 14px; }
+  #pup    { left: 48px;  bottom: 86px; }
+  #pjump  {
+    right: 14px; bottom: 14px;
+    width: 80px; height: 80px;
+    background: rgba(232, 82, 48, 0.25);
+    border-color: #ff8050;
+    color: #ffd680;
+    font-size: 14px;
+    letter-spacing: 2px;
+    font-weight: bold;
+  }
+  #pjump:active { background: rgba(255, 130, 80, 0.45); }
+  .back {
+    position: absolute;
+    top: 10px; left: 10px;
+    color: #a89cc8;
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 3px;
+    pointer-events: auto;
+    z-index: 5;
+  }
+  #overlay {
+    position: absolute; inset: 0;
+    background: rgba(10, 4, 2, 0.92);
+    color: #fff;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px;
+    pointer-events: auto;
+    padding: 24px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h1 {
+    font-size: 26px; margin: 0;
+    color: #ffd680;
+    letter-spacing: 5px;
+    text-shadow: 3px 3px 0 #8a3010;
+  }
+  #overlay h2 {
+    font-size: 14px; margin: 0;
+    color: #f08060;
+    letter-spacing: 3px;
+  }
+  #overlay p {
+    margin: 0;
+    max-width: 280px;
+    line-height: 1.5;
+    color: #c9b8a0;
+    font-size: 13px;
+  }
+  #overlay .controls {
+    font-size: 11px; color: #897a68;
+    line-height: 1.6;
+  }
+  #overlay button {
+    margin-top: 6px;
+    padding: 14px 28px;
+    font-size: 14px;
+    background: #d94c2a;
+    color: #ffd680;
+    border: 2px solid #ffd680;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 3px;
+    font-weight: bold;
+  }
+  #overlay button:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="360" height="540"></canvas>
+  <a class="back" href="index.html">← BACK</a>
+  <div class="pad" id="pleft">◀</div>
+  <div class="pad" id="pright">▶</div>
+  <div class="pad" id="pup">▲</div>
+  <div class="pad" id="pjump">JUMP</div>
+  <div id="overlay">
+    <h1>BARREL DONKEY</h1>
+    <h2>SAVE THE PRINCESS</h2>
+    <p>The donkey is hurling <b>poop barrels</b>. Climb the girders, jump the barrels, and dodge the splatters from ones that smash open.</p>
+    <p class="controls">Arrow keys + Space &nbsp;·&nbsp; or use the on-screen pad<br>↑ climbs ladders &nbsp;·&nbsp; JUMP hops barrels for points</p>
+    <button id="start">START</button>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const W = 360, H = 540;
+
+  function resize() {
+    const ar = W / H;
+    let w = window.innerWidth, h = window.innerHeight;
+    if (w / h > ar) w = h * ar; else h = w / ar;
+    cvs.style.width = Math.floor(w) + 'px';
+    cvs.style.height = Math.floor(h) + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ====== World definition ======
+  // Each platform: line segment from (x1,y1) to (x2,y2) describing top surface
+  const platforms = [
+    { x1: 0,   y1: 498, x2: 360, y2: 498 },  // 0 floor
+    { x1: 18,  y1: 425, x2: 360, y2: 450 },  // 1 slants down-right
+    { x1: 0,   y1: 368, x2: 342, y2: 340 },  // 2 slants down-left
+    { x1: 18,  y1: 285, x2: 360, y2: 312 },  // 3 slants down-right
+    { x1: 0,   y1: 226, x2: 300, y2: 226 },  // 4 top flat
+  ];
+
+  function platformY(p, x) {
+    if (x < p.x1 - 0.5 || x > p.x2 + 0.5) return null;
+    const t = (x - p.x1) / (p.x2 - p.x1);
+    return p.y1 + t * (p.y2 - p.y1);
+  }
+  function platformSlope(p) {
+    return (p.y2 - p.y1) / (p.x2 - p.x1);
+  }
+
+  // Ladders connect adjacent platforms. pTop is the upper platform index.
+  const ladders = [
+    { x: 70,  pTop: 1, pBot: 0 },
+    { x: 300, pTop: 2, pBot: 1 },
+    { x: 80,  pTop: 3, pBot: 2 },
+    { x: 256, pTop: 4, pBot: 3 },
+  ];
+  for (const l of ladders) {
+    l.yTop = platformY(platforms[l.pTop], l.x);
+    l.yBot = platformY(platforms[l.pBot], l.x);
+  }
+
+  // ====== Entities ======
+  const player = {
+    x: 30, y: 0, vx: 0, vy: 0,
+    w: 14, h: 20,
+    onGround: true,
+    onLadder: false, ladder: null,
+    facing: 1,
+    walkPhase: 0,
+    jumping: false,
+    dead: false, won: false,
+    deadTimer: 0,
+  };
+  player.y = platformY(platforms[0], player.x) - player.h / 2;
+
+  const donkey = {
+    x: 30, y: 213,
+    throwTimer: 1.4,
+    throwAnim: 0,
+    bob: 0,
+  };
+
+  const princess = { x: 270, y: 226 };
+
+  const barrels = [];
+  const puddles = [];
+
+  let score = 0;
+  let lives = 3;
+  let level = 1;
+  let gameState = 'menu'; // menu | play | dead | won | gameover
+  let throwInterval = 2.2;
+
+  // ====== Constants ======
+  const G = 0.36;
+  const PLAYER_SPEED = 1.4;
+  const JUMP_VEL = -5.6;
+  const BARREL_SPEED = 1.05;
+  const LADDER_SPEED = 1.05;
+
+  // ====== Input ======
+  const keys = {};
+  window.addEventListener('keydown', e => {
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+    keys[e.key] = true;
+  });
+  window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+  const touch = { left: false, right: false, up: false, jump: false };
+  function bindPad(id, name) {
+    const el = document.getElementById(id);
+    const on = e => { e.preventDefault(); touch[name] = true; el.classList.add('held'); };
+    const off = e => { e.preventDefault(); touch[name] = false; el.classList.remove('held'); };
+    el.addEventListener('touchstart', on, { passive: false });
+    el.addEventListener('touchend', off, { passive: false });
+    el.addEventListener('touchcancel', off, { passive: false });
+    el.addEventListener('mousedown', on);
+    el.addEventListener('mouseup', off);
+    el.addEventListener('mouseleave', off);
+  }
+  bindPad('pleft', 'left');
+  bindPad('pright', 'right');
+  bindPad('pup', 'up');
+  bindPad('pjump', 'jump');
+
+  function getInput() {
+    return {
+      left:  keys.ArrowLeft  || touch.left,
+      right: keys.ArrowRight || touch.right,
+      up:    keys.ArrowUp    || touch.up,
+      down:  keys.ArrowDown,
+      jump:  keys[' ']       || touch.jump,
+    };
+  }
+
+  // ====== Audio ======
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (Ctor) audioCtx = new Ctor();
+    }
+  }
+  function beep(freq, dur, type, gain) {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type || 'square';
+    o.frequency.value = freq;
+    g.gain.value = gain || 0.05;
+    g.gain.exponentialRampToValueAtTime(0.0008, audioCtx.currentTime + dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + dur);
+  }
+  function chord(notes, type) {
+    notes.forEach((n, i) => setTimeout(() => beep(n, 0.18, type || 'triangle', 0.06), i * 90));
+  }
+  function sfxJump()  { beep(520, 0.10, 'square', 0.04); }
+  function sfxScore() { chord([660, 880], 'triangle'); }
+  function sfxSmash() { beep(180, 0.18, 'sawtooth', 0.06); beep(90, 0.25, 'sawtooth', 0.05); }
+  function sfxDie()   { chord([330, 220, 110], 'sawtooth'); }
+  function sfxWin()   { chord([523, 659, 784, 1047], 'triangle'); }
+
+  // ====== Spawning ======
+  function spawnBarrel() {
+    const startPlatform = 4;
+    const b = {
+      x: donkey.x + 8,
+      y: platformY(platforms[startPlatform], donkey.x + 8) - 8,
+      vx: BARREL_SPEED,
+      vy: 0,
+      onPlatform: startPlatform,
+      onLadder: null,
+      smashed: false,
+      smashTimer: 0,
+      angle: 0,
+      r: 8,
+      scored: false,
+      laddersTouched: new Set(),
+    };
+    barrels.push(b);
+    donkey.throwAnim = 0.45;
+  }
+
+  function smashBarrel(b) {
+    if (b.smashed) return;
+    b.smashed = true;
+    b.smashTimer = 0.35;
+    sfxSmash();
+    // Find the platform under the smash point for the puddle to sit on
+    let pY = b.y + b.r;
+    for (const p of platforms) {
+      const py = platformY(p, b.x);
+      if (py !== null && Math.abs(py - (b.y + b.r)) < 20) {
+        pY = py;
+        break;
+      }
+    }
+    puddles.push({
+      x: b.x,
+      y: pY,
+      life: 6.5,
+      maxLife: 6.5,
+      chunks: Array.from({ length: 5 }, () => ({
+        dx: (Math.random() - 0.5) * 26,
+        offY: -Math.random() * 2,
+        size: 2 + Math.random() * 2.5,
+      })),
+      bubbles: Array.from({ length: 3 }, () => ({
+        dx: (Math.random() - 0.5) * 18,
+        phase: Math.random() * Math.PI * 2,
+      })),
+    });
+  }
+
+  function killPlayer() {
+    if (player.dead || player.won) return;
+    player.dead = true;
+    player.vx = 0;
+    player.vy = -3.5;
+    player.deadTimer = 1.1;
+    sfxDie();
+  }
+
+  function winLevel() {
+    if (player.won || player.dead) return;
+    player.won = true;
+    player.deadTimer = 1.4;
+    score += 2000 + Math.max(0, 30 - Math.floor(levelTime)) * 50;
+    sfxWin();
+  }
+
+  // ====== Reset ======
+  let levelTime = 0;
+  function resetLevel(full) {
+    barrels.length = 0;
+    puddles.length = 0;
+    player.x = 30;
+    player.y = platformY(platforms[0], 30) - player.h / 2;
+    player.vx = 0; player.vy = 0;
+    player.onLadder = false; player.ladder = null;
+    player.onGround = true;
+    player.dead = false; player.won = false;
+    player.facing = 1;
+    player.jumping = false;
+    player.deadTimer = 0;
+    donkey.throwTimer = 1.4;
+    donkey.throwAnim = 0;
+    levelTime = 0;
+    if (full) {
+      score = 0;
+      lives = 3;
+      level = 1;
+      throwInterval = 2.2;
+    }
+  }
+
+  // ====== Update ======
+  function update(dt) {
+    levelTime += dt / 60;
+    donkey.bob += dt * 0.04;
+
+    if (player.dead || player.won) {
+      player.deadTimer -= dt / 60;
+      // Death animation bounce
+      if (player.dead) {
+        player.vy += G * 0.4 * dt;
+        player.y += player.vy * dt;
+      }
+      if (player.deadTimer <= 0) {
+        if (player.won) {
+          level += 1;
+          throwInterval = Math.max(1.0, throwInterval - 0.3);
+          lives = Math.min(5, lives + 1);
+          gameState = 'won';
+          showOverlay('LEVEL ' + (level - 1) + ' CLEARED',
+            'PRINCESS RESCUED',
+            'Score: ' + score + ' · +1 life · Donkey throws faster next round.',
+            'NEXT LEVEL');
+        } else {
+          lives -= 1;
+          if (lives <= 0) {
+            gameState = 'gameover';
+            showOverlay('GAME OVER', 'DONKEY WINS',
+              'Final score: ' + score + '. Better luck next round.',
+              'TRY AGAIN');
+          } else {
+            resetLevel(false);
+          }
+        }
+      }
+      return;
+    }
+
+    const inp = getInput();
+
+    // ----- Ladder detection -----
+    const feet = player.y + player.h / 2;
+    let nearLadder = null;
+    for (const l of ladders) {
+      if (Math.abs(player.x - l.x) < 10 && feet >= l.yTop - 6 && feet <= l.yBot + 6) {
+        nearLadder = l;
+        break;
+      }
+    }
+
+    if (player.onLadder) {
+      const l = player.ladder;
+      player.x = l.x;
+      player.vx = 0;
+      if (inp.up)        player.vy = -LADDER_SPEED;
+      else if (inp.down) player.vy =  LADDER_SPEED;
+      else               player.vy = 0;
+
+      player.walkPhase += Math.abs(player.vy) * 0.2 * dt;
+      player.y += player.vy * dt;
+
+      // Top dismount
+      if (player.vy < 0 && player.y + player.h / 2 <= l.yTop + 1) {
+        player.y = l.yTop - player.h / 2;
+        player.vy = 0;
+        player.onLadder = false;
+        player.onGround = true;
+        player.ladder = null;
+      }
+      // Bottom dismount
+      else if (player.vy > 0 && player.y + player.h / 2 >= l.yBot) {
+        player.y = l.yBot - player.h / 2;
+        player.vy = 0;
+        player.onLadder = false;
+        player.onGround = true;
+        player.ladder = null;
+      }
+    } else {
+      // ----- Ground / air motion -----
+      if (nearLadder && inp.up && !player.jumping) {
+        // Grab ladder going up if we're at or below its top
+        if (feet > nearLadder.yTop + 2) {
+          player.onLadder = true;
+          player.ladder = nearLadder;
+          player.x = nearLadder.x;
+          player.vy = 0;
+          player.vx = 0;
+          player.jumping = false;
+        }
+      } else if (nearLadder && inp.down && player.onGround) {
+        // Grab ladder going down if we're standing on the top platform
+        const topY = platformY(platforms[nearLadder.pTop], nearLadder.x);
+        if (topY !== null && Math.abs(feet - topY) < 4) {
+          player.onLadder = true;
+          player.ladder = nearLadder;
+          player.x = nearLadder.x;
+          player.y = topY + 2 - player.h / 2;
+          player.vy = LADDER_SPEED;
+          player.vx = 0;
+          player.jumping = false;
+        }
+      }
+
+      if (!player.onLadder) {
+        // Horizontal
+        if (inp.left)       { player.vx = -PLAYER_SPEED; player.facing = -1; }
+        else if (inp.right) { player.vx =  PLAYER_SPEED; player.facing =  1; }
+        else                { player.vx = 0; }
+
+        player.x += player.vx * dt;
+        if (player.x < 6) player.x = 6;
+        if (player.x > W - 6) player.x = W - 6;
+
+        // Jump
+        if (player.onGround && inp.jump) {
+          player.vy = JUMP_VEL;
+          player.onGround = false;
+          player.jumping = true;
+          sfxJump();
+        }
+
+        // Vertical
+        if (player.onGround) {
+          // Snap to platform under feet
+          let found = false;
+          for (const p of platforms) {
+            const py = platformY(p, player.x);
+            if (py !== null && Math.abs((player.y + player.h / 2) - py) < 8) {
+              player.y = py - player.h / 2;
+              player.vy = 0;
+              found = true;
+              break;
+            }
+          }
+          if (!found) player.onGround = false;
+        }
+        if (!player.onGround) {
+          const oldFeet = player.y + player.h / 2;
+          player.vy += G * dt;
+          if (player.vy > 9) player.vy = 9;
+          player.y += player.vy * dt;
+          const newFeet = player.y + player.h / 2;
+          if (player.vy > 0) {
+            for (const p of platforms) {
+              const py = platformY(p, player.x);
+              if (py !== null && oldFeet <= py + 1 && newFeet >= py - 0.5) {
+                player.y = py - player.h / 2;
+                player.vy = 0;
+                player.onGround = true;
+                player.jumping = false;
+                break;
+              }
+            }
+          }
+        }
+
+        // Walking animation
+        if (Math.abs(player.vx) > 0.01 && player.onGround) {
+          player.walkPhase += 0.22 * dt;
+        }
+      }
+    }
+
+    // ----- Donkey throws barrels -----
+    donkey.throwTimer -= dt / 60;
+    if (donkey.throwAnim > 0) donkey.throwAnim -= dt / 60;
+    if (donkey.throwTimer <= 0) {
+      spawnBarrel();
+      donkey.throwTimer = throwInterval + Math.random() * 1.2;
+    }
+
+    // ----- Update barrels -----
+    for (let i = barrels.length - 1; i >= 0; i--) {
+      const b = barrels[i];
+
+      if (b.smashed) {
+        b.smashTimer -= dt / 60;
+        if (b.smashTimer <= 0) { barrels.splice(i, 1); continue; }
+        continue;
+      }
+
+      if (b.onLadder) {
+        b.x = b.onLadder.x;
+        b.y += b.vy * dt;
+        b.angle += b.vy * 0.08 * dt;
+        if (b.y + b.r >= b.onLadder.yBot) {
+          b.onPlatform = b.onLadder.pBot;
+          const py = platformY(platforms[b.onPlatform], b.x);
+          b.y = py - b.r;
+          // Move barrel slightly off the ladder so it can roll
+          const slope = platformSlope(platforms[b.onPlatform]);
+          const dir = slope > 0 ? 1 : -1;
+          b.vx = dir * BARREL_SPEED;
+          b.x += dir * 5;
+          b.vy = 0;
+          b.onLadder = null;
+        }
+      } else if (b.onPlatform !== null) {
+        const p = platforms[b.onPlatform];
+        const slope = platformSlope(p);
+        const dir = slope > 0 ? 1 : (slope < 0 ? -1 : Math.sign(b.vx) || 1);
+        b.vx = dir * BARREL_SPEED;
+        b.x += b.vx * dt;
+        b.angle += b.vx * 0.16 * dt;
+        const py = platformY(p, b.x);
+        if (py !== null) b.y = py - b.r;
+
+        // Chance to drop down a ladder
+        for (const l of ladders) {
+          if (l.pTop === b.onPlatform && Math.abs(b.x - l.x) < 5 && !b.laddersTouched.has(l.x)) {
+            b.laddersTouched.add(l.x);
+            if (Math.random() < 0.18) {
+              b.onLadder = l;
+              b.onPlatform = null;
+              b.vx = 0;
+              b.vy = BARREL_SPEED * 1.1;
+              break;
+            }
+          }
+        }
+
+        // Off platform end → fall
+        if (b.onPlatform !== null && (b.x < p.x1 - 1 || b.x > p.x2 + 1)) {
+          b.onPlatform = null;
+          b.vy = 0.6;
+        }
+
+        // Rare mid-roll smash
+        if (b.onPlatform !== null && Math.random() < 0.0008 * dt) {
+          smashBarrel(b);
+        }
+      } else {
+        // Falling
+        b.vy += G * dt;
+        if (b.vy > 8) b.vy = 8;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.angle += b.vx * 0.18 * dt;
+        if (b.vy > 0) {
+          for (let pi = 0; pi < platforms.length; pi++) {
+            const p = platforms[pi];
+            const py = platformY(p, b.x);
+            if (py === null) continue;
+            if (b.y + b.r >= py && b.y + b.r <= py + 10) {
+              b.y = py - b.r;
+              b.vy = 0;
+              b.onPlatform = pi;
+              b.laddersTouched.clear();
+              // 20% chance to smash on landing
+              if (Math.random() < 0.20) {
+                smashBarrel(b);
+              }
+              break;
+            }
+          }
+        }
+      }
+
+      // Score for jumping over a still-rolling barrel
+      if (!b.smashed && !b.scored && player.jumping && !player.onGround) {
+        const dx = Math.abs(player.x - b.x);
+        const feetY = player.y + player.h / 2;
+        if (dx < 12 && feetY < b.y - b.r + 2 && feetY > b.y - b.r - 20) {
+          b.scored = true;
+          score += 100;
+          sfxScore();
+        }
+      }
+
+      // Despawn
+      if (b.y > H + 40 || b.x < -40 || b.x > W + 40) {
+        barrels.splice(i, 1);
+        continue;
+      }
+
+      // Collide with player
+      if (!b.smashed && !player.dead && !player.won) {
+        const dx = b.x - player.x;
+        const dy = b.y - (player.y);
+        if (Math.abs(dx) < b.r + 5 && Math.abs(dy) < b.r + 9) {
+          killPlayer();
+        }
+      }
+    }
+
+    // ----- Update puddles -----
+    for (let i = puddles.length - 1; i >= 0; i--) {
+      const pu = puddles[i];
+      pu.life -= dt / 60;
+      if (pu.life <= 0) { puddles.splice(i, 1); continue; }
+      // Damage player on contact
+      if (!player.dead && !player.won) {
+        const feetY = player.y + player.h / 2;
+        if (Math.abs(player.x - pu.x) < 11 && Math.abs(feetY - pu.y) < 5) {
+          killPlayer();
+        }
+      }
+    }
+
+    // ----- Win check: reach princess -----
+    if (Math.abs(player.x - princess.x) < 16 && Math.abs((player.y + player.h / 2) - 226) < 6) {
+      winLevel();
+    }
+  }
+
+  // ====== Rendering ======
+  function draw() {
+    // background
+    ctx.fillStyle = '#1a0a05';
+    ctx.fillRect(0, 0, W, H);
+
+    // background grunge dots
+    ctx.fillStyle = '#341a10';
+    for (let i = 0; i < 40; i++) {
+      const x = (i * 79 + 17) % W;
+      const y = (i * 53 + 11) % H;
+      ctx.fillRect(x, y, 1, 1);
+    }
+
+    // Platforms
+    for (const p of platforms) drawGirder(p);
+
+    // Ladders
+    for (const l of ladders) drawLadder(l);
+
+    // Puddles (drawn before barrels and player so they sit on platforms but under sprites)
+    for (const pu of puddles) drawPuddle(pu);
+
+    // Barrels
+    for (const b of barrels) {
+      if (b.smashed) drawSmashed(b);
+      else drawBarrel(b);
+    }
+
+    // Donkey
+    drawDonkey();
+
+    // Princess
+    drawPrincess();
+
+    // Player
+    drawPlayer();
+
+    // HUD
+    drawHUD();
+  }
+
+  function drawGirder(p) {
+    const dx = p.x2 - p.x1;
+    const dy = p.y2 - p.y1;
+    const len = Math.hypot(dx, dy);
+    const ang = Math.atan2(dy, dx);
+    ctx.save();
+    ctx.translate(p.x1, p.y1);
+    ctx.rotate(ang);
+    // top edge
+    ctx.fillStyle = '#f06040';
+    ctx.fillRect(0, 0, len, 4);
+    // body
+    ctx.fillStyle = '#c03820';
+    ctx.fillRect(0, 4, len, 5);
+    // shadow underside
+    ctx.fillStyle = '#7a1810';
+    ctx.fillRect(0, 9, len, 2);
+    // rivets
+    ctx.fillStyle = '#ffd680';
+    for (let x = 6; x < len - 3; x += 22) {
+      ctx.fillRect(x, 2, 2, 2);
+      ctx.fillRect(x + 11, 6, 2, 2);
+    }
+    ctx.restore();
+  }
+
+  function drawLadder(l) {
+    ctx.strokeStyle = '#e8c060';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(l.x - 5, l.yTop - 1);
+    ctx.lineTo(l.x - 5, l.yBot);
+    ctx.moveTo(l.x + 5, l.yTop - 1);
+    ctx.lineTo(l.x + 5, l.yBot);
+    ctx.stroke();
+    ctx.beginPath();
+    for (let y = l.yTop + 4; y < l.yBot - 2; y += 7) {
+      ctx.moveTo(l.x - 5, y);
+      ctx.lineTo(l.x + 5, y);
+    }
+    ctx.stroke();
+  }
+
+  function drawBarrel(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(b.angle);
+    const r = b.r;
+    // outer body
+    ctx.fillStyle = '#6a3a14';
+    ctx.fillRect(-r, -r, r * 2, r * 2);
+    // top hoop
+    ctx.fillStyle = '#3a1d08';
+    ctx.fillRect(-r, -r + 1, r * 2, 1);
+    ctx.fillRect(-r, r - 2, r * 2, 1);
+    // middle stave gap showing poop inside
+    ctx.fillStyle = '#3a2010';
+    ctx.fillRect(-r, -2, r * 2, 1);
+    ctx.fillRect(-r, 1, r * 2, 1);
+    // poop peeking through the lid
+    ctx.fillStyle = '#5a3010';
+    ctx.fillRect(-r + 2, -r + 1, r * 2 - 4, 1);
+    // grime
+    ctx.fillStyle = '#4a280c';
+    ctx.fillRect(-r + 1, -1, 3, 2);
+    ctx.fillRect(r - 4, 2, 3, 2);
+    // little fly
+    ctx.fillStyle = '#000';
+    const flyX = Math.cos(b.angle * 3) * 3;
+    const flyY = Math.sin(b.angle * 3) * 3 - r - 3;
+    ctx.fillRect(Math.floor(flyX), Math.floor(flyY), 1, 1);
+    ctx.restore();
+  }
+
+  function drawSmashed(b) {
+    const t = 1 - b.smashTimer / 0.35;
+    const spread = t * 14;
+    // shockwave bits
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      const d = spread * (0.6 + (i % 3) * 0.2);
+      const px = b.x + Math.cos(a) * d;
+      const py = b.y + Math.sin(a) * d * 0.7;
+      ctx.fillStyle = (i % 2) ? '#5a3010' : '#3a2008';
+      ctx.fillRect(Math.floor(px) - 1, Math.floor(py) - 1, 3, 3);
+    }
+    // wood pieces
+    ctx.fillStyle = '#6a3a14';
+    ctx.fillRect(b.x - 5 - t * 3, b.y - 1, 4, 2);
+    ctx.fillRect(b.x + 1 + t * 3, b.y - 2, 4, 2);
+    ctx.fillRect(b.x - 1, b.y - 5 - t * 3, 3, 2);
+    // green stink whiff
+    ctx.fillStyle = '#5a6020';
+    ctx.fillRect(b.x - 2, b.y - 8 - t * 4, 4, 2);
+  }
+
+  function drawPuddle(pu) {
+    const fade = Math.min(1, pu.life / 1.2);
+    ctx.globalAlpha = fade;
+
+    // base puddle
+    ctx.fillStyle = '#4a2810';
+    ctx.fillRect(pu.x - 11, pu.y - 3, 22, 4);
+    ctx.fillRect(pu.x - 9,  pu.y - 4, 18, 1);
+    ctx.fillRect(pu.x - 13, pu.y - 2, 26, 2);
+    // darker chunks
+    ctx.fillStyle = '#2a1408';
+    for (const c of pu.chunks) {
+      ctx.fillRect(Math.floor(pu.x + c.dx - c.size / 2), Math.floor(pu.y + c.offY - c.size / 2), c.size, c.size);
+    }
+    // sickly green sheen
+    ctx.fillStyle = '#5a6020';
+    ctx.fillRect(pu.x - 7, pu.y - 4, 2, 1);
+    ctx.fillRect(pu.x + 2, pu.y - 4, 2, 1);
+    ctx.fillRect(pu.x - 3, pu.y - 3, 1, 1);
+    // wobbly bubbles
+    const t = performance.now() / 300;
+    ctx.fillStyle = '#7a8030';
+    for (const bub of pu.bubbles) {
+      const bx = pu.x + bub.dx;
+      const by = pu.y - 4 + Math.sin(t + bub.phase) * 1;
+      ctx.fillRect(Math.floor(bx), Math.floor(by), 1, 1);
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDonkey() {
+    const dx = donkey.x;
+    const dy = donkey.y + Math.sin(donkey.bob) * 0.6;
+    const throwing = donkey.throwAnim > 0;
+    const tilt = throwing ? -0.18 : 0;
+
+    ctx.save();
+    ctx.translate(dx, dy);
+    ctx.rotate(tilt);
+
+    // body
+    ctx.fillStyle = '#7a6650';
+    ctx.fillRect(-12, -10, 22, 14);
+    // belly
+    ctx.fillStyle = '#a08870';
+    ctx.fillRect(-10, -2, 18, 4);
+    // back ridge
+    ctx.fillStyle = '#5a4838';
+    ctx.fillRect(-12, -11, 22, 2);
+
+    // head extends to the right
+    ctx.fillStyle = '#7a6650';
+    ctx.fillRect(8, -14, 11, 9);
+    // muzzle
+    ctx.fillStyle = '#9a8068';
+    ctx.fillRect(15, -8, 6, 5);
+    // nostrils
+    ctx.fillStyle = '#2a1808';
+    ctx.fillRect(17, -6, 1, 1);
+    ctx.fillRect(19, -6, 1, 1);
+
+    // ears
+    ctx.fillStyle = '#5a4838';
+    ctx.fillRect(8,  -19, 3, 6);
+    ctx.fillRect(14, -19, 3, 6);
+    ctx.fillStyle = '#b8a08a';
+    ctx.fillRect(9,  -17, 1, 3);
+    ctx.fillRect(15, -17, 1, 3);
+
+    // eye (angry)
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(12, -11, 3, 2);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(13, -11, 2, 2);
+    // angry brow
+    ctx.fillStyle = '#2a1808';
+    ctx.fillRect(11, -13, 5, 1);
+
+    // mane
+    ctx.fillStyle = '#3a2c20';
+    ctx.fillRect(4, -14, 5, 9);
+    ctx.fillRect(6, -16, 4, 4);
+
+    // legs
+    ctx.fillStyle = '#5a4838';
+    ctx.fillRect(-10, 4, 4, 8);
+    ctx.fillRect(4,   4, 4, 8);
+    // hooves
+    ctx.fillStyle = '#1a0c04';
+    ctx.fillRect(-10, 11, 4, 2);
+    ctx.fillRect(4,   11, 4, 2);
+
+    // tail
+    ctx.fillStyle = '#3a2c20';
+    ctx.fillRect(-15, -6, 3, 9);
+    ctx.fillStyle = '#5a4020';
+    ctx.fillRect(-16, 1, 4, 4);
+
+    // barrel being raised when throwing
+    if (throwing) {
+      ctx.fillStyle = '#6a3a14';
+      ctx.fillRect(2, -22, 10, 7);
+      ctx.fillStyle = '#3a1d08';
+      ctx.fillRect(2, -21, 10, 1);
+      ctx.fillRect(2, -16, 10, 1);
+    }
+
+    ctx.restore();
+  }
+
+  function drawPrincess() {
+    const px = princess.x;
+    const py = princess.y - 1;
+    // dress
+    ctx.fillStyle = '#e84a8a';
+    ctx.fillRect(px - 4, py - 12, 8, 8);
+    ctx.fillRect(px - 6, py - 5, 12, 5);
+    ctx.fillRect(px - 7, py - 2, 14, 2);
+    // dress trim
+    ctx.fillStyle = '#ff90c0';
+    ctx.fillRect(px - 6, py - 5, 12, 1);
+    // arms (up, scared)
+    ctx.fillStyle = '#f8d0a8';
+    ctx.fillRect(px - 7, py - 10, 2, 4);
+    ctx.fillRect(px + 5, py - 10, 2, 4);
+    // head
+    ctx.fillRect(px - 3, py - 18, 6, 6);
+    // eyes
+    ctx.fillStyle = '#000';
+    ctx.fillRect(px - 2, py - 16, 1, 1);
+    ctx.fillRect(px + 1, py - 16, 1, 1);
+    // hair
+    ctx.fillStyle = '#f8d040';
+    ctx.fillRect(px - 5, py - 20, 10, 3);
+    ctx.fillRect(px - 5, py - 17, 2, 4);
+    ctx.fillRect(px + 3, py - 17, 2, 4);
+    // crown
+    ctx.fillStyle = '#ffd680';
+    ctx.fillRect(px - 3, py - 22, 6, 2);
+    ctx.fillRect(px - 2, py - 24, 1, 2);
+    ctx.fillRect(px,     py - 24, 1, 2);
+    ctx.fillRect(px + 2, py - 24, 1, 2);
+    // jewel
+    ctx.fillStyle = '#ff4040';
+    ctx.fillRect(px, py - 21, 1, 1);
+    // HELP! blinking
+    if (Math.floor(performance.now() / 380) % 2 === 0) {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 9px monospace';
+      ctx.fillText('HELP!', px - 12, py - 28);
+    }
+  }
+
+  function drawPlayer() {
+    const px = Math.round(player.x);
+    const py = Math.round(player.y);
+    const climbing = player.onLadder;
+    const jumping  = !player.onGround && !climbing;
+    const walk = Math.floor(player.walkPhase) % 2;
+
+    ctx.save();
+    ctx.translate(px, py);
+    if (player.facing < 0 && !climbing) ctx.scale(-1, 1);
+
+    // hat
+    ctx.fillStyle = '#e83018';
+    ctx.fillRect(-5, -10, 10, 3);
+    ctx.fillRect(-3, -12, 6, 2);
+    // hat patch
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(-1, -11, 2, 1);
+    // face
+    ctx.fillStyle = '#f8c098';
+    ctx.fillRect(-4, -7, 8, 4);
+    // mustache
+    ctx.fillStyle = '#3a2010';
+    ctx.fillRect(-3, -4, 6, 1);
+    // eye
+    ctx.fillStyle = '#000';
+    ctx.fillRect(2, -6, 1, 2);
+    // ear
+    ctx.fillStyle = '#f8c098';
+    ctx.fillRect(-5, -5, 1, 2);
+
+    // body / overalls
+    ctx.fillStyle = '#3050d8';
+    ctx.fillRect(-5, -3, 10, 7);
+    // buttons
+    ctx.fillStyle = '#ffd680';
+    ctx.fillRect(-3, -1, 1, 1);
+    ctx.fillRect(2,  -1, 1, 1);
+    // shirt sleeves
+    ctx.fillStyle = '#e83018';
+    ctx.fillRect(-7, -2, 2, 4);
+    ctx.fillRect(5,  -2, 2, 4);
+    // hands
+    ctx.fillStyle = '#f8c098';
+    ctx.fillRect(-7, 1, 2, 2);
+    ctx.fillRect(5,  1, 2, 2);
+
+    // legs / pose
+    ctx.fillStyle = '#3050d8';
+    if (climbing) {
+      const c = Math.floor(performance.now() / 220) % 2;
+      ctx.fillRect(-4, 4, 3, 5);
+      ctx.fillRect(1,  4, 3, 5);
+      // arms up
+      ctx.fillStyle = '#e83018';
+      ctx.fillRect(-3, -7, 2, 3);
+      ctx.fillRect(1,  -7, 2, 3);
+      ctx.fillStyle = '#f8c098';
+      ctx.fillRect(-3, -10 + (c ? 0 : 1), 2, 2);
+      ctx.fillRect(1,  -10 + (c ? 1 : 0), 2, 2);
+    } else if (jumping) {
+      ctx.fillRect(-4, 3, 3, 5);
+      ctx.fillRect(1,  3, 3, 5);
+    } else if (Math.abs(player.vx) > 0.01) {
+      // walking
+      if (walk) {
+        ctx.fillRect(-4, 4, 3, 5);
+        ctx.fillRect(1,  4, 4, 4);
+      } else {
+        ctx.fillRect(-4, 4, 4, 4);
+        ctx.fillRect(1,  4, 3, 5);
+      }
+    } else {
+      ctx.fillRect(-4, 4, 3, 5);
+      ctx.fillRect(1,  4, 3, 5);
+    }
+
+    // shoes
+    ctx.fillStyle = '#3a1808';
+    if (!climbing && !jumping && Math.abs(player.vx) > 0.01 && walk) {
+      ctx.fillRect(-5, 8, 4, 2);
+      ctx.fillRect(0,  7, 5, 2);
+    } else if (!climbing && !jumping) {
+      ctx.fillRect(-5, 8, 4, 2);
+      ctx.fillRect(1,  8, 4, 2);
+    } else if (jumping) {
+      ctx.fillRect(-5, 7, 4, 2);
+      ctx.fillRect(1,  7, 4, 2);
+    } else {
+      ctx.fillRect(-5, 8, 4, 2);
+      ctx.fillRect(1,  8, 4, 2);
+    }
+
+    if (player.dead) {
+      // X eyes overlay
+      ctx.fillStyle = '#000';
+      ctx.fillRect(-3, -6, 1, 1);
+      ctx.fillRect(-1, -5, 1, 1);
+      ctx.fillRect(-3, -4, 1, 1);
+      ctx.fillRect(1, -6, 1, 1);
+      ctx.fillRect(3, -5, 1, 1);
+      ctx.fillRect(1, -4, 1, 1);
+    }
+
+    ctx.restore();
+  }
+
+  function drawHUD() {
+    ctx.fillStyle = '#ffd680';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText('SCORE ' + String(score).padStart(5, '0'), 8, 18);
+
+    ctx.fillStyle = '#f08060';
+    ctx.fillText('L ' + level, W / 2 - 14, 18);
+
+    ctx.fillStyle = '#ffd680';
+    ctx.fillText('LIVES', W - 86, 18);
+    // tiny life heads
+    for (let i = 0; i < lives; i++) {
+      const lx = W - 38 + i * 9;
+      ctx.fillStyle = '#e83018';
+      ctx.fillRect(lx, 10, 6, 2);
+      ctx.fillStyle = '#f8c098';
+      ctx.fillRect(lx + 1, 12, 4, 4);
+    }
+  }
+
+  // ====== Loop ======
+  let last = performance.now();
+  function tick(now) {
+    let dt = (now - last) / 16.67;
+    if (dt > 3) dt = 3;
+    if (dt < 0) dt = 0;
+    last = now;
+    if (gameState === 'play') update(dt);
+    draw();
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ====== Overlay ======
+  const overlay = document.getElementById('overlay');
+  const startBtn = document.getElementById('start');
+  function showOverlay(title, sub, msg, btnText) {
+    overlay.querySelector('h1').textContent = title;
+    overlay.querySelector('h2').textContent = sub;
+    overlay.querySelectorAll('p')[0].innerHTML = msg;
+    startBtn.textContent = btnText;
+    overlay.classList.remove('hidden');
+  }
+  function hideOverlay() { overlay.classList.add('hidden'); }
+
+  startBtn.addEventListener('click', () => {
+    ensureAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    if (gameState === 'gameover' || gameState === 'menu') {
+      resetLevel(true);
+    } else if (gameState === 'won') {
+      resetLevel(false);
+    }
+    gameState = 'play';
+    hideOverlay();
+  });
+})();
+</script>
+</body>
+</html>
