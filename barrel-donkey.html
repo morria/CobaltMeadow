@@ -141,7 +141,7 @@
     <h1>BARREL DONKEY</h1>
     <h2>SAVE THE PRINCESS</h2>
     <p>The donkey is hurling <b>poop barrels</b>. Climb the girders, jump the barrels, and dodge the splatters from ones that smash open.</p>
-    <p class="controls">Arrow keys + Space &nbsp;·&nbsp; or use the on-screen pad<br>↑ climbs ladders &nbsp;·&nbsp; JUMP hops barrels for points</p>
+    <p class="controls">Arrow keys + Space &nbsp;·&nbsp; or use the on-screen pad<br>↑ climbs ladders &nbsp;·&nbsp; JUMP hops barrels for points<br>Grab the <b style="color:#e0b040">golden hammer</b> to bash barrels (can't climb while held)</p>
     <button id="start">START</button>
   </div>
 </div>
@@ -166,13 +166,15 @@
   resize();
 
   // ====== World definition ======
-  // Each platform: line segment from (x1,y1) to (x2,y2) describing top surface
+  // Each platform: line segment from (x1,y1) to (x2,y2) describing top surface.
+  // Geometry guarantees each "low end" overflows past the next platform below,
+  // so a barrel falling off one platform always lands on the next.
   const platforms = [
-    { x1: 0,   y1: 498, x2: 360, y2: 498 },  // 0 floor
-    { x1: 18,  y1: 425, x2: 360, y2: 450 },  // 1 slants down-right
-    { x1: 0,   y1: 368, x2: 342, y2: 340 },  // 2 slants down-left
-    { x1: 18,  y1: 285, x2: 360, y2: 312 },  // 3 slants down-right
-    { x1: 0,   y1: 226, x2: 300, y2: 226 },  // 4 top flat
+    { x1: 0,   y1: 498, x2: 360, y2: 510 },  // 0 floor      down-right (barrels chase →)
+    { x1: 20,  y1: 434, x2: 360, y2: 414 },  // 1 down-left  (exits at left x≈19  → lands on L0)
+    { x1: 0,   y1: 358, x2: 330, y2: 378 },  // 2 down-right (exits at right x≈331 → lands on L1)
+    { x1: 10,  y1: 302, x2: 340, y2: 275 },  // 3 down-left  (exits at left x≈9   → lands on L2)
+    { x1: 10,  y1: 223, x2: 260, y2: 235 },  // 4 down-right (exits at right x≈261 → lands on L3)
   ];
 
   function platformY(p, x) {
@@ -184,12 +186,13 @@
     return (p.y2 - p.y1) / (p.x2 - p.x1);
   }
 
-  // Ladders connect adjacent platforms. pTop is the upper platform index.
+  // Ladders connect adjacent platforms. Placement zig-zags so the player
+  // must traverse each platform end-to-end (and into the path of barrels).
   const ladders = [
-    { x: 70,  pTop: 1, pBot: 0 },
-    { x: 300, pTop: 2, pBot: 1 },
-    { x: 80,  pTop: 3, pBot: 2 },
-    { x: 256, pTop: 4, pBot: 3 },
+    { x: 320, pTop: 1, pBot: 0 },  // climb up on the right
+    { x: 50,  pTop: 2, pBot: 1 },  // walk left across L1
+    { x: 300, pTop: 3, pBot: 2 },  // walk right across L2
+    { x: 80,  pTop: 4, pBot: 3 },  // walk left across L3
   ];
   for (const l of ladders) {
     l.yTop = platformY(platforms[l.pTop], l.x);
@@ -211,29 +214,50 @@
   player.y = platformY(platforms[0], player.x) - player.h / 2;
 
   const donkey = {
-    x: 30, y: 213,
+    x: 30, y: 212,
     throwTimer: 1.4,
     throwAnim: 0,
     bob: 0,
+    rage: 0,           // increases per level, tints donkey + eye
   };
 
-  const princess = { x: 270, y: 226 };
+  // Princess stands on the right side of L4; y computed from platform slope.
+  const princess = { x: 230, y: 0 };
+  princess.y = platformY(platforms[4], princess.x);
 
   const barrels = [];
   const puddles = [];
+  let hammer = null;       // { x, y, taken } or null
+  let playerHammerTimer = 0;
 
   let score = 0;
   let lives = 3;
   let level = 1;
   let gameState = 'menu'; // menu | play | dead | won | gameover
-  let throwInterval = 2.2;
+
+  // Per-level tuned values (populated by applyLevelStats)
+  let stats = null;
 
   // ====== Constants ======
   const G = 0.36;
   const PLAYER_SPEED = 1.4;
   const JUMP_VEL = -5.6;
-  const BARREL_SPEED = 1.05;
   const LADDER_SPEED = 1.05;
+
+  function levelStats(L) {
+    return {
+      throwInterval:       Math.max(0.85, 2.2 - (L - 1) * 0.30),  // faster throws
+      throwJitter:         Math.max(0.4,  1.2 - (L - 1) * 0.18),
+      barrelSpeed:         Math.min(1.85, 1.05 + (L - 1) * 0.12),  // faster rolls
+      smashOnLand:         Math.min(0.50, 0.18 + (L - 1) * 0.05),  // more splatters
+      smashRolling:        Math.min(0.005, 0.0006 + (L - 1) * 0.0007),
+      ladderDescend:       Math.min(0.45, 0.15 + (L - 1) * 0.06),
+      doubleThrowChance:   L >= 3 ? Math.min(0.55, (L - 2) * 0.12) : 0,
+      tripleThrowChance:   L >= 5 ? Math.min(0.30, (L - 4) * 0.07) : 0,
+      hammerOnLevel:       (L === 1 || L === 4),    // hammer pickup spawned
+      puddleLife:          Math.max(4.0, 7.0 - (L - 1) * 0.35),
+    };
+  }
 
   // ====== Input ======
   const keys = {};
@@ -293,11 +317,13 @@
   function chord(notes, type) {
     notes.forEach((n, i) => setTimeout(() => beep(n, 0.18, type || 'triangle', 0.06), i * 90));
   }
-  function sfxJump()  { beep(520, 0.10, 'square', 0.04); }
-  function sfxScore() { chord([660, 880], 'triangle'); }
-  function sfxSmash() { beep(180, 0.18, 'sawtooth', 0.06); beep(90, 0.25, 'sawtooth', 0.05); }
-  function sfxDie()   { chord([330, 220, 110], 'sawtooth'); }
-  function sfxWin()   { chord([523, 659, 784, 1047], 'triangle'); }
+  function sfxJump()   { beep(520, 0.10, 'square', 0.04); }
+  function sfxScore()  { chord([660, 880], 'triangle'); }
+  function sfxSmash()  { beep(180, 0.18, 'sawtooth', 0.06); beep(90, 0.25, 'sawtooth', 0.05); }
+  function sfxDie()    { chord([330, 220, 110], 'sawtooth'); }
+  function sfxWin()    { chord([523, 659, 784, 1047], 'triangle'); }
+  function sfxHammer() { chord([880, 1100, 1320], 'square'); }
+  function sfxBash()   { beep(660, 0.08, 'square', 0.06); beep(220, 0.16, 'sawtooth', 0.05); }
 
   // ====== Spawning ======
   function spawnBarrel() {
@@ -305,7 +331,7 @@
     const b = {
       x: donkey.x + 8,
       y: platformY(platforms[startPlatform], donkey.x + 8) - 8,
-      vx: BARREL_SPEED,
+      vx: stats.barrelSpeed,
       vy: 0,
       onPlatform: startPlatform,
       onLadder: null,
@@ -318,6 +344,17 @@
     };
     barrels.push(b);
     donkey.throwAnim = 0.45;
+  }
+
+  function donkeyThrow() {
+    spawnBarrel();
+    // Higher levels: donkey may chuck a 2nd or 3rd barrel in quick succession
+    if (Math.random() < stats.doubleThrowChance) {
+      setTimeout(() => { if (gameState === 'play') spawnBarrel(); }, 220);
+    }
+    if (Math.random() < stats.tripleThrowChance) {
+      setTimeout(() => { if (gameState === 'play') spawnBarrel(); }, 440);
+    }
   }
 
   function smashBarrel(b) {
@@ -337,8 +374,8 @@
     puddles.push({
       x: b.x,
       y: pY,
-      life: 6.5,
-      maxLife: 6.5,
+      life: stats.puddleLife,
+      maxLife: stats.puddleLife,
       chunks: Array.from({ length: 5 }, () => ({
         dx: (Math.random() - 0.5) * 26,
         offY: -Math.random() * 2,
@@ -371,6 +408,14 @@
   // ====== Reset ======
   let levelTime = 0;
   function resetLevel(full) {
+    if (full) {
+      score = 0;
+      lives = 3;
+      level = 1;
+    }
+    stats = levelStats(level);
+    donkey.rage = Math.min(1, (level - 1) * 0.25);
+
     barrels.length = 0;
     puddles.length = 0;
     player.x = 30;
@@ -382,14 +427,17 @@
     player.facing = 1;
     player.jumping = false;
     player.deadTimer = 0;
-    donkey.throwTimer = 1.4;
+    donkey.throwTimer = Math.max(0.8, 1.4 - (level - 1) * 0.15);
     donkey.throwAnim = 0;
     levelTime = 0;
-    if (full) {
-      score = 0;
-      lives = 3;
-      level = 1;
-      throwInterval = 2.2;
+    playerHammerTimer = 0;
+
+    // Hammer pickup on certain levels — sits on platform 2 (mid maze)
+    if (stats.hammerOnLevel) {
+      const hx = level === 1 ? 180 : 240;
+      hammer = { x: hx, y: platformY(platforms[2], hx) - 10, taken: false };
+    } else {
+      hammer = null;
     }
   }
 
@@ -408,13 +456,21 @@
       if (player.deadTimer <= 0) {
         if (player.won) {
           level += 1;
-          throwInterval = Math.max(1.0, throwInterval - 0.3);
           lives = Math.min(5, lives + 1);
           gameState = 'won';
+          const nextStats = levelStats(level);
+          const flavors = [
+            'Donkey is throwing faster.',
+            'Barrels are rolling quicker.',
+            'Now with double-barrel throws.',
+            'Splatters everywhere. Watch your step.',
+            'Triple throws unlocked. Good luck.',
+          ];
+          const flavor = flavors[Math.min(flavors.length - 1, level - 2)] || 'It only gets worse.';
           showOverlay('LEVEL ' + (level - 1) + ' CLEARED',
             'PRINCESS RESCUED',
-            'Score: ' + score + ' · +1 life · Donkey throws faster next round.',
-            'NEXT LEVEL');
+            'Score: ' + score + ' · +1 life · ' + flavor,
+            'LEVEL ' + level);
         } else {
           lives -= 1;
           if (lives <= 0) {
@@ -471,7 +527,8 @@
       }
     } else {
       // ----- Ground / air motion -----
-      if (nearLadder && inp.up && !player.jumping) {
+      // While holding the hammer the player can't grab ladders
+      if (nearLadder && inp.up && !player.jumping && playerHammerTimer <= 0) {
         // Grab ladder going up if we're at or below its top
         if (feet > nearLadder.yTop + 2) {
           player.onLadder = true;
@@ -481,7 +538,7 @@
           player.vx = 0;
           player.jumping = false;
         }
-      } else if (nearLadder && inp.down && player.onGround) {
+      } else if (nearLadder && inp.down && player.onGround && playerHammerTimer <= 0) {
         // Grab ladder going down if we're standing on the top platform
         const topY = platformY(platforms[nearLadder.pTop], nearLadder.x);
         if (topY !== null && Math.abs(feet - topY) < 4) {
@@ -559,8 +616,8 @@
     donkey.throwTimer -= dt / 60;
     if (donkey.throwAnim > 0) donkey.throwAnim -= dt / 60;
     if (donkey.throwTimer <= 0) {
-      spawnBarrel();
-      donkey.throwTimer = throwInterval + Math.random() * 1.2;
+      donkeyThrow();
+      donkey.throwTimer = stats.throwInterval + Math.random() * stats.throwJitter;
     }
 
     // ----- Update barrels -----
@@ -581,10 +638,10 @@
           b.onPlatform = b.onLadder.pBot;
           const py = platformY(platforms[b.onPlatform], b.x);
           b.y = py - b.r;
-          // Move barrel slightly off the ladder so it can roll
+          // Resume rolling in the slope's downhill direction
           const slope = platformSlope(platforms[b.onPlatform]);
           const dir = slope > 0 ? 1 : -1;
-          b.vx = dir * BARREL_SPEED;
+          b.vx = dir * stats.barrelSpeed;
           b.x += dir * 5;
           b.vy = 0;
           b.onLadder = null;
@@ -593,21 +650,22 @@
         const p = platforms[b.onPlatform];
         const slope = platformSlope(p);
         const dir = slope > 0 ? 1 : (slope < 0 ? -1 : Math.sign(b.vx) || 1);
-        b.vx = dir * BARREL_SPEED;
+        b.vx = dir * stats.barrelSpeed;
         b.x += b.vx * dt;
         b.angle += b.vx * 0.16 * dt;
         const py = platformY(p, b.x);
         if (py !== null) b.y = py - b.r;
 
-        // Chance to drop down a ladder
+        // Chance to drop down a ladder (only if the barrel is moving toward
+        // the player's column rather than away — keeps barrels reachable)
         for (const l of ladders) {
           if (l.pTop === b.onPlatform && Math.abs(b.x - l.x) < 5 && !b.laddersTouched.has(l.x)) {
             b.laddersTouched.add(l.x);
-            if (Math.random() < 0.18) {
+            if (Math.random() < stats.ladderDescend) {
               b.onLadder = l;
               b.onPlatform = null;
               b.vx = 0;
-              b.vy = BARREL_SPEED * 1.1;
+              b.vy = stats.barrelSpeed * 1.15;
               break;
             }
           }
@@ -620,7 +678,7 @@
         }
 
         // Rare mid-roll smash
-        if (b.onPlatform !== null && Math.random() < 0.0008 * dt) {
+        if (b.onPlatform !== null && Math.random() < stats.smashRolling * dt) {
           smashBarrel(b);
         }
       } else {
@@ -640,8 +698,7 @@
               b.vy = 0;
               b.onPlatform = pi;
               b.laddersTouched.clear();
-              // 20% chance to smash on landing
-              if (Math.random() < 0.20) {
+              if (Math.random() < stats.smashOnLand) {
                 smashBarrel(b);
               }
               break;
@@ -672,7 +729,13 @@
         const dx = b.x - player.x;
         const dy = b.y - (player.y);
         if (Math.abs(dx) < b.r + 5 && Math.abs(dy) < b.r + 9) {
-          killPlayer();
+          if (playerHammerTimer > 0) {
+            smashBarrel(b);
+            score += 300;
+            sfxBash();
+          } else {
+            killPlayer();
+          }
         }
       }
     }
@@ -682,7 +745,7 @@
       const pu = puddles[i];
       pu.life -= dt / 60;
       if (pu.life <= 0) { puddles.splice(i, 1); continue; }
-      // Damage player on contact
+      // Damage player on contact (hammer doesn't help — it's already smashed)
       if (!player.dead && !player.won) {
         const feetY = player.y + player.h / 2;
         if (Math.abs(player.x - pu.x) < 11 && Math.abs(feetY - pu.y) < 5) {
@@ -691,9 +754,27 @@
       }
     }
 
-    // ----- Win check: reach princess -----
-    if (Math.abs(player.x - princess.x) < 16 && Math.abs((player.y + player.h / 2) - 226) < 6) {
-      winLevel();
+    // ----- Hammer pickup + timer -----
+    if (hammer && !hammer.taken && !player.dead && !player.won) {
+      if (Math.abs(player.x - hammer.x) < 12 && Math.abs((player.y + player.h / 2) - (hammer.y + 6)) < 14) {
+        hammer.taken = true;
+        playerHammerTimer = 6.0;
+        sfxHammer();
+      }
+    }
+    if (playerHammerTimer > 0) {
+      playerHammerTimer -= dt / 60;
+      if (playerHammerTimer < 0) playerHammerTimer = 0;
+    }
+
+    // ----- Win check: reach princess on the top platform -----
+    if (!player.onLadder) {
+      const topY = platformY(platforms[4], player.x);
+      if (topY !== null
+          && Math.abs(player.x - princess.x) < 16
+          && Math.abs((player.y + player.h / 2) - topY) < 6) {
+        winLevel();
+      }
     }
   }
 
@@ -720,6 +801,9 @@
     // Puddles (drawn before barrels and player so they sit on platforms but under sprites)
     for (const pu of puddles) drawPuddle(pu);
 
+    // Hammer pickup
+    if (hammer && !hammer.taken) drawHammerPickup();
+
     // Barrels
     for (const b of barrels) {
       if (b.smashed) drawSmashed(b);
@@ -737,6 +821,25 @@
 
     // HUD
     drawHUD();
+  }
+
+  function drawHammerPickup() {
+    const bob = Math.sin(performance.now() / 280) * 1.5;
+    const hx = hammer.x, hy = hammer.y + bob;
+    // glow
+    ctx.fillStyle = 'rgba(255,214,128,0.35)';
+    ctx.fillRect(hx - 8, hy - 4, 16, 4);
+    // handle
+    ctx.fillStyle = '#8a5028';
+    ctx.fillRect(hx - 1, hy - 2, 2, 9);
+    // head
+    ctx.fillStyle = '#e0b040';
+    ctx.fillRect(hx - 5, hy - 6, 10, 5);
+    ctx.fillStyle = '#fff0a0';
+    ctx.fillRect(hx - 5, hy - 6, 10, 1);
+    ctx.fillStyle = '#7a5020';
+    ctx.fillRect(hx + 4, hy - 5, 1, 3);
+    ctx.fillRect(hx - 5, hy - 5, 1, 3);
   }
 
   function drawGirder(p) {
@@ -905,14 +1008,25 @@
     ctx.fillRect(9,  -17, 1, 3);
     ctx.fillRect(15, -17, 1, 3);
 
-    // eye (angry)
+    // eye — gets redder as donkey enrages each level
     ctx.fillStyle = '#fff';
     ctx.fillRect(12, -11, 3, 2);
+    if (donkey.rage > 0.4) {
+      ctx.fillStyle = '#ff3010';
+      ctx.fillRect(12, -11, 3, 2);
+    }
     ctx.fillStyle = '#000';
     ctx.fillRect(13, -11, 2, 2);
     // angry brow
-    ctx.fillStyle = '#2a1808';
+    ctx.fillStyle = donkey.rage > 0.6 ? '#ff8030' : '#2a1808';
     ctx.fillRect(11, -13, 5, 1);
+    if (donkey.rage > 0.7) {
+      // steam puff
+      ctx.fillStyle = 'rgba(255,200,160,0.5)';
+      const puff = Math.sin(performance.now() / 140) * 1;
+      ctx.fillRect(19, -16 + puff, 2, 2);
+      ctx.fillRect(21, -18 + puff, 2, 2);
+    }
 
     // mane
     ctx.fillStyle = '#3a2c20';
@@ -1093,6 +1207,22 @@
       ctx.fillRect(1, -4, 1, 1);
     }
 
+    // Swinging hammer
+    if (playerHammerTimer > 0 && !climbing) {
+      const swing = Math.sin(performance.now() / 90);
+      const ang = swing * 0.7;
+      ctx.save();
+      ctx.translate(2, -8);
+      ctx.rotate(ang);
+      ctx.fillStyle = '#8a5028';
+      ctx.fillRect(-1, -8, 2, 9);
+      ctx.fillStyle = '#e0b040';
+      ctx.fillRect(-5, -12, 10, 5);
+      ctx.fillStyle = '#fff0a0';
+      ctx.fillRect(-5, -12, 10, 1);
+      ctx.restore();
+    }
+
     ctx.restore();
   }
 
@@ -1113,6 +1243,17 @@
       ctx.fillRect(lx, 10, 6, 2);
       ctx.fillStyle = '#f8c098';
       ctx.fillRect(lx + 1, 12, 4, 4);
+    }
+
+    // Hammer timer bar
+    if (playerHammerTimer > 0) {
+      const w = 80;
+      const px = W / 2 - w / 2;
+      const py = 26;
+      ctx.fillStyle = '#3a2008';
+      ctx.fillRect(px - 1, py - 1, w + 2, 5);
+      ctx.fillStyle = '#e0b040';
+      ctx.fillRect(px, py, w * (playerHammerTimer / 6), 3);
     }
   }
 
